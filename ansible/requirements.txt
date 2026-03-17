@@ -54,7 +54,7 @@ MarkupSafe==2.1.5
 mccabe==0.7.0
 melddict==1.0.1
 molecule-docker==2.1.0
-molecule==24.7.0
+molecule==26.3.0
 oauthlib==3.2.2
 openshift==0.13.2
 packaging==24.1
