@@ -15,7 +15,7 @@ runs:
     - if: inputs.gitOps && contains(inputs.gitOps, 'true') && inputs.issue
       name: Notify GitHub issue when created
       continue-on-error: true
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const result = await github.rest.issues.listLabelsOnIssue({

@@ -22,7 +22,7 @@ jobs:
       - name: Setup Git
         uses: elastic/oblt-actions/git/setup@v1
       - name: Generate dates
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: gen-dates
         with:
           script: |
@@ -52,7 +52,7 @@ jobs:
           done
           cat "${GITHUB_WORKSPACE}/close-to-expire-tmp"*|jq -s '{"items": [.[].items[]]}' >"${GITHUB_WORKSPACE}/close-to-expire.json"
       - name: Set outputs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: process-file
         with:
           script: |

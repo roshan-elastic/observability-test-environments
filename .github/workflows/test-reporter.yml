@@ -19,7 +19,7 @@ jobs:
   report:
     runs-on: ubuntu-latest
     steps:
-      - uses: dorny/test-reporter@v1.9.1
+      - uses: dorny/test-reporter@v2.6.0
         with:
           artifact: /test-results-(.*)/            # artifact name
           name: 'Test Report $1'                 # Name of the check run which will be created

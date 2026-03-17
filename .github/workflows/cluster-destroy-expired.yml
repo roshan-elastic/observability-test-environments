@@ -25,7 +25,7 @@ jobs:
           command: 'cluster list --all --filter "expire_date=$(date -I)" --output-file ${PWD}/destroy.json || true'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set outputs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: process-file
         with:
           script: |

@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify - started
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({
@@ -31,7 +31,7 @@ jobs:
               repo: context.repo.repo,
               body: '🏃 I am attending your request for creating your generic cluster ([logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))'
             })
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Use https://github.com/stefanbuck/github-issue-parser/releases/tag/v3.0.1
       - uses: stefanbuck/github-issue-parser@c1a559d78bfb8dd05216dab9ffd2b91082ff5324
@@ -43,7 +43,7 @@ jobs:
         run: echo "RELEASE_STACK_VERSION=$(jq -r .release.version .ci/update-versions/update_channels.json)" >> "${GITHUB_ENV}"
 
       - name: Configure oblt-cli parameters
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             console.log(`Parsing flags`)

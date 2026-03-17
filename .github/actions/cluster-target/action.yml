@@ -87,7 +87,7 @@ runs:
         key: docker-${{ inputs.frameworkVersion }}-oblt-framework
     - name: Log in to the Container registry
       if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
-      uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+      uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2
       with:
         registry: ${{ inputs.dockerRegistry }}
         username: ${{ inputs.dockerUsername }}
@@ -131,7 +131,7 @@ runs:
         VERSION: ${{ inputs.frameworkVersion }}
         GITHUB_ENABLED: "true"
     - if: ${{ failure() && steps.cluster-config.outputs.oblt_managed == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ env.TASK_ID }}-logs
         path: |
@@ -140,7 +140,7 @@ runs:
           ${{ inputs.buildDir }}/kind_logs/
           ${{ inputs.clusterConfigFile }}
         retention-days: 2
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v7
       if: ${{ always() && steps.cluster-config.outputs.oblt_managed == 'true' }} # run this step even if previous step failed
       with:
         name: test-results-${{ inputs.id }}

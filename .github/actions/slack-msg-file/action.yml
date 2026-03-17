@@ -23,7 +23,7 @@ runs:
   using: "composite"
   steps:
       - name: Read payload file
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: read-payload
         env:
           TS: ${{ inputs.thread-timestamp || '' }}
@@ -41,7 +41,7 @@ runs:
             core.setOutput('payload', JSON.stringify(jsonContent));
             core.setSecret(JSON.stringify(jsonContent));
       - name: Send slack message
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v3.0.1
         id: slack-thread
         env:
           SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }}

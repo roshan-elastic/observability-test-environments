@@ -27,7 +27,7 @@ runs:
   using: "composite"
   steps:
     - name: Read Files
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       id: read-files
       with:
         script: |
@@ -80,7 +80,7 @@ runs:
 
     - name: GitHub summary
       continue-on-error: true
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         BUILD_DIR: ${{ inputs.buildDir }}
       with:
@@ -94,7 +94,7 @@ runs:
     - if: inputs.gitOps && contains(inputs.gitOps, 'true') && inputs.issue
       name: Notify GitHub issue when created
       continue-on-error: true
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         BUILD_DIR: ${{ inputs.buildDir }}
         INFO: ${{ steps.read-files.outputs.deploy-info-msg }}

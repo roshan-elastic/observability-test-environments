@@ -27,11 +27,11 @@ jobs:
     concurrency:
       group: "${{ github.ref }}-tools"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: elastic/oblt-actions/git/setup@v1
         with:
           github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: .go-version
           cache: true

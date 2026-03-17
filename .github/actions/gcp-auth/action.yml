@@ -29,7 +29,7 @@ runs:
   using: "composite"
   steps:
     - name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@v2'
+      uses: 'google-github-actions/auth@v3'
       id: gcp-auth
       with:
         project_id: '${{ inputs.projectId }}'
@@ -39,7 +39,7 @@ runs:
         access_token_lifetime: ${{ inputs.accessTokenLifetime }}
         access_token_scopes: ${{ inputs.accessTokenScopes }}
     - name: 'Set outputs'
-      uses: 'actions/github-script@v7'
+      uses: 'actions/github-script@v8'
       env:
         TOKEN: ${{ steps.gcp-auth.outputs.access_token }}
       with:

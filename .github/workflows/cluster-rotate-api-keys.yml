@@ -19,7 +19,7 @@ jobs:
         environment: [pro, qa, staging]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Rotate Api Keys Staging
         uses: ./.github/actions/make-target
         with:

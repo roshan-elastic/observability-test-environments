@@ -27,7 +27,7 @@ jobs:
       previousChannels: ${{ steps.changed-channels.outputs.previousChannels }}
       dayOfWeek: ${{ steps.changed-channels.outputs.dayOfWeek }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: false
@@ -48,7 +48,7 @@ jobs:
     env:
       CHANNEL: ${{ matrix.channel }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: false
@@ -56,7 +56,7 @@ jobs:
 
       # IMPORTANT: the secrets below are managed through IASC (contact robots if you need further assistance)
       - name: Log in to the Elastic Container registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           registry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
           username: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
@@ -82,18 +82,18 @@ jobs:
       CHANNEL: ${{ matrix.channel }}
       DAY_OF_WEEK: ${{ needs.channel-changes.outputs.dayOfWeek }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: false
           ref: ${{ inputs.ref || github.sha || 'main' }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
           cache: 'pip'
           cache-dependency-path: ansible/requirements.txt
       - name: "Setup updatecli"
-        uses: "updatecli/updatecli-action@v2.65.0"
+        uses: "updatecli/updatecli-action@v2.100.0"
         with:
           version: "v0.75.0"
       - name: Setup Git

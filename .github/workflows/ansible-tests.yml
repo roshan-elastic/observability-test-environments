@@ -23,7 +23,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Unit test common role
         uses: ./.github/actions/make-target
         env:
@@ -43,13 +43,13 @@ jobs:
       matrix: ${{ steps.filter-roles.outputs.matrix }}
       count: ${{ steps.filter-roles.outputs.count }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: false
           ref: ${{ github.sha || 'main' }}
       - uses: ./.github/actions/no-forks
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
           cache: 'pip'
@@ -57,7 +57,7 @@ jobs:
       - run: pip install --no-compile -r .ci/requirements.txt
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@c65cd883420fd2eb864698a825fc4162dd94482c
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323
         with:
           json: true
           dir_names: true
@@ -101,7 +101,7 @@ jobs:
       matrix:
         item: "${{ fromJson(needs.filter.outputs.matrix) }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Unit test ${{ matrix.item.role }} - ${{ matrix.item.scenario }}
         uses: ./.github/actions/make-target
         env:
@@ -122,7 +122,7 @@ jobs:
     needs:
       - filter
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: ESS Creation test
         uses: ./.github/actions/make-target
         env:
@@ -142,7 +142,7 @@ jobs:
     needs:
       - filter
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Serverless Creation Tests
         uses: ./.github/actions/make-target
         with:
@@ -162,7 +162,7 @@ jobs:
     env:
       ANSIBLE_COLLECTIONS_PATH: "~/.ansible/collections:/usr/share/ansible/collections:."
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/prepare-tool
         with:
           # NOTE: it requires to access private github repositories hence

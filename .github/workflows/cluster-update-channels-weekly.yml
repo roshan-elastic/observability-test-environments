@@ -22,7 +22,7 @@ jobs:
       isEmpty: ${{ steps.find-clusters.outputs.isEmpty }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: false
@@ -30,7 +30,7 @@ jobs:
       - name: Setup Git
         uses: elastic/oblt-actions/git/setup@v1
       - name: "Day of the week"
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: day-of-week
         with:
           script: |
@@ -45,7 +45,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set clusters output
         id: find-clusters
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -78,7 +78,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: false
@@ -86,7 +86,7 @@ jobs:
       - name: Setup Git
         uses: elastic/oblt-actions/git/setup@v1
       - name: "Setup updatecli"
-        uses: "updatecli/updatecli-action@v2.65.0"
+        uses: "updatecli/updatecli-action@v2.100.0"
         with:
           version: "v0.75.0"
       - name: Oblt Cluster update weekly
