@@ -1,0 +1,392 @@
+## @section Configuration
+## @skip Configuration
+## @descriptionStart
+## Cluster configuration file parameters confire the type of cluster to create.
+## It is a YAML file that contains the settings for the cluster.
+## It contains the Elastic Stack deployment configuration and the Kubernetes cluster settings.
+## The configuration file define the applications to the ploy and the configuration for each application.
+## The basic configuration file contains a name for the cluster an the type of stack to deploy.
+##
+## ```yaml
+## cluster_name: "test-oblt"
+## stack:
+##  version: "8.13.2"
+## ```
+##
+## The main sections are the following:
+##
+## * `cluster_name`: Name of the cluster (e.g. sample-oblt)
+## * `stack`: Elastic Stack deployment configuration
+## * `k8s`: Kubernetes cluster settings
+## * `features`: List of features the cluster should deploy.
+## @descriptionEnd
+
+## @param cluster_name Name of the cluster (e.g. sample-oblt)
+cluster_name: ""
+
+## @param create_users True to create users for the cluster (default: true)
+create_users: false
+## @param grab_cluster_info True to grab cluster information (default: true)
+grab_cluster_info: false
+## @param configure_external_snapshots_repo True to configure an external snapshot repository (default: false)
+configure_external_snapshots_repo: false
+
+## @param ess_not_allow_settings True to disable some settings not allowed in staging.
+ess_not_allow_settings: true
+## @param build_tf_provider_from_src [boolean,nullable] True to build the Elastic terraform provider from source (default: fatse).
+build_tf_provider_from_src: false
+## @param use_snapshot_tf_provider [boolean,nullable] True to use a snapshot version of the Elastic terraform provider (default: false)
+use_snapshot_tf_provider: true
+## @param ess_terraform_version [string] Version of the Elastic terraform provider to use (default: 0.5.0)
+ess_terraform_version: ""
+## @param observability_secret [string] Secret name for the observability cluster (default: oblt-clusters_monitoring-oblt)
+observability_secret: ""
+## @param secret_ess_user [string] path to the secret that contains the ESS credentials (elastic-cloud-observability-team-pro)
+
+## @param golden_cluster True to create a golden cluster (default: false)
+golden_cluster: true
+
+## @param slack_channel Slack channel to use for notifications
+slack_channel: "#observablt-bots"
+## @param oblt_username Username to use for the observability team (default: robots)
+oblt_username: "robots"
+
+## @param expire_date Date to expire the cluster (e.g. 2023-12-31).
+expire_date: ""
+## @param bootstrap_cluster True to bootstrap the cluster (default: false) see [bootstrap](./bootstrap.md)
+bootstrap_cluster: false
+## @param bootstrap_cluster_dirs Directories where the bootstrap cluster are located.
+# bootstrap_cluster_dirs:
+#   - "{{ deployment_dir }}/bootstrap-fleet"
+#   - "{{ deployment_dir }}/bootstrap-test"
+bootstrap_cluster_dirs: []
+
+## @param profiling_agent_deploy True to deploy the profiling agent in the k8s cluster (default: true)
+profiling_agent_deploy: true
+
+## @section Kubernetes
+## @descriptionStart
+## The Kubernetes configuration defines the settings for the Kubernetes cluster.
+## It is optional by default gcp with default settings.
+## @descriptionEnd
+## @extra k8s [object] Kubernetes cluster settings
+## @param k8s.cluster_name [string] Name of the k8s cluster, it replaces de default name (default: {{ cluster_name }})
+## @param k8s.certmanager [boolean,nullable] True to enable cert-manager
+## @param k8s.default_namespace [string] Default namespace for all resources
+## @param k8s.domain [string] Domain name for the cluster
+## @param k8s.enabled [boolean,nullable] True to enable Kubernetes cluster creation
+## @param k8s.ingress [boolean,nullable] True to enable ingress controller
+## @param k8s.kube_system_namespace [string] Namespace for the kube-system resources
+## @param k8s.machine_type [string] Machine type, e.g. n1-standard-4
+## @param k8s.max_node_count [number,nullable] Maximum number of nodes
+## @param k8s.project [string] Project name
+## @param k8s.provider [string] Cloud provider, e.g. gcp, kind
+## @param k8s.region [string] Cloud region, e.g. us-east-1, europe-west1-c
+## @param k8s.shared [string] Name of the shared cluster.This is used to share the same cluster between different deployments, when is set a cluster is not created.
+## @param k8s.static_ip [boolean,nullable] True to enable static IP
+## @param k8s.certificate_issuer [string] Issuer of the certificate, e.g. letsencrypt-prod, letsencrypt-staging (default: letsencrypt-staging)
+## @param k8s.network [string] Network to use for the cluster
+k8s:
+  enabled: true
+  cluster_name: ""
+  provider: gcp
+  shared: ""
+  certmanager: false
+  default_namespace: ""
+  domain: ""
+  ingress: false
+  kube_system_namespace: ""
+  machine_type: ""
+  max_node_count: 10
+  project: "elastic-observability"
+  region: "us-central1"
+  static_ip: false
+  certificate_issuer: letsencrypt-prod
+  network: "oblt-clusters-vpc"
+
+## @section Elastic Stack
+## @descriptionStart
+## The Elastic Stack configuration defines the settings for the Elastic Stack deployment.
+## @descriptionEnd
+## @extra stack [object] Elastic Stack deployment settings
+## @param stack.version [string] Version of the stack
+## @param stack.mode Stack provider, e.g. ess, eck, serverless, external (default: ess)
+## @param stack.template Name of the template to use for the deployment creation (e.g. elasticsearch, kibana, observability, ccs)
+
+## @param stack.target [string] Target environment, e.g. production, staging (default: production)
+
+## @param stack.observability [boolean,nullable] True to enable observability features to send logs, metrics, and APM to the monitoring cluster (default: false)
+
+## @param stack.update_channel [string] Update channel to use for the stack, e.g. update_channel: unstable, development, release
+## @param stack.update_mode [string] Update mode to use for the cluster, e.g. update, recreate (default: update)
+## @param stack.update_schedule [string] Update schedule to use for the cluster, e.g. daily, Monday, Tuesday, Wednesday, Thursday, Friday (default: daily)
+## @param stack.package_registry [string] Package registry to use for the stack.
+## @section ESS
+## @descriptionStart
+## It requires a Elastic Cloud credential stored in the Vault,
+## the vault secret must have the following fields:
+##
+## ```ini
+## "apiKey": "OWOWOWOWOOOWOWOWOWOWOWOWOWOWOWWOOWWOOWWOOWWOOWOWOWOWWO==",
+## "description": "user to access to the Elastic Cloud service as a regular user",
+## "endpoint": "https://staging.found.no",
+## "region": "us-east-1",
+## "username": "user@elastic.co"
+## ```
+##
+## @descriptionEnd
+## @extra ess [object] ESS deployment settings
+## @param stack.ess.saml_id [string] Service Provider (SP) ID configured in ESS to use for SSO authentication (optional)
+## @param stack.ess.autoscale [boolean,nullable] True to enable autoscaling (default: true)
+## @param stack.ess.ccs_remote_clusters List of remote clusters to configure CCS (optional)
+## @param stack.ess.elasticsearch.enabled [boolean,nullable] True to enable Elasticsearch deployment (default: true)
+## @param stack.ess.elasticsearch.extra_config [object] Extra configuration for Elasticsearch (optional)
+## @param stack.ess.elasticsearch.image [string] Docker image for Elasticsearch (optional)
+## @param stack.ess.elasticsearch.mem [number,nullable] Memory for Elasticsearch (default: 16)(ignored on autoscaling enabled)
+## @param stack.ess.elasticsearch.zones [number,nullable] Number of zones to use for the Elasticsearch deployment (default: 3)
+## @param stack.ess.integrations.enabled [boolean,nullable] True to enable Integrations server deployment (default: true)
+## @param stack.ess.integrations.extra_config [object] Extra configuration for Integrations server (optional)
+## @param stack.ess.integrations.image [string] Docker image for Elastic Agent (optional)
+## @param stack.ess.integrations.mem [number,nullable] Memory for Integrations server (default: 2)(ignored on autoscaling enabled)
+## @param stack.ess.integrations.zones [number,nullable] Number of zones to use for the Integrations serve deployment (default: 1)
+## @param stack.ess.kibana.enabled [boolean,nullable] True to enable Kibana deployment (default: true)
+## @param stack.ess.kibana.extra_config [object] Extra configuration for Kibana (optional)
+## @param stack.ess.kibana.further_details [string] Message to show in the Kibana login page (optional)
+## @param stack.ess.kibana.image [string] Docker image for Kibana (optional)
+## @param stack.ess.kibana.mem [number,nullable] Memory for Kibana (default: 2)(ignored on autoscaling enabled)
+## @param stack.ess.kibana.zones [number,nullable]  Number of zones to use for the Kibana deployment (default: 1)
+## @param stack.ess.kibana.open_ai_secret [string] Vault secret with the OpenaAI connection information '{"apiKey":"XXXXXXX", "service": "azureOpenAI"}', '{"apiKey":"XXXXXXX", "service": "openAI"}'
+## @param stack.ess.provider [string] Cloud provider, e.g. gcp, aws, azure (default: gcp)
+## @param stack.ess.region [string] Cloud region, e.g. us-east-1, europe-west1-c, gcp-us-west2, azure-eastus2,  (default: us-central1-c)
+## @param stack.ess.restore_snapshot_from [string] Restore a snapshot from a given deployment ID (optional)
+## @param stack.ess.restore_snapshot_name [string] Name of the snapshot to restore (optional)(default: __latest_success__)
+## @param stack.ess.template [string] Name of the ESS hardware template to use for the deployment creation (default: gcp-io-optimized-v3)
+## @param stack.ess.trusted_org [string] Trusted ESS organization (Optional)
+## @param stack.ess.reset_password [boolean,nullable] True to reset the password for the ESS deployment (default: false)
+
+## @section Elastic Cloud on Kubernetes (ECK)
+## @descriptionStart
+## The Elastic Cloud on Kubernetes (ECK) configuration defines the settings for the ECK deployment.
+## @descriptionEnd
+## @extra eck [object] ECK deployment settings
+## @param stack.eck.agent.enabled [boolean,nullable] True to enable Elastic Agent deployment (default: true)
+## @param stack.eck.agent.extra_config [object] Extra configuration for Elastic Agent (optional)
+## @param stack.eck.agent.image [string] Docker image for Elastic Agent (optional)
+## @param stack.eck.agent.mem [number,nullable] Memory for Elastic Agent (default: 2)
+## @param stack.eck.elasticsearch.enabled [boolean,nullable] True to enable Elasticsearch deployment (default: true)
+## @param stack.eck.elasticsearch.extra_config [object] Extra configuration for Elasticsearch (optional)
+## @param stack.eck.elasticsearch.image [string] Docker image for Elasticsearch (optional)
+## @param stack.eck.elasticsearch.mem [number,nullable] Memory for Elasticsearch (default: 16)
+## @param stack.eck.elasticsearch.node_count [number,nullable] Number of nodes for the Elasticsearch deployment (default: 3)
+## @param stack.eck.elasticsearch.node_storage [number,nullable] Size of the storage for each node (default: 256)
+## @param stack.eck.kibana.enabled [boolean,nullable] True to enable Kibana deployment (default: true)
+## @param stack.eck.kibana.extra_config [object] Extra configuration for Kibana (optional)
+## @param stack.eck.kibana.further_details [string] Message to show in the Kibana login page (optional)
+## @param stack.eck.kibana.image [string] Docker image for Kibana (optional)
+## @param stack.eck.kibana.mem [number,nullable] Memory for Kibana (default: 2)
+## @param stack.eck.license [string] License to use for ECK (default: trial) ['enterprise', 'trial', 'none']
+## @section External
+## @descriptionStart
+## The External configuration defines the settings for the external Stack deployment.
+## @descriptionEnd
+## @param stack.external.secret [string]  Vault secret with the fields to the external Stack (default: '')
+
+## @section Serverless
+## @descriptionStart
+## The Serverless configuration defines the settings for the Serverless deployment.
+## @descriptionEnd
+## @extra serverless [object] Serverless deployment settings
+## @param stack.serverless.region [string] Cloud region, e.g. gcp-us-central1, aws-eu-west-1, azure-eastus2,  (default: aws-eu-west-1)
+## @param stack.serverless.elasticsearch.image [string] Docker image for Elasticsearch (optional)
+## @param stack.serverless.kibana.image [string] Docker image for Kibana (optional)
+## @param stack.serverless.fleet.image [string] Docker image for Fleet (optional)
+## @param stack.serverless.cluster [string] ID of the cluster to use for the deployment creation (e.g prd-awsuse1-cp-internal-app-1, qa-awsuse1-cp-internal-app-1)
+
+## @param stack.ess.profiling [object] Configuration for Profiling
+## @param stack.ess.profiling.enabled [boolean,nullable] True to enable profiling (default: false)
+## @param stack.ess.profiling.image [string] Docker image for profiling (optional)
+stack:
+  mode: ""
+  template: ""
+  update_mode: ""
+  update_schedule: ""
+  observability: true
+  target: ""
+  package_registry: ""
+  eck:
+    license: ""
+    agent:
+      enabled: true
+      extra_config: ""
+      image: ""
+      mem: 2
+    elasticsearch:
+      enabled: true
+      extra_config: ""
+      image: ""
+      mem: 16
+      node_count: 3
+      node_storage: 256
+    kibana:
+      enabled: true
+      extra_config: ""
+      further_details: ""
+      image: ""
+      mem: 2
+  ess:
+    autoscale: true
+    ccs_remote_clusters: []
+    reset_password: false
+    saml_id: "disabled"
+    elasticsearch:
+      enabled: true
+      extra_config: ""
+      image: ""
+      mem: 16
+      zones: 3
+    integrations:
+      enabled: true
+      extra_config: ""
+      image: ""
+      mem: 2
+      zones: 1
+    kibana:
+      enabled: true
+      extra_config: ""
+      further_details: ""
+      image: ""
+      mem: 2
+      zones: 1
+      open_ai_secret: ""
+    profiling:
+      enabled: false
+      image: ""
+    provider: gcp
+    region: us-central1-c
+    restore_snapshot_from: ""
+    restore_snapshot_name: __latest_success__
+    template: gcp-io-optimized-v3
+    trusted_org: ""
+  serverless:
+    region: aws-eu-west-1
+    cluster: prd-awsuse1-cp-internal-app-1
+    elasticsearch:
+      image: ""
+    kibana:
+      image: ""
+    fleet:
+      image: ""
+## @section Applications
+## @descriptionStart
+## The applications configuration defines which applications to deploy in the cluster.
+## @descriptionEnd
+## @extra apps [object] Applications to deploy
+## @extra apps.helm List of Helm charts to deploy
+## @skip apps.helm[0].chart
+## @skip apps.helm[0].extra_args
+## @skip apps.helm[0].name
+## @skip apps.helm[0].namespace
+## @skip apps.helm[0].values_file
+## @skip apps.helm[0].version
+## @param apps.helm[0].chart [string] Chart to deploy
+## @param apps.helm[0].extra_args [object] Extra arguments to pass to the Helm install command
+## @param apps.helm[0].name [string] Name of the Helm chart
+## @param apps.helm[0].namespace [string] Namespace to deploy the chart
+## @param apps.helm[0].values_file [string] Values file for the Helm chart
+## @param apps.helm[0].version [string] Version of the chart
+
+## @extra apps.k8s List of Kubernetes manifests to deploy
+## @skip apps.k8s[0].name
+## @skip apps.k8s[0].src
+## @param apps.k8s[0].name [string] Name of the Kubernetes manifest
+## @param apps.k8s[0].src [string] Source directory for the Kubernetes manifest
+
+apps:
+  k8s:
+    - name: k8s deploy
+      src: "{{ deployment_dir }}/k8s/app"
+  helm:
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ kube_state_metrics_version }}"
+      namespace: "{{ k8s_default_namespace }}"
+      values_file: "{{ helm_deployment_dir }}/kube-state-metrics/helm-values.yml.j2"
+    - name: kubernetes-integration
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/autopilot_standalone/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent_autopilot"
+      namespace: "{{ k8s_default_namespace }}"
+      version: 0.1.0
+    - name: opbeans-go-standalone
+      values_file: "{{ helm_deployment_dir }}/opbeans/opbeans_go_standalone/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/opbeans_go_standalone"
+      namespace: "{{ k8s_default_namespace }}"
+      build_deps: true
+      version: 0.1.0
+
+## @section Opbeans
+## @descriptionStart
+## The Opbeans configuration defines the settings for the Opbeans deployment.
+## @descriptionEnd
+## @param opbeans.enabled True to deploy Opbeans (default: false)
+opbeans:
+  enabled: false
+
+## @section Synthetics monitors
+## @descriptionStart
+## ```yaml
+## - id: release-oblt
+##   folder: "{{ synthetics_deployments_dir }}/{{ cluster_name }}"
+##   locale: "en-US"
+##   timezone: "America/Los_Angeles"
+##   params:
+##     ELASTICSEARCH_URL: "https://elasticsearch.example.com"
+##     APM_URL: "https://apm.example.com"
+##     KIBANA_URL: "https://kibana.example.com"
+##     KIBANA_USERNAME: "elastic"
+##     KIBANA_PASSWORD: "changeme"
+## ```
+## @descriptionEnd
+## @extra synthetics_monitors_folders List of Synthetics monitors to deploy
+## @param synthetics_monitors_folders[0].id Id of the monitor
+## @param synthetics_monitors_folders[0].folder Folder where the monitor is located
+## @param synthetics_monitors_folders[0].locale Locale to use for the monitor
+## @param synthetics_monitors_folders[0].timezone Timezone to use for the monitor
+## @param synthetics_monitors_folders[0].params Parameters to use for the monitor
+## @skip synthetics_monitors_folders[0].params
+synthetics_monitors_folders:
+  - id: ""
+    folder: ""
+    locale: ""
+    timezone: ""
+    params: {}
+
+## @param load_balancer_ip Loadbalancer IP to use for the cluster
+load_balancer_ip: ""
+
+## @param features
+## @descriptionStart
+## The features configuration defines the features to deploy in the cluster.
+## @descriptionEnd
+## @skip features
+## @descriptionStart
+## List of features to deploy in the cluster.
+## The features are a list of objects with the following fields:
+##
+## * `name`: Name of the feature
+## * `enabled`: True to enable the feature
+## * `parameters`: Parameters to use for the feature
+##
+## Each feature define the parameters to use for the feature.
+## you can find details about the parameters in the feature documentation.
+##
+## ```yaml
+## features:
+##   - name: "feature01"
+##     enabled: true
+##   - name: "feature02"
+##     enabled: true
+##     parameter00: "value00"
+##     parameter01: "value01"
+## ```
+## @descriptionEnd
+features: []

@@ -1,0 +1,3662 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../docker/">
+      
+      
+        <link rel="next" href="../../oblt-robot/">
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+    
+    
+      
+        <title>CI - Observability Test Clusters</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,700,700i%7CUbuntu+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Ubuntu";--md-code-font:"Ubuntu Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="light-blue">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#overview" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Observability Test Clusters" class="md-header__button md-logo" aria-label="Observability Test Clusters" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Observability Test Clusters
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CI
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/elastic/observability-test-environments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Observability Test Clusters" class="md-nav__button md-logo" aria-label="Observability Test Clusters" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Observability Test Clusters
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/elastic/observability-test-environments" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        Getting Started
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Serverless
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Serverless
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/serverless-quick-start/" class="md-nav__link">
+        Quick start
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/serverless-local-development/" class="md-nav__link">
+        Local Development
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/serverless-deploy-prs/" class="md-nav__link">
+        Deploy PRs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/serverless-k8s-resources/" class="md-nav__link">
+        k8s resources
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/serverless-logs-metrics-apm/" class="md-nav__link">
+        Logs/Metrics/APM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/serverless-troubleshooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/serverless-advanced/" class="md-nav__link">
+        Advanced
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          User Guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          User Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+          Accessing Resources
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_1">
+          <span class="md-nav__icon md-icon"></span>
+          Accessing Resources
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-ess-ui/" class="md-nav__link">
+        ESS deployments
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-connect-to-k8s-cluster/" class="md-nav__link">
+        Kubernetes
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/bootstrap/" class="md-nav__link">
+        BootStrap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/ci/" class="md-nav__link">
+        CI
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://status.obs.elastic.dev" class="md-nav__link">
+        Clusters status
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+          Create clusters
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_5">
+          <span class="md-nav__icon md-icon"></span>
+          Create clusters
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/autopilot/" class="md-nav__link">
+        Autopilot
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-create-cluster/" class="md-nav__link">
+        CCS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/ess/" class="md-nav__link">
+        ESS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/deploy-my-kibana-pr/" class="md-nav__link">
+        Kibana PR
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/opbeans-cluster/" class="md-nav__link">
+        Opbeans
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/profiling/" class="md-nav__link">
+        Profiling
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-retrieve-credentials/" class="md-nav__link">
+        Credentials
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-destroy-cluster/" class="md-nav__link">
+        Destroy a Cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/expiration-date/" class="md-nav__link">
+        Expiration date
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/integrations/" class="md-nav__link">
+        Integrations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-run-a-local-cluster/" class="md-nav__link">
+        Local cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-local-kibana/" class="md-nav__link">
+        Local Kibana
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-check-logs/" class="md-nav__link">
+        Logs/Metrics/APM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/mki/" class="md-nav__link">
+        MKI
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/push-licenses/" class="md-nav__link">
+        Push Licenses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/stack-profiling/" class="md-nav__link">
+        Stack Profiling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/cluster-templates/" class="md-nav__link">
+        Templates
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/oblt-cluster-snapshots/" class="md-nav__link">
+        Test data
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/troubleshooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/use-case-update-cluster/" class="md-nav__link">
+        Update a cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/vpn/" class="md-nav__link">
+        VPN
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Admin Guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Admin Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin-guide/admin-configure-sso/" class="md-nav__link">
+        Configure SSO
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin-guide/rally-tracks/" class="md-nav__link">
+        Rally tracks
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-tools/" class="md-nav__link">
+        Release oblt tools
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin-guide/cluster-unhealthy/" class="md-nav__link">
+        Repair an unlhealth cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin-guide/use-case-restore-snapshots/" class="md-nav__link">
+        Restore snapshots
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin-guide/process-rotate-ingress-password/" class="md-nav__link">
+        Rotate ingress password
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin-guide/process-rotate-ess-api-keys/" class="md-nav__link">
+        Rotate ESS API keys
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/cluster-config/" class="md-nav__link">
+        Configuration reference
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Tools
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Tools
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+          oblt-cli
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5_1">
+          <span class="md-nav__icon md-icon"></span>
+          oblt-cli
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/bootstrap/" class="md-nav__link">
+        Bootstrap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/CONTRIBUTING/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/eol/" class="md-nav__link">
+        EOL
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/local-kibana/" class="md-nav__link">
+        Local Kibana
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/manual-deployment/" class="md-nav__link">
+        Manual deployment
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/run-in-docker/" class="md-nav__link">
+        Run in Docker
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/templates/" class="md-nav__link">
+        Templates
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/update/" class="md-nav__link">
+        Update
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/github-token/" class="md-nav__link">
+        GitHub Token
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-cli/generated/oblt-cli/" class="md-nav__link">
+        Commands
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          oblt-framework
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_5_2">
+          <span class="md-nav__icon md-icon"></span>
+          oblt-framework
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5_2_2" id="__nav_5_2_2_label" tabindex="0">
+          Ansible Collection
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_2_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Ansible Collection
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible-collection/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/cluster_tasks/" class="md-nav__link">
+        cluster_tasks
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/common/" class="md-nav__link">
+        common
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/feature_dummy/" class="md-nav__link">
+        feature_dummy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/feature_siem_linux/" class="md-nav__link">
+        feature_siem_linux
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/features/" class="md-nav__link">
+        features
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/helm_apps/" class="md-nav__link">
+        helm_apps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s/" class="md-nav__link">
+        k8s
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_apps/" class="md-nav__link">
+        k8s_apps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_autopilot/" class="md-nav__link">
+        k8s_autopilot
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_beats/" class="md-nav__link">
+        k8s_beats
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_certmanager/" class="md-nav__link">
+        k8s_certmanager
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_common/" class="md-nav__link">
+        k8s_common
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_gcp/" class="md-nav__link">
+        k8s_gcp
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_helm/" class="md-nav__link">
+        k8s_helm
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_ingress/" class="md-nav__link">
+        k8s_ingress
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_kind/" class="md-nav__link">
+        k8s_kind
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/k8s_opbeans/" class="md-nav__link">
+        k8s_opbeans
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/stack_eck/" class="md-nav__link">
+        stack_eck
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/stack_ess/" class="md-nav__link">
+        stack_ess
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/stack_security/" class="md-nav__link">
+        stack_security
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/stack_serverless/" class="md-nav__link">
+        stack_serverless
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/tools/" class="md-nav__link">
+        tools
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansible/vm_gcp/" class="md-nav__link">
+        vm_gcp
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker/" class="md-nav__link">
+        Docker
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          CI
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        CI
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#interactions" class="md-nav__link">
+    Interactions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-integration-ci" class="md-nav__link">
+    Continuous Integration (CI)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oblt-github-actions" class="md-nav__link">
+    Oblt GitHub Actions
+  </a>
+  
+    <nav class="md-nav" aria-label="Oblt GitHub Actions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster-target" class="md-nav__link">
+    cluster-target
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster-create" class="md-nav__link">
+    cluster-create
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster-destroy" class="md-nav__link">
+    cluster-destroy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster-update" class="md-nav__link">
+    cluster-update
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oblt-cli-workflow" class="md-nav__link">
+    Oblt-cli workflow
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-my-kibana-pr-workflow" class="md-nav__link">
+    Deploy my Kibana PR workflow
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-elastic-stack-workflow" class="md-nav__link">
+    Update Elastic Stack workflow
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#golden-clusters" class="md-nav__link">
+    Golden Clusters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#developer-clusters" class="md-nav__link">
+    Developer Clusters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oblt-cluster-workflows" class="md-nav__link">
+    Oblt Cluster Workflows
+  </a>
+  
+    <nav class="md-nav" aria-label="Oblt Cluster Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manager" class="md-nav__link">
+    Manager
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-cluster-info" class="md-nav__link">
+    Update cluster info
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-developers" class="md-nav__link">
+    Update developers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-licenses" class="md-nav__link">
+    Check licenses
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-custom-kibana-issue" class="md-nav__link">
+    Deploy custom Kibana (issue)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ephemeral-undeploy" class="md-nav__link">
+    Ephemeral-undeploy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oblt-cluster-ccs-issue" class="md-nav__link">
+    Oblt Cluster CCS (issue)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automerge" class="md-nav__link">
+    automerge
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elastic-stack-docker-images" class="md-nav__link">
+    Elastic Stack Docker images
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opbeans-android-app-uploader" class="md-nav__link">
+    Opbeans Android App Uploader
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opbeans-swift-data-generator" class="md-nav__link">
+    Opbeans Swift Data Generator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-tools" class="md-nav__link">
+    Update Tools
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#update-channels" class="md-nav__link">
+    Update Channels
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#update-helm-charts" class="md-nav__link">
+    Update Helm Charts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#update-cluster-channels" class="md-nav__link">
+    Update cluster channels
+  </a>
+  
+    <nav class="md-nav" aria-label="Update cluster channels">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-oblt-cli-pr" class="md-nav__link">
+    Create oblt-cli/* PR
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#templates" class="md-nav__link">
+    Templates
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oblt-robot/" class="md-nav__link">
+        oblt-robot
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+          Tips
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5_4">
+          <span class="md-nav__icon md-icon"></span>
+          Tips
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/sudo_touch_id/" class="md-nav__link">
+        Sudo Touch ID
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Environments
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Environments
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+          apm-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_1">
+          <span class="md-nav__icon md-icon"></span>
+          apm-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../apm-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../apm-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+          autopilot-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_2">
+          <span class="md-nav__icon md-icon"></span>
+          autopilot-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../autopilot-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../autopilot-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+          dev-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_3">
+          <span class="md-nav__icon md-icon"></span>
+          dev-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          edge-benchmarks
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_4">
+          <span class="md-nav__icon md-icon"></span>
+          edge-benchmarks
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-benchmarks/" class="md-nav__link">
+        Edge Benchmarks
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
+          edge-lite-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_5">
+          <span class="md-nav__icon md-icon"></span>
+          edge-lite-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-lite-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-lite-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_6" id="__nav_6_6_label" tabindex="0">
+          edge-logs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_6">
+          <span class="md-nav__icon md-icon"></span>
+          edge-logs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-logs/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-logs/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_7" id="__nav_6_7_label" tabindex="0">
+          edge-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_7">
+          <span class="md-nav__icon md-icon"></span>
+          edge-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_8" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_8" id="__nav_6_8_label" tabindex="0">
+          edge-onboarding
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_8_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_8">
+          <span class="md-nav__icon md-icon"></span>
+          edge-onboarding
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-onboarding/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-onboarding/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_9" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_9" id="__nav_6_9_label" tabindex="0">
+          edge-sec
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_9_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_9">
+          <span class="md-nav__icon md-icon"></span>
+          edge-sec
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-sec/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../edge-sec/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_10" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
+          keep_serverless-qa-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_10">
+          <span class="md-nav__icon md-icon"></span>
+          keep_serverless-qa-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../keep_serverless-qa-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+          monitoring-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_11">
+          <span class="md-nav__icon md-icon"></span>
+          monitoring-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../monitoring-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../monitoring-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+          observability-ci
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_12">
+          <span class="md-nav__icon md-icon"></span>
+          observability-ci
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../observability-ci/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../observability-ci/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+          overview-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_13">
+          <span class="md-nav__icon md-icon"></span>
+          overview-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../overview-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../overview-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_14" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_14" id="__nav_6_14_label" tabindex="0">
+          release-benchmarks
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_14_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_14">
+          <span class="md-nav__icon md-icon"></span>
+          release-benchmarks
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../release-benchmarks/" class="md-nav__link">
+        Release Benchmarks
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_15" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_15" id="__nav_6_15_label" tabindex="0">
+          release-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_15">
+          <span class="md-nav__icon md-icon"></span>
+          release-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../release-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../release-oblt/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_16" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_16" id="__nav_6_16_label" tabindex="0">
+          release-sec
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_16_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_16">
+          <span class="md-nav__icon md-icon"></span>
+          release-sec
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../release-sec/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../release-sec/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_17" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_17" id="__nav_6_17_label" tabindex="0">
+          serverless-benchmarks
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_17_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_17">
+          <span class="md-nav__icon md-icon"></span>
+          serverless-benchmarks
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../serverless-benchmarks/" class="md-nav__link">
+        Serverless Benchmarks
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_18" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_18" id="__nav_6_18_label" tabindex="0">
+          serverless-k8s
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_18_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_18">
+          <span class="md-nav__icon md-icon"></span>
+          serverless-k8s
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../serverless-k8s/" class="md-nav__link">
+        serverless k8s
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_19" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_19" id="__nav_6_19_label" tabindex="0">
+          serverless-production-oblt
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_19_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_19">
+          <span class="md-nav__icon md-icon"></span>
+          serverless-production-oblt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../serverless-production-oblt/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_20" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_20" id="__nav_6_20_label" tabindex="0">
+          serverless-production-sec
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_20_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_20">
+          <span class="md-nav__icon md-icon"></span>
+          serverless-production-sec
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../serverless-production-sec/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../serverless-production-sec/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_21" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_21" id="__nav_6_21_label" tabindex="0">
+          synth-sec
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_21_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_21">
+          <span class="md-nav__icon md-icon"></span>
+          synth-sec
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../synth-sec/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../synth-sec/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_22" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6_22" id="__nav_6_22_label" tabindex="0">
+          synthetics-billing-audit
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_22_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6_22">
+          <span class="md-nav__icon md-icon"></span>
+          synthetics-billing-audit
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../synthetics-billing-audit/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../synthetics-billing-audit/cluster-info/" class="md-nav__link">
+        Cluster info
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h1>
+<h2 id="interactions">Interactions<a class="headerlink" href="#interactions" title="Permanent link">&para;</a></h2>
+<p>The oblt clusters are managed by different interactions, such as <a href="/tools/oblt-cli/">oblt-cli</a>, <a href="/tools/oblt-robot/">oblt-robot</a>, <a href="https://github.com/elastic/observability-test-environments/issues/new/choose">GitHub issues</a> and so on. Those interactions can happen
+either by users or some systems.</p>
+<p>The below diagram reflects how it's used</p>
+<pre class="mermaid"><code>flowchart TB
+
+%% Visualise the direct interactions
+classDef interaction stroke:#0f0
+
+actor[fa:fa-user Actor] -- commands --&gt; slack-bot[Slack Bot]
+actor -- runs --&gt; oblt-cli[oblt-cli]
+actor -- triggers --&gt; github-actions[GitHub actions]
+actor -- clicks --&gt; browser-ext[Browser extension]
+actor -- opens --&gt; github-issue[GitHub issue]
+actor -- writes --&gt; github-comment[GitHub comment]
+actor -- interacts --&gt; github-ui[GitHub UI]
+actor -- types --&gt; terminal[Terminal]
+
+browser-ext:::interaction -- opens --&gt; github-issue
+github-actions:::interaction --&gt; oblt-cli
+github-comment:::interaction -- opens --&gt; github-issue
+github-issue:::interaction --&gt; github-workflows1[GitHub workflows*]
+github-workflows1 --&gt; oblt-cli
+github-ui:::interaction --&gt; git[Git]
+slack-bot:::interaction --&gt; oblt-cli
+oblt-cli:::interaction --&gt; git
+git --&gt; github-workflows[GitHub workflows*]
+
+%% enable clicks
+click browser-ext "https://github.com/elastic/oblt-deploy-kibana-browser-extension#oblt-deploy-kibana-browser-extension"
+click github-comment "https://ela.st/deploy-my-kibana-oblt"
+click github-issue "https://ela.st/deploy-my-kibana-oblt"
+click oblt-cli "https://ela.st/oblt-cli"
+click slack-bot "https://ela.st/oblt-robot"
+
+subgraph oblt-test-env
+direction TB
+cluster-confs[Cluster confs] --&gt; ansible-playbooks[Ansible playbooks]
+helm-charts[Helm Charts] --&gt; ansible-playbooks
+ansible-playbooks --&gt; ansible-roles[Ansible roles]
+end
+github-workflows -- uses --&gt; oblt-test-env
+terminal:::interaction -- uses --&gt;  oblt-test-env
+
+subgraph environments
+direction LR
+elastic-cloud-qa[Elastic cloud - qa]
+elastic-cloud-staging[Elastic cloud - staging]
+elastic-cloud-prod[Elastic cloud - production]
+gke[GKE]
+autopilot[Autopilot]
+end
+
+oblt-test-env -- secrets --&gt; vault[Vault]
+oblt-test-env -- deploys --&gt; environments</code></pre>
+<h2 id="continuous-integration-ci">Continuous Integration (CI)<a class="headerlink" href="#continuous-integration-ci" title="Permanent link">&para;</a></h2>
+<p>The oblt clusters are drive by a set of CI workflows that run in GitHub Action.
+The workflows are in the folder <code>.github/workflows</code> in the root of the repository.
+Every workflow related to oblt clusters is prefixed with <code>cluster-</code>.
+The workflows are triggered by the creation of a pull request with changes in the folder <code>environments/users</code>.
+There are two types of changes, changes in <a href="#golden-clusters">golden clusters</a> an changes in <a href="#developer-clusters">developer clusters</a>.</p>
+<p>The process to create a cluster is the following:</p>
+<ul>
+<li>
+<p>A developer uses <code>oblt-cli cluster create</code> to create a cluster configuration file from a <a href="#templates">template</a>.</p>
+</li>
+<li>
+<p>oblt-cli uses the parameters and the template selected to create a new cluster configuration file.</p>
+</li>
+<li>
+<p>oblt-cli pushes the changes to a feature branch in the repository.</p>
+</li>
+<li>
+<p>A pull request is created with the changes by <a href="#create-oblt-cli-pr">Oblt Clusters create oblt-cli/* PR</a>.</p>
+</li>
+<li>The workflow <a href="#manager">Oblt Cluster manager</a> process the changes and notify the result by Slack.</li>
+<li>If successful, the PR is merged by <a href="#automerge">automerge</a>.</li>
+<li>If failed, the PR is closed and Slack message with info about how to resolve the issue is sent to the user.</li>
+</ul>
+<p>The process is always the same for golden and developer clusters.</p>
+<p>When a change is made on a golden cluster and it is merged, a set of new workflows are triggered to update the developer clusters and update the cluster information pages.</p>
+<ul>
+<li>A PR with changes in a golden cluster is merged.</li>
+<li>The workflow <a href="#update-cluster-info">Oblt Clusters update cluster info</a> is triggered.</li>
+<li>The workflow <a href="#developer-clusters">Oblt Cluster update developers</a> is triggered.</li>
+</ul>
+<h2 id="oblt-github-actions">Oblt GitHub Actions<a class="headerlink" href="#oblt-github-actions" title="Permanent link">&para;</a></h2>
+<p>The oblt GitHub Actions are the GitHub Actions that manage the oblt clusters.
+The actions are in the folder <code>.github/actions</code> in the root of the repository.
+The oblt GitHub Actions use the <a href="../ansible-collection/">oblt-framework</a> to manage the clusters.</p>
+<h3 id="cluster-target">cluster-target<a class="headerlink" href="#cluster-target" title="Permanent link">&para;</a></h3>
+<p>The GitHub Action <code>cluster-target</code> is used to run the <a href="../ansible-collection/">oblt-framework</a> in the GitHub Actions.
+The action uses <a href="../docker/">oblt-framework-docker</a> container to run the <a href="../ansible-collection/">oblt-framework</a>.
+The action prepare the GitHub runner to authenticate with the GCP, send notifications and grab the results.
+This action exetute one of the targets available in the <a href="../docker/">oblt-framework-docker</a>.
+This action is used by all the other actions to make especific tasks.
+The GitHub Action <code>cluster-target</code> contains the version used of the <a href="../docker/">oblt-framework-docker</a>,
+to bump the version of the <a href="../docker/">oblt-framework-docker</a> the action must be updated.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run a target</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./.github/actions/cluster-target</span>
+<span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">run-task</span>
+<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;help&#39;</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ env.CLUSTER_CONFIG_FILE }}</span>
+<span class="w">        </span><span class="nt">workloadIdentityProvider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}</span>
+<span class="w">        </span><span class="nt">serviceAccount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.SERVICE_ACCOUNT_EMAIL }}</span>
+<span class="w">        </span><span class="nt">dockerUsername</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_USERNAME }}</span>
+<span class="w">        </span><span class="nt">dockerPassword</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_PASSWORD }}</span>
+<span class="w">        </span><span class="nt">dockerRegistry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_REGISTRY }}</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/environments/users/dummy/cluster-config.yml</span>
+<span class="w">        </span><span class="nt">buildDir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/build</span>
+</code></pre></div>
+<p><a href="https://github.com/elastic/observability-test-environments/blob/main/.github/actions/cluster-target/action.yml">Action details</a></p>
+<h3 id="cluster-create">cluster-create<a class="headerlink" href="#cluster-create" title="Permanent link">&para;</a></h3>
+<p>The GitHub Action <code>cluster-create</code> is used to create a cluster.
+It sends the credentials of the clusters to Slack and GitHub issues if it is necessary.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create a cluster</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./.github/actions/cluster-create</span>
+<span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">run-task</span>
+<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ env.CLUSTER_CONFIG_FILE }}</span>
+<span class="w">        </span><span class="nt">workloadIdentityProvider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}</span>
+<span class="w">        </span><span class="nt">serviceAccount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.SERVICE_ACCOUNT_EMAIL }}</span>
+<span class="w">        </span><span class="nt">dockerUsername</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_USERNAME }}</span>
+<span class="w">        </span><span class="nt">dockerPassword</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_PASSWORD }}</span>
+<span class="w">        </span><span class="nt">dockerRegistry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_REGISTRY }}</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/environments/users/dummy/cluster-config.yml</span>
+<span class="w">        </span><span class="nt">buildDir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/build</span>
+</code></pre></div>
+<p><a href="https://github.com/elastic/observability-test-environments/blob/main/.github/actions/cluster-create/action.yml">Action details</a></p>
+<h3 id="cluster-destroy">cluster-destroy<a class="headerlink" href="#cluster-destroy" title="Permanent link">&para;</a></h3>
+<p>The GitHub Action <code>cluster-destroy</code> is used to destroy a cluster.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Destroy a cluster</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./.github/actions/cluster-destroy</span>
+<span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">run-task</span>
+<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ env.CLUSTER_CONFIG_FILE }}</span>
+<span class="w">        </span><span class="nt">workloadIdentityProvider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}</span>
+<span class="w">        </span><span class="nt">serviceAccount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.SERVICE_ACCOUNT_EMAIL }}</span>
+<span class="w">        </span><span class="nt">dockerUsername</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_USERNAME }}</span>
+<span class="w">        </span><span class="nt">dockerPassword</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_PASSWORD }}</span>
+<span class="w">        </span><span class="nt">dockerRegistry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_REGISTRY }}</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/environments/users/dummy/cluster-config.yml</span>
+<span class="w">        </span><span class="nt">buildDir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/build</span>
+</code></pre></div>
+<p><a href="https://github.com/elastic/observability-test-environments/blob/main/.github/actions/cluster-destroy/action.yml">Action details</a></p>
+<h3 id="cluster-update">cluster-update<a class="headerlink" href="#cluster-update" title="Permanent link">&para;</a></h3>
+<p>The GitHub Action <code>cluster-update</code> is used to update a cluster.
+It sends the credentials of the clusters to Slack and GitHub issues if it is necessary.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Update a cluster</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./.github/actions/cluster-update</span>
+<span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">run-task</span>
+<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ env.CLUSTER_CONFIG_FILE }}</span>
+<span class="w">        </span><span class="nt">workloadIdentityProvider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}</span>
+<span class="w">        </span><span class="nt">serviceAccount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.SERVICE_ACCOUNT_EMAIL }}</span>
+<span class="w">        </span><span class="nt">dockerUsername</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_USERNAME }}</span>
+<span class="w">        </span><span class="nt">dockerPassword</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_PASSWORD }}</span>
+<span class="w">        </span><span class="nt">dockerRegistry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.DOCKER_REGISTRY }}</span>
+<span class="w">        </span><span class="nt">clusterConfigFile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/environments/users/dummy/cluster-config.yml</span>
+<span class="w">        </span><span class="nt">buildDir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workspace }}/build</span>
+</code></pre></div>
+<p><a href="https://github.com/elastic/observability-test-environments/blob/main/.github/actions/cluster-update/action.yml">Action details</a></p>
+<h3 id="oblt-cli-workflow">Oblt-cli workflow<a class="headerlink" href="#oblt-cli-workflow" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart LR
+
+oblt-cli[oblt-cli cluster create] --&gt; Cluster-config[New Branch with cluster config file]
+Cluster-config --&gt; PR[Create oblt-cli/* PR]
+PR --&gt; Oblt-Cluster-Manager[Oblt Cluster manager]
+Oblt-Cluster-Manager --&gt; Slack[Slack]
+Oblt-Cluster-Manager --&gt; automerge[automerge]
+automerge --&gt; Merge[PR merged]
+Merge --&gt; Update-Cluster-Info[Oblt Clusters update cluster info]
+Merge --&gt; Update-Developers[Oblt Cluster update developers]</code></pre>
+<h3 id="deploy-my-kibana-pr-workflow">Deploy my Kibana PR workflow<a class="headerlink" href="#deploy-my-kibana-pr-workflow" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart LR
+
+Issue[GitHub Issue] --&gt; Deploy-Kibana-PR[Deploy my Kibana PR]
+Deploy-Kibana-PR --&gt; oblt-cli[oblt-cli cluster create]
+oblt-cli --&gt; Cluster-config[New Branch with cluster config file]
+Cluster-config --&gt; PR[Create oblt-cli/* PR]
+PR --&gt; Oblt-Cluster-Manager[Oblt Cluster manager]
+Oblt-Cluster-Manager --&gt; Slack[Slack]
+Oblt-Cluster-Manager --&gt; Issue
+Oblt-Cluster-Manager --&gt; automerge[automerge]</code></pre>
+<h3 id="update-elastic-stack-workflow">Update Elastic Stack workflow<a class="headerlink" href="#update-elastic-stack-workflow" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart LR
+
+update-channel[Update channel] --&gt;  PR0[Update channel PR]
+PR0 --&gt; cluster-update-channels[Update clusters by channel]
+cluster-update-channels --&gt; Update-Stack[Update Tools]
+Update-Stack[Update Tools] --&gt; PR[Update Elastic Stack PR]
+PR --&gt; Oblt-Cluster-Manager[Oblt Cluster manager]
+Oblt-Cluster-Manager --&gt; Slack[Slack]
+Oblt-Cluster-Manager --&gt; automerge[automerge]
+automerge --&gt; Merge[PR merged]
+Merge --&gt; Update-Cluster-Info[Oblt Clusters update cluster info]
+Merge --&gt; Update-Developers[Oblt Cluster update developers]
+Update-Developers --&gt; Slack</code></pre>
+<h2 id="golden-clusters">Golden Clusters<a class="headerlink" href="#golden-clusters" title="Permanent link">&para;</a></h2>
+<p>Golden clusters are those clusters that have the property <code>golden_cluster</code> set to <code>true</code> in their cluster configuration file.
+These clusters are permanent clusters that are updated regularly by the <a href="#update-tools">update-tools</a> workflow.
+There are two types of update daily and weekly.
+Daily updates are done every day at 00:00 UTC and weekly updates are done every Monday at 00:00 UTC.
+There are four channel to select the version to update <code>unstable</code>, <code>development</code>, <code>release</code>, or a specific version form other cluster (edge-lite-oblt).
+Unstable channel updates to the latest versions from the <code>main</code> branch of the repositories.
+Development channel updates to the latest versions from the branch currently in development of the repositories (usually next release A.B.(C-1)).
+Release channel updates to the latest release/BC (usually last release A.B.(C)).
+The channel is set in the <code>stack.update_channel</code> property of the <a href="/user-guide/cluster-config">cluster configuration file</a>.</p>
+<p>There are two modes to make the update, a simple <code>update</code> or a <code>recreate</code>.
+The value of the <code>stack.update_mode</code> property of the <a href="/user-guide/cluster-config">cluster configuration file</a> defines the mode (by default <code>stack.update_mode: update</code>).
+A simple update updates the components to the Elastic Stack version and other changes made on the configuration file.
+In simple <code>update</code> case there is no data lost.
+A <code>recreate</code> update mode would destroy and recreates the cluster from scratch with the new configuration.
+In <code>recreate</code> update mode the data is lost.</p>
+<h2 id="developer-clusters">Developer Clusters<a class="headerlink" href="#developer-clusters" title="Permanent link">&para;</a></h2>
+<p>Developer clusters are those created by the developers to test changes on their code.
+There are several <a href="#templates">templates</a> to create developer clusters.
+The developer use <a href="/tools/oblt-cli/">oblt-cli</a> to easily create a cluster from a template.
+It is possible to create cluster configuration files manually and push the changes to the repository manually,
+the effect is the same as using oblt-cli.</p>
+<h2 id="oblt-cluster-workflows">Oblt Cluster Workflows<a class="headerlink" href="#oblt-cluster-workflows" title="Permanent link">&para;</a></h2>
+<h3 id="manager">Manager<a class="headerlink" href="#manager" title="Permanent link">&para;</a></h3>
+<p>The workflow Oblt Cluster manager is the main workflow that process the changes in the cluster configuration files.
+The workflow is triggered by the creation of a pull request with changes in the folder <code>environments/users</code>.
+The workflow will destroy, create, or update the cluster depending on the changes in the cluster configuration file.
+A delete of a file will destroy the cluster.
+A new file will create a cluster.
+A change in the cluster configuration file will update the cluster.
+The workflow will notify the result by Slack.
+The summary of the workflow contains links to logs and the cluster, this links are useful to debug/troubleshooting the workflow.</p>
+<p>In case of infrastructure issues, we can retry to execute the failed jobs.</p>
+<h3 id="update-cluster-info">Update cluster info<a class="headerlink" href="#update-cluster-info" title="Permanent link">&para;</a></h3>
+<p>When a golden cluster is updated this workflow is triggered to update the cluster information pages.</p>
+<h3 id="update-developers">Update developers<a class="headerlink" href="#update-developers" title="Permanent link">&para;</a></h3>
+<p>When a golder cluster is updated this workflow is triggered to update the developer clusters.
+It search for developers clusters that are using the golden cluster and update them.
+A PR is generated for each developer cluster and the developer is notified by Slack.</p>
+<h3 id="check-licenses">Check licenses<a class="headerlink" href="#check-licenses" title="Permanent link">&para;</a></h3>
+<p>Every Monday this workflow checks the licenses of the clusters.
+It runs every Monday at 00:00 UTC.
+It notifies by Slack the clusters with licenses issues and instructions to resolve the issue.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>SNAPSHOT deployments have a trial license that expires in 30 days.</p>
+</div>
+<h3 id="deploy-custom-kibana-issue">Deploy custom Kibana (issue)<a class="headerlink" href="#deploy-custom-kibana-issue" title="Permanent link">&para;</a></h3>
+<p>This workflow manage the request to <a href="/user-guide/deploy-my-kibana-pr/">Deploy my Kibana PR</a>
+when the request is made by a GitHub issue.</p>
+<h3 id="ephemeral-undeploy">Ephemeral-undeploy<a class="headerlink" href="#ephemeral-undeploy" title="Permanent link">&para;</a></h3>
+<p>This workflow undeploy all Kibana PR clusters create during the week.
+It also destroy ephemeral clusters created by CI test that left resources undestroyed.
+It runs every Saturday at 05:00 UTC.</p>
+<h3 id="oblt-cluster-ccs-issue">Oblt Cluster CCS (issue)<a class="headerlink" href="#oblt-cluster-ccs-issue" title="Permanent link">&para;</a></h3>
+<p>Oblt Cluster CCS workflow create a CCS cluster based on the configuration on a <code>Create CCS cluster</code>.
+It is similar to <code>oblt-cli cluster create ccs</code> but using a GitHub issue to trigger the creation.</p>
+<h3 id="automerge">automerge<a class="headerlink" href="#automerge" title="Permanent link">&para;</a></h3>
+<p>This workflow merge pull request that have the label <code>automerge</code> and the CI pass.
+It only watch a few kinds of pull request.</p>
+<h3 id="elastic-stack-docker-images">Elastic Stack Docker images<a class="headerlink" href="#elastic-stack-docker-images" title="Permanent link">&para;</a></h3>
+<p>Download and push the Elastic Stack Docker images to <code>docker.elastic.co/observability-ci</code> namespace.
+It runs every hour and check if there is a new version of the images.
+We download only a subset of the images, the ones used by the oblt clusters.
+We download the last two SNAPSHOTs and the last release/BC.
+The Docker images are tagged with the version, the commit hash, and the date.</p>
+<h3 id="opbeans-android-app-uploader">Opbeans Android App Uploader<a class="headerlink" href="#opbeans-android-app-uploader" title="Permanent link">&para;</a></h3>
+<p>Build and push the opbeans-android binary to Sauce Labs.
+This will generate data for the opbeans-android app on the <code>edge-lite-oblt</code> cluster.</p>
+<h3 id="opbeans-swift-data-generator">Opbeans Swift Data Generator<a class="headerlink" href="#opbeans-swift-data-generator" title="Permanent link">&para;</a></h3>
+<p>Build and push the opbeans-swift binary to Sauce Labs.
+This will generate data for the opbeans-swift app on the <code>edge-lite-oblt</code> cluster.</p>
+<h3 id="update-tools">Update Tools<a class="headerlink" href="#update-tools" title="Permanent link">&para;</a></h3>
+<p>Update tools workflow runs daily tools updates.
+It runs everyday at 00:00 UTC.</p>
+<h2 id="update-channels">Update Channels<a class="headerlink" href="#update-channels" title="Permanent link">&para;</a></h2>
+<p>Update tools workflow runs daily to update the <code>.ci/update-versions/update_channels.json</code> file.
+This file contains the latest version of the Elastic Stack for each channel.
+It runs everyday at 00:00 UTC.</p>
+<h2 id="update-helm-charts">Update Helm Charts<a class="headerlink" href="#update-helm-charts" title="Permanent link">&para;</a></h2>
+<p>This workflow runs daily to update the Helm charts.
+It runs everyday at 00:00 UTC.</p>
+<h2 id="update-cluster-channels">Update cluster channels<a class="headerlink" href="#update-cluster-channels" title="Permanent link">&para;</a></h2>
+<p>It runs ob changes in the <code>.ci/update-versions/update_channels.json</code> file to update the Elastic Stack version of the clusters.
+It uses the <code>stack.update_channel</code> property of the cluster configuration file to select the channel to update.
+The frequency of the update is defined by the <code>stack.update_schedule</code> property of the cluster configuration file.</p>
+<h3 id="create-oblt-cli-pr">Create oblt-cli/* PR<a class="headerlink" href="#create-oblt-cli-pr" title="Permanent link">&para;</a></h3>
+<p>This workflows is triggered when a branch oblt-cli/* is created.
+The workflow will create a pull request with the changes in the branch.
+The PR is made in this way to simplify the process in oblt-cli.</p>
+<h2 id="templates">Templates<a class="headerlink" href="#templates" title="Permanent link">&para;</a></h2>
+<p>Each template is a <code>.tmpl</code> in the <code>environments/users</code> folder.
+The templates are designed to cover a specific use case.
+The template is used by oblt-cli to create a cluster configuration file and push changes to a feature branch.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.top", "toc.integrate", "toc.follow", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      
+    
+  </body>
+</html>

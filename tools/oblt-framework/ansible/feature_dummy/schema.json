@@ -1,0 +1,11 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "dummy_version": {
+            "type": "string",
+            "description": "Default value for a parameter",
+            "default": "\"\""
+        }
+    }
+}

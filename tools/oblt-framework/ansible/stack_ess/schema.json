@@ -1,0 +1,61 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "ess_tf_dir": {
+            "type": "string",
+            "description": "The directory where the Terraform files are located.",
+            "default": "{{ build_dir }}/terraform/elastic_cloud"
+        },
+        "ess_stack_version": {
+            "type": "string",
+            "description": "The version of the stack to deploy.",
+            "default": "{{ default_stack_version }}"
+        },
+        "ess_ccs_enabled": {
+            "type": "string",
+            "description": "True to enable Cross Cluster Search (CCS).",
+            "default": "{{ ess_ccs_remote_cluster | length > 1 }}"
+        },
+        "ess_ccs_remote_cluster_name_vault": {
+            "type": "string",
+            "description": "The name of the secret in Google Cloud Secret Manager that contains the remote cluster name.",
+            "default": "oblt-clusters_{{ ess_ccs_remote_cluster }}_cluster-state"
+        },
+        "ess_ccs_remote_cluster_id": {
+            "type": "string",
+            "description": "The ID of the remote cluster.",
+            "default": "{{ (lookup('oblt.framework.gcp_secret_manager', key=ess_ccs_remote_cluster_name_vault, on_error='warn')|safe|from_yaml).ess_deployment_id | default(None,true) }}"
+        },
+        "ess_not_allow_settings": {
+            "type": "boolean",
+            "description": "True to disable some settings not allowed in staging.",
+            "default": true
+        },
+        "ess_credentials": {
+            "type": "string",
+            "description": "The credentials to access the Elastic Cloud service.",
+            "default": "{{ lookup('oblt.framework.gcp_secret_manager', key=secret_ess_user)|safe()|from_yaml }}"
+        },
+        "ess_api_key": {
+            "type": "string",
+            "description": "The API key to access the Elastic Cloud service",
+            "default": "{{ ess_credentials.apiKey | mandatory }}"
+        },
+        "ess_org_id": {
+            "type": "string",
+            "description": "The organization ID to access the Elastic Cloud service.",
+            "default": "{{ ess_credentials.organizationID | default(None,true) }}"
+        },
+        "ess_custom_settings": {
+            "type": "boolean",
+            "description": "True to enable custom settings.",
+            "default": true
+        },
+        "ess_gcs_credentials": {
+            "type": "string",
+            "description": "The name of the secret in Google Cloud Secret Manager that contains the credentials to access the Google Cloud Storage service.",
+            "default": "oblt-clusters_gcs-credentials"
+        }
+    }
+}

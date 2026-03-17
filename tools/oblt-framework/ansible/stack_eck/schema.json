@@ -1,0 +1,91 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "eck_version": {
+            "type": "string",
+            "description": "The version of the Elastic Cloud on Kubernetes",
+            "default": "\"\""
+        },
+        "eck_api_version": {
+            "type": "string",
+            "description": "The API version of the Elastic Cloud on Kubernetes API",
+            "default": "\"\""
+        },
+        "eck_domain": {
+            "type": "string",
+            "description": "The domain used for URLs",
+            "default": "\"\""
+        },
+        "elasticsearch_host": {
+            "type": "string",
+            "description": "The external URL for Elasticsearch",
+            "default": "\"\""
+        },
+        "elasticsearch_host_int": {
+            "type": "string",
+            "description": "The internal URL for Elasticsearch",
+            "default": "\"\""
+        },
+        "elasticsearch_port_int": {
+            "type": "number",
+            "description": "The internal port for Elasticsearch",
+            "default": 9200
+        },
+        "kibana_host": {
+            "type": "string",
+            "description": "The external URL for Kibana",
+            "default": "\"\""
+        },
+        "kibana_host_int": {
+            "type": "string",
+            "description": "The internal URL for Kibana",
+            "default": "\"\""
+        },
+        "kibana_port_int": {
+            "type": "number",
+            "description": "The internal port for Kibana",
+            "default": 5601
+        },
+        "apm_host": {
+            "type": "string",
+            "description": "The external URL for APM",
+            "default": "\"\""
+        },
+        "apm_host_int": {
+            "type": "string",
+            "description": "The internal URL for APM",
+            "default": "\"\""
+        },
+        "apm_port_int": {
+            "type": "number",
+            "description": "The internal port for APM",
+            "default": 8200
+        },
+        "fleet_host": {
+            "type": "string",
+            "description": "The external URL for Fleet",
+            "default": "\"\""
+        },
+        "fleet_host_int": {
+            "type": "string",
+            "description": "The internal URL for Fleet",
+            "default": "\"\""
+        },
+        "fleet_port_int": {
+            "type": "number",
+            "description": "The internal port for Fleet",
+            "default": 8220
+        },
+        "apm_secret_token": {
+            "type": "string",
+            "description": "The secret token for APM",
+            "default": "\"\""
+        },
+        "stack_monitoring_secret": {
+            "type": "string",
+            "description": "The k8s secret name for the stack monitoring",
+            "default": "\"\""
+        }
+    }
+}

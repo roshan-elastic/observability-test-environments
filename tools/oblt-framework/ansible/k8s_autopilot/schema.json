@@ -1,0 +1,31 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "cluster_context": {
+            "type": "string",
+            "description": "The context name of the cluster to use.",
+            "default": "gke_{{ k8s_project }}_{{ k8s_region }}_{{ gke_cluster_name }}"
+        },
+        "k8s_autopilot_channel": {
+            "type": "string",
+            "description": "The GCE update channel to use for updating the cluster.",
+            "default": "stable"
+        },
+        "k8s_autopilot_version": {
+            "type": "string",
+            "description": "The version of the GKE Autopilot cluster to use.",
+            "default": "1.27.11-gke.1062003"
+        },
+        "k8s_autopilot_labels": {
+            "type": "string",
+            "description": "The labels to apply to the cluster.",
+            "default": "name={{ cluster_name }},owner={{ oblt_username }},division=engineering,org=obs,team=observability,project=oblt-clusters"
+        },
+        "password_apr1": {
+            "type": "string",
+            "description": "The password hash for the user to access the cluster.",
+            "default": "{{ password_plaintext | password_hash('apr_md5_crypt') }}"
+        }
+    }
+}

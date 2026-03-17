@@ -1,0 +1,14 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "k8s_apps": {
+            "type": "array",
+            "description": "List of K8s apps to install",
+            "default": "[]",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "templates_dir": {
+            "type": "string",
+            "description": "The directory where the templates are stored",
+            "default": "\"\""
+        },
+        "build_dir": {
+            "type": "string",
+            "description": "The directory where the build is stored",
+            "default": "\"\""
+        }
+    }
+}

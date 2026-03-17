@@ -1,0 +1,66 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "opbeans_dir": {
+            "type": "string",
+            "description": "The directory where the opbeans Helm Charts are stored",
+            "default": "\"\""
+        },
+        "apm_attacher_dir": {
+            "type": "string",
+            "description": "The directory where the apm-attacher Helm Chart is stored",
+            "default": "\"\""
+        },
+        "opbeans_transaction_rate": {
+            "type": "string",
+            "description": "The rate of transactions for the opbeans",
+            "default": "\"\""
+        },
+        "opbeans_go_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-go chart",
+            "default": "\"\""
+        },
+        "opbeans_dotnet_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-dotnet chart",
+            "default": "\"\""
+        },
+        "opbeans_frontend_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-frontend chart",
+            "default": "\"\""
+        },
+        "opbeans_java_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-java chart",
+            "default": "\"\""
+        },
+        "opbeans_node_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-node chart",
+            "default": "\"\""
+        },
+        "opbeans_php_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-php chart",
+            "default": "\"\""
+        },
+        "opbeans_python_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-python chart",
+            "default": "\"\""
+        },
+        "opbeans_ruby_enabled": {
+            "type": "string",
+            "description": "Enable the opbeans-ruby chart",
+            "default": "\"\""
+        },
+        "opbeans_apm_enabled": {
+            "type": "boolean",
+            "description": "Enable sent traces to the APM service",
+            "default": true
+        }
+    }
+}
