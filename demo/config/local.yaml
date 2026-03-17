@@ -1,63 +1,14 @@
-#!/usr/bin/env bash
-# MegaMart demo – run locally (Docker Desktop K8s or Kind)
-set -e
+# MegaMart demo – local (Docker Desktop or Kind)
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEMO_ROOT="$(cd "$REPO_ROOT/.." && pwd)/demo"
-CONFIG="${DEMO_ROOT}/config/local.yaml"
-CHART="${DEMO_ROOT}/chart"
-NAMESPACE="${NAMESPACE:-megamart}"
+target: local
+cluster_provider: kind   # or docker-desktop
 
-# Optional: override Elasticsearch from env
-if [[ -n "$ELASTICSEARCH_URL" ]]; then
-  export ELASTICSEARCH_URL
-fi
-if [[ -n "$ELASTICSEARCH_API_KEY" ]]; then
-  export ELASTICSEARCH_API_KEY
-fi
+# Use defaults for service_count and applications; override if needed
+service_count: 8
 
-echo "=== MegaMart demo (local) ==="
-echo "Config: $CONFIG"
-echo "Namespace: $NAMESPACE"
-echo ""
-
-# Check cluster
-if ! kubectl cluster-info &>/dev/null; then
-  echo "No Kubernetes cluster reachable. Start Docker Desktop K8s or run: kind create cluster"
-  exit 1
-fi
-
-# Merge env into a temp values file for Elasticsearch (Helm doesn't read env for values)
-VALUES_FILE="$CONFIG"
-if [[ -n "$ELASTICSEARCH_URL" || -n "$ELASTICSEARCH_API_KEY" ]]; then
-  VALUES_FILE=$(mktemp)
-  trap "rm -f $VALUES_FILE" EXIT
-  cp "$CONFIG" "$VALUES_FILE"
-  if [[ -n "$ELASTICSEARCH_URL" ]]; then
-    # Use yq if available, else leave as-is (user can set in local.yaml)
-    if command -v yq &>/dev/null; then
-      yq -i ".otel_collector.exporters.elasticsearch.endpoint = \"$ELASTICSEARCH_URL\"" "$VALUES_FILE" 2>/dev/null || true
-    fi
-  fi
-  if [[ -n "$ELASTICSEARCH_API_KEY" ]]; then
-    if command -v yq &>/dev/null; then
-      yq -i ".otel_collector.exporters.elasticsearch.api_key = \"$ELASTICSEARCH_API_KEY\"" "$VALUES_FILE" 2>/dev/null || true
-    fi
-  fi
-fi
-
-# Helm values: map demo config keys to chart values (otel_collector -> otelCollector.elasticsearch)
-# For now we expect the chart to be used with -f demo/config/local.yaml where user sets
-# otelCollector.elasticsearch.endpoint and apiKey. So we need a values file that the chart understands.
-# The demo config uses otel_collector.exporters.elasticsearch; the chart uses otelCollector.elasticsearch.
-# So we need either to use the chart's values.yaml and override from a file that has otelCollector, or
-# we document that user should set in demo/config/local.yaml under otelCollector.
-# Let me check - our chart values.yaml has otelCollector.elasticsearch.endpoint. Our config/local.yaml
-# has otel_collector.exporters.elasticsearch. So we need the run script to pass a values file that
-# has the chart's structure. Easiest: the chart values and the config file should align. So we should
-# change demo/config/local.yaml to use otelCollector (chart structure) so one -f works.
-# I'll update local.yaml to use the chart's structure (otelCollector).
-</think>
-Checking config key structure: chart expects `otelCollector`; config uses `otel_collector`. Aligning them.
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-StrReplace
+# Elasticsearch: set via env (ELASTICSEARCH_URL, ELASTICSEARCH_API_KEY) or set below for local run
+# Chart key: otelCollector.elasticsearch
+otelCollector:
+  elasticsearch:
+    endpoint: ""   # e.g. https://my-deployment.es.us-central1.gcp.cloud.es.io
+    apiKey: ""     # e.g. from ELASTICSEARCH_API_KEY
