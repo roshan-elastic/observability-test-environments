@@ -1,0 +1,31 @@
+# MegaMart demo chart – default values
+# Override with -f demo/config/local.yaml (or gcp/aws)
+
+# Our OTel Collector (replaces the demo's collector when using the demo as dependency)
+# Demo workloads expect a service named "otel-collector" – we deploy it here with Elasticsearch export
+otelCollector:
+  enabled: true
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.109.0"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      memory: 512Mi
+  # Elasticsearch export – set via config file or env (ELASTICSEARCH_URL, ELASTICSEARCH_API_KEY)
+  elasticsearch:
+    endpoint: ""   # e.g. https://my-deployment.es.us-central1.gcp.cloud.es.io
+    apiKey: ""     # optional; can use cloud_id + api_key for Elastic Cloud
+
+# OpenTelemetry Demo (subchart) – full demo app; we disable its collector and use ours
+opentelemetry-demo:
+  enabled: true
+  opentelemetry-collector:
+    enabled: false
+  default:
+    env:
+      - name: OTEL_COLLECTOR_NAME
+        value: otel-collector
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4317
+  # Optional: reduce resources for local (override component resources in local.yaml if needed)

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: megamart-demo
+description: MegaMart observability demo - app services and OTel Collector (Elasticsearch export)
+type: application
+version: 0.1.0
+appVersion: "1.0"
+dependencies:
+  - name: opentelemetry-demo
+    version: "0.29.0"
+    repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+    condition: opentelemetry-demo.enabled

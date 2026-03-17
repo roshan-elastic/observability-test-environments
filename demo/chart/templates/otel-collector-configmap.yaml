@@ -1,0 +1,81 @@
+{{- if .Values.otelCollector.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "megamart-demo.fullname" . }}-otel-collector
+  labels:
+    {{- include "megamart-demo.labels" . | nindent 4 }}
+data:
+  otel-collector-config.yaml: |
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+            cors:
+              allowed_origins:
+                - "http://*"
+                - "https://*"
+
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+      resourcedetection:
+        detectors: [env, system]
+
+    exporters:
+      debug:
+        verbosity: basic
+      {{- if .Values.otelCollector.elasticsearch.endpoint }}
+      elasticsearch:
+        endpoints:
+          - {{ .Values.otelCollector.elasticsearch.endpoint | quote }}
+        {{- if .Values.otelCollector.elasticsearch.apiKey }}
+        # API key from env (set from Secret in Deployment)
+        api_key: ${env:ELASTICSEARCH_API_KEY}
+        {{- end }}
+        logs_index: megamart-logs
+        traces_index: megamart-traces
+        metrics_index: megamart-metrics
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
+        retry:
+          enabled: true
+          max_elapsed_time: 120s
+      {{- end }}
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, resourcedetection, batch]
+          exporters: [debug{{ if .Values.otelCollector.elasticsearch.endpoint }}, elasticsearch{{ end }}]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, resourcedetection, batch]
+          exporters: [debug{{ if .Values.otelCollector.elasticsearch.endpoint }}, elasticsearch{{ end }}]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, resourcedetection, batch]
+          exporters: [debug{{ if .Values.otelCollector.elasticsearch.endpoint }}, elasticsearch{{ end }}]
+      telemetry:
+        logs:
+          level: info
+        metrics:
+          level: detailed
+          address: 0.0.0.0:8888
+{{- end }}

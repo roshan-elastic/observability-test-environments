@@ -1,0 +1,44 @@
+# MegaMart demo – default configuration
+# Override per environment with local.yaml, gcp.yaml, aws.yaml
+
+# Target: local | gcp | aws
+target: local
+
+# Scale: number of services to deploy (Phase 1 uses a fixed set; scale applies when using generated services)
+service_count: 8
+
+# Applications / business units (for labels and grouping)
+applications:
+  - name: customer-experience
+    team: customer-experience
+    services: [storefront, cart, checkout]
+  - name: payments
+    team: payments
+    services: [payment]
+  - name: inventory
+    team: inventory
+    services: [inventory]
+  - name: fulfillment
+    team: fulfillment
+    services: [order-orchestrator, fulfillment]
+
+# Instrumentation: traces | logs_only (per-service override possible later)
+instrumentation: traces
+
+# Ratio of services that emit traces (0.0–1.0) when scaling; 1.0 = all
+trace_emitting_ratio: 1.0
+
+# Infrastructure telemetry: metrics_and_logs | logs_only
+infra_telemetry: metrics_and_logs
+
+# OpenTelemetry Collector → backend (Elasticsearch)
+# Set in local/gcp/aws or via --set otelCollector.elasticsearch.endpoint=... apiKey=...
+# Leave empty to disable export (collector still runs; useful for local without Elastic Cloud)
+# Chart key: otelCollector.elasticsearch
+# otelCollector:
+#   elasticsearch:
+#     endpoint: ""
+#     apiKey: ""
+
+# Cluster provider hint for scripts (kind | docker-desktop | gke | eks)
+cluster_provider: kind
