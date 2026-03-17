@@ -17,7 +17,7 @@ jobs:
       expired: ${{ steps.licenses.outputs.expired }}
       unknown: ${{ steps.licenses.outputs.unknown }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: licenses
         name: Check licenses

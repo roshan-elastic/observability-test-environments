@@ -71,9 +71,9 @@ jobs:
           OBLT_CLUSTER: ${{ inputs.oblt_cluster }}
           TRACK_TYPE: ${{ inputs.track_type }}
           TRACK_INDICES: ${{ inputs.track_indices }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/free-space
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
           cache: 'pip'

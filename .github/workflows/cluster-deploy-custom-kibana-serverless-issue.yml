@@ -32,7 +32,7 @@ jobs:
       kibana-pullrequest: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
     steps:
       - name: Checkout the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Use https://github.com/stefanbuck/github-issue-parser/releases/tag/v3.0.1
       - name: Parse GitHub issue form
@@ -42,7 +42,7 @@ jobs:
           template-path: .github/ISSUE_TEMPLATE/cluster-deploy-custom-kibana-serverless-issue.yaml
 
       - name: Debug GitHub issue form (fetch content)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ISSUE_CONTENT: ${{ steps.issue-parser.outputs.jsonString }}
         with:
@@ -56,7 +56,7 @@ jobs:
 
       - name: No Docker image
         if: steps.issue-parser.outputs.issueparser_kibana_image == ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const body = `💔 The Kibana Docker image was not set.
@@ -81,7 +81,7 @@ jobs:
 
       - name: Block - PR owned by external contributor
         id: block-pr-external-contributor
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           IS_PR: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
           IS_ELASTIC_PR_AUTHOR: ${{ steps.is_elastic_pr_author.outputs.result }}
@@ -105,7 +105,7 @@ jobs:
     if: contains(needs.prepare_context.outputs.continue, 'true')
     steps:
       - name: Checkout the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Git
         uses: elastic/oblt-actions/git/setup@v1
@@ -125,7 +125,7 @@ jobs:
           username: "deploykibana"
 
       - name: Notify - deploy on-going 🔜
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({
@@ -137,7 +137,7 @@ jobs:
 
       - name: Notify - failure 💔
         if: ${{ failure() }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             var message = '💔 Something went wrong with the deployment ([logs](${{ env.JOB_LOGS }}))'

@@ -40,7 +40,7 @@ jobs:
       is_serverless: ${{ steps.data_parser.outputs.is_serverless }}
     steps:
       - name: Checkout the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Use https://github.com/stefanbuck/github-issue-parser/releases/tag/v3.0.1
       - name: Parse GitHub issue form
@@ -50,7 +50,7 @@ jobs:
           template-path: .github/ISSUE_TEMPLATE/cluster-deploy-custom-kibana-issue.yaml
 
       - name: Debug GitHub issue form (fetch content)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ISSUE_CONTENT: ${{ steps.issue-parser.outputs.jsonString }}
         with:
@@ -63,7 +63,7 @@ jobs:
             core.debug(issue)
 
       - name: Transform Kibana git reference
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: data_parser
         env:
           KIBANA_BRANCH: ${{ steps.issue-parser.outputs.issueparser_kibana_branch }}
@@ -105,7 +105,7 @@ jobs:
 
       - name: Block - PR owned by external contributor
         id: block-pr-external-contributor
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           IS_PR: ${{ steps.data_parser.outputs.pull-request }}
           IS_ELASTIC_PR_AUTHOR: ${{ steps.is_elastic_pr_author.outputs.result }}
@@ -130,10 +130,10 @@ jobs:
     if: contains(needs.prepare_context.outputs.continue, 'true')
     steps:
       - name: Checkout the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Notify - started
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({
@@ -148,7 +148,7 @@ jobs:
 
       # IMPORTANT: the secrets below are managed through IASC (contact robots if you need further assistance)
       - name: Log in to the Elastic Container registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           registry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
           username: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
@@ -206,7 +206,7 @@ jobs:
           username: ${{ needs.prepare_context.outputs.oblt_user }}
 
       - name: Notify - deploy on-going 🔜
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({
@@ -218,7 +218,7 @@ jobs:
 
       - name: Notify - failure 💔
         if: ${{ failure() }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             var message = '💔 Something went wrong with the deployment ([logs](${{ env.JOB_LOGS }}))'

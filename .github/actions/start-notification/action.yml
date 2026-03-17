@@ -42,7 +42,7 @@ runs:
     - if: inputs.gitOps && contains(inputs.gitOps, 'true') && inputs.issue && contains(inputs.target, 'create-cluster')
       continue-on-error: true
       name: Notify GitHub Issue when started
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           github.rest.issues.createComment({

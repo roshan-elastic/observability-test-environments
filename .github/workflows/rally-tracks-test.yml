@@ -98,8 +98,8 @@ jobs:
             esrally_from_sources=${ESRALLY_FROM_SOURCES}
             esrally_on_error=${ESRALLY_ON_ERROR}
           EOF
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
           cache: 'pip'
@@ -153,7 +153,7 @@ jobs:
 
       - name: Upload benchmarks results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rally-tracks-benchmarks
           path: ${{ github.workspace }}/ansible/build/.rally

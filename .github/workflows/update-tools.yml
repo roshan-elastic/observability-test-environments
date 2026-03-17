@@ -15,12 +15,12 @@ jobs:
   tools:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: "Setup updatecli"
-        uses: "updatecli/updatecli-action@v2.65.0"
+        uses: "updatecli/updatecli-action@v2.100.0"
         with:
           version: "v0.75.0"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
           cache: 'pip'

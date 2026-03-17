@@ -24,10 +24,10 @@ jobs:
       ARTIFACT_NAME: artifacts
       WORKFLOW_NAME: failed-deployment.yml
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Fetch artifacts
         id: download
-        uses: dawidd6/action-download-artifact@bf251b5aa9c2f7eeb574a96ee720e24f801b7c11 # v6
+        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f # v18
         with:
           github_token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
           workflow: cluster-manager.yml
@@ -59,7 +59,7 @@ jobs:
           filename: ${{ steps.config-file.outputs.config_file }}
 
       # Store artifacts to be consumed later on by the observability-system-status automation
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ steps.download.outputs.found_artifact == 'true' && steps.config-file.outputs.config_file != '' }}
         with:
           name: ${{ env.ARTIFACT_NAME }}

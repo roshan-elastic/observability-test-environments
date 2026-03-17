@@ -40,7 +40,7 @@ jobs:
       slack: ${{ steps.issue-parser.outputs.issueparser_slack || '#observablt-bots' }}
     steps:
       - name: Checkout the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Parse GitHub issue form
         uses: stefanbuck/github-issue-parser@v3
@@ -49,7 +49,7 @@ jobs:
           template-path: .github/ISSUE_TEMPLATE/cluster-restore-snapshot-issue.yaml
 
       - name: Set issue context
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: issue-context
         env:
           INDICES: "${{ steps.issue-parser.outputs.issueparser_indices }}"
@@ -67,7 +67,7 @@ jobs:
             core.setOutput("dry_run", "${{ steps.issue-parser.outputs.issueparser_dry_run }}" != "")
 
       - name: Debug GitHub issue form (fetch content)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ISSUE_CONTENT: ${{ steps.issue-parser.outputs.jsonString }}
         with:
@@ -85,11 +85,11 @@ jobs:
       group: observability-test
     steps:
       - name: Checkout the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Notify - prepare ⌛
         if: needs.prepare_context.outputs.dry_run == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             var message = '⌛ Preparing the dry run ([logs](${{ env.JOB_LOGS }})).'
@@ -102,7 +102,7 @@ jobs:
 
       - name: Notify - prepare ⌛
         if: needs.prepare_context.outputs.dry_run == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             var message = '⌛ Preparing the restore ([logs](${{ env.JOB_LOGS }})).'
@@ -138,7 +138,7 @@ jobs:
 
       - name: Notify - failure 💔
         if: ${{ failure() }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             var message = '💔 Something went wrong ([logs](${{ env.JOB_LOGS }})).'
@@ -151,7 +151,7 @@ jobs:
 
       - name: Notify - completed 🚧
         if: ${{ success() && needs.prepare_context.outputs.dry_run == 'true' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             var message = '🚧 Dry run completed ([logs](${{ env.JOB_LOGS }})).'

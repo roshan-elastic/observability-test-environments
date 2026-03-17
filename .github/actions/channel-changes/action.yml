@@ -24,7 +24,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
         fetch-tags: false
@@ -32,7 +32,7 @@ runs:
         path: channel-changes
 
     - name: "Update Channels file path"
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       id: channels-file
       with:
         script: |
@@ -41,7 +41,7 @@ runs:
           core.setOutput('path', channelsFilePath);
 
     - name: "Load current update channels"
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       id: current-channels
       with:
         script: |
@@ -56,7 +56,7 @@ runs:
         git checkout -b work_branch_before
         git reset HEAD^1 --hard
     - name: "Load previous update channels"
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       id: previous-channels
       with:
         script: |
@@ -65,7 +65,7 @@ runs:
           const channels = JSON.parse(data);
           core.setOutput('channels', channels);
     - name: "Check changed channels"
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       id: changed-channels
       env:
         CURRENT_CHANNELS: ${{ steps.current-channels.outputs.channels }}
