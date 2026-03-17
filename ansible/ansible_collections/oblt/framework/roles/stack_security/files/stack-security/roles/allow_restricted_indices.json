@@ -1,0 +1,17 @@
+{
+  "applications": [
+    {
+      "application": "kibana-.kibana",
+      "privileges": ["all"],
+      "resources": ["*"]
+    }
+  ],
+  "cluster": ["all"],
+  "indices": [
+    {
+      "privileges": ["all"],
+      "allow_restricted_indices": true,
+      "names": ["*"]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "username" : "kibana_write_user",
+  "password" : "{{ elasticsearch_password }}",
+  "roles" : [
+    "apm_user", "kibana_write_role"
+  ]
+}

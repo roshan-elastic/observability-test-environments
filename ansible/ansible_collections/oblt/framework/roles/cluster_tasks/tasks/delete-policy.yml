@@ -1,0 +1,24 @@
+---
+- name: Delete fleet policy
+  ignore_errors: true
+  vars:
+    url: "{{ elasticsearch_url }}"
+  uri:
+    url: "{{ url }}/.kibana/_delete_by_query"
+    method: POST
+    validate_certs: false
+    body: |
+      {
+        "query": {
+          "match": {
+            "ingest-agent-policies.name": "Elastic Cloud agent policy"
+          }
+        }
+      }
+    body_format: json
+    user: "kibana_system_user"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+  register: _result_policies

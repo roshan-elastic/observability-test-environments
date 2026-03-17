@@ -1,0 +1,5 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param certificate_issuer [string] Default issuer name for the certificates
+certificate_issuer: letsencrypt-staging

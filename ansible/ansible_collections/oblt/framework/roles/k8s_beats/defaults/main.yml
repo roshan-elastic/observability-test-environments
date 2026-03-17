@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=../schema.json
+# Deploy Beats services into the k8s cluster.
+# https://www.elastic.co/products/beats
+## @section Beats
+## @extra beats Beats configuration
+## @param beats.enabled Enable Beats services
+## @extra beats.auditbeat [object] Auditbeat configuration
+## @param beats.auditbeat.enabled Enable Auditbeat service
+## @param beats.auditbeat.image [string] Auditbeat image
+## @extra beats.filebeat [object] Filebeat configuration
+## @param beats.filebeat.enabled Enable Filebeat service
+## @param beats.filebeat.image [string] Filebeat image
+## @extra beats.heartbeat [object] Heartbeat configuration
+## @param beats.heartbeat.enabled Enable Heartbeat service
+## @param beats.heartbeat.image [string] Heartbeat image
+## @extra beats.metricbeat [object] Metricbeat configuration
+## @param beats.metricbeat.enabled Enable Metricbeat service
+## @param beats.metricbeat.image [string] Metricbeat image
+## @extra beats.packetbeat [object] Packetbeat configuration
+## @param beats.packetbeat.enabled Enable Packetbeat service
+## @param beats.packetbeat.image [string] Packetbeat image
+## @param beats_enabled [string] Enable Beats services
+## @param apache_version [string] Apache version to deploy
+## @param apache_enabled [string] Enable Apache service
+## @param haproxy_version [string] HAProxy version to deploy
+## @param haproxy_enabled [string] Enable HAProxy service
+beats:
+  enabled: false
+  auditbeat:
+    enabled: true
+    image: "{{ docker_image_path }}/auditbeat:{{ stack_version | default(default_stack_version) }}"
+  filebeat:
+    enabled: true
+    image: "{{ docker_image_path }}/filebeat:{{ stack_version | default(default_stack_version) }}"
+  heartbeat:
+    enabled: true
+    image: "{{ docker_image_path }}/heartbeat:{{ stack_version | default(default_stack_version) }}"
+  metricbeat:
+    enabled: true
+    image: "{{ docker_image_path }}/metricbeat:{{ stack_version | default(default_stack_version) }}"
+  packetbeat:
+    enabled: false
+    image: "{{ docker_image_path }}/packetbeat:{{ stack_version | default(default_stack_version) }}"
+beats_enabled: "{{ (beats is defined and beats.enabled ) | default(false, false) | bool }}"
+# https://bitnami.com/stack/apache/helm
+apache_version: 11.2.13
+apache_enabled: "{{ apache.enabled | default(beats_enabled) | bool }}"
+# https://bitnami.com/stack/haproxy/helm
+haproxy_version: 2.1.1
+haproxy_enabled: "{{ haproxy.enabled | default(beats_enabled) | bool }}"

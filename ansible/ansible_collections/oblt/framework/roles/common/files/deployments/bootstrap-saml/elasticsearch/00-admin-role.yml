@@ -1,0 +1,15 @@
+---
+description: Create the Elasticians SAML role
+api: "/_security/role_mapping/saml-owner-superuser"
+method: POST
+headers:
+  Content-Type: application/json
+body: |
+  {
+    "roles": [ "superuser", "allow_restricted_indices" ],
+    "enabled": true,
+    "rules":
+      { "field": { "realm.name": "cloud-saml" } }
+  }
+return_code:
+  - 200

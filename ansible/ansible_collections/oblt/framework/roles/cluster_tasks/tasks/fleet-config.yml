@@ -1,0 +1,49 @@
+---
+# TODO delete this process it can be replaced by a bootstrap process
+- block:
+  - name: Set fact Policy id
+    set_fact:
+      policy_id: "fleet-agent-policy"
+    when:
+      - fleet_agent_policy_result.status is defined
+      - fleet_agent_policy_result.status == 200
+
+  - name: Set fact Fleet Server Policy id
+    set_fact:
+      fleet_server_policy_id: "fleet-server-policy"
+    when:
+      - fleet_server_policy_result.status is defined
+      - fleet_server_policy_result.status == 200
+
+  - name: Set fact fleet enroll token
+    vars:
+      json: "{{ fleet_agent_policy_enroll_token_result.json | to_json }}"
+    set_fact:
+      fleet_enroll_token: "{{ fleet_agent_policy_enroll_token_result.json.item | list | first ).api_key | default(None, true) }}"
+    when:
+      - _result_kb.status is defined
+      - _result_kb.status == 200
+
+  - name: Set fact fleet api token
+    set_fact:
+      fleet_api_token: "{{ fleet_api_token_result.json.access_token }}"
+    when:
+      - fleet_api_token_result.status is defined
+      - fleet_api_token_result.status == 200
+
+  - name: Set facts fleet server token
+    vars:
+      json_server: "{{ fleet_server_token_result.json | to_json }}"
+    set_fact:
+      fleet_server_token: "{{ (json_server | from_json ).token.value | default(None, true) }}"
+    when:
+      - elasticsearch_url is defined
+      - fleet_server_token_result.status is defined
+      - fleet_server_token_result.status == 200
+  when:
+    - kibana_url is defined
+    - elasticsearch_url is defined
+    - k8s_provider != 'kind'
+    - fleet_enabled|bool
+    # TODO enable when fleet server is supported
+    - serverless_enabled == false

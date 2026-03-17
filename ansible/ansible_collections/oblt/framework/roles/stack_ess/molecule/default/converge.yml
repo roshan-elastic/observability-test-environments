@@ -1,0 +1,25 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Deploy Stack
+      include_role:
+        name: oblt.framework.stack_ess
+    - name: Set cluster created flag
+      set_fact:
+        cluster_created: true
+    - name: Vault Secrets
+      include_role:
+        name: oblt.framework.common
+        tasks_from: cluster_state.yml

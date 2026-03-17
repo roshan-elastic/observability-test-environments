@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: overview-oblt
+create_users: true
+grab_cluster_info: true
+configure_external_snapshots_repo: true
+remote_cluster_configure: true
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+remote_clusters:
+  - host: 74dffda89b14239fdfd1060fec34e5e7.us-east-1.aws.found.io
+    port: 9400
+    name: metrics-us-east-1
+  - host: 738d8b1b03f54448a8051007ea0bfade.us-central1.gcp.cloud.es.io
+    port: 9400
+    name: logging-gcp-us-central1
+  - host: a757d7df5a524982834630392b1918d7.us-central1.gcp.cloud.es.io
+    port: 9400
+    name: metrics-gcp-us-central1
+  - host: fe482248f1c6b4ecc1cd40d7cbea8249.us-east-1.aws.found.io
+    port: 9400
+    name: logging-us-east-1
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ deployment_dir }}/bootstrap-overview-oblt"
+stack:
+  version: 8.15.0
+  mode: ess
+  template: observability
+  target: production
+  observability: true
+  update_channel: release
+  update_schedule: tuesday
+  ess:
+    saml_id: exkq4a0cnj1CPQfDh1t7
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-474303bf
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-474303bf
+      mem: 8
+      extra_config: |
+        xpack.apm.indices.error: metrics-*:apm-*,metrics-*:logs-apm*,apm-*,logs-apm*
+        xpack.apm.indices.onboarding: metrics-*:apm-*,apm-*
+        xpack.apm.indices.span: metrics-*:apm-*,metrics-*:traces-apm*,apm-*,traces-apm*
+        xpack.apm.indices.transaction: metrics-*:apm-*,metrics-*:traces-apm*,apm-*,traces-apm*
+        xpack.apm.indices.metric: metrics-*:apm-*,metrics-*:metrics-apm*,apm-*,metrics-apm*
+        xpack.apm.indices.sourcemap: metrics-*:apm-*,apm-*
+        xpack.uptime.index: metrics:heartbeat-*,heartbeat-*
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-474303bf
+    profiling:
+      image: docker.elastic.co/observability-ci/profiling-agent:8.15.0-474303bf
+updated_at: "2024-08-06T02:17:28Z"

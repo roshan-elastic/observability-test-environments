@@ -1,0 +1,121 @@
+---
+description: Create a Kibana Stack monitoring Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "stack-monitoring-policy",
+    "package": {
+      "name": "kibana",
+      "version": "{{ packages_result.json | json_query('[?name==`kibana`].version') | first }}"
+    },
+    "name": "stack_monitoring_kbn_policy",
+    "id": "stack_monitoring_kbn_policy",
+    "description": "",
+    "namespace": "default",
+    "inputs": {
+      "kibana-logfile": {
+        "enabled": false,
+        "vars": {},
+        "streams": {
+          "kibana.audit": {
+            "enabled": false,
+            "vars": {
+              "paths": [
+                "/var/log/kibana/*_audit.json"
+              ]
+            }
+          },
+          "kibana.log": {
+            "enabled": false,
+            "vars": {
+              "paths": [
+                "/var/log/kibana/kibana.stdout"
+              ]
+            }
+          }
+        }
+      },
+      "kibana-http/metrics": {
+        "enabled": true,
+        "vars": {
+          "hosts": [
+            "{{ kibana_url }}"
+          ],
+          "username": "{{ kibana_username }}",
+          "password": "{{ kibana_password }}",
+          "ssl": "#certificate_authorities: [\"/etc/ca.crt\"]\n#certificate: \"/etc/client.crt\"\n#key: \"/etc/client.key\"\n"
+        },
+        "streams": {
+          "kibana.background_task_utilization": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "kibana.task_manager_metrics": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          }
+        }
+      },
+      "kibana-kibana/metrics": {
+        "enabled": true,
+        "vars": {
+          "hosts": [
+            "{{ kibana_url }}"
+          ],
+          "username": "{{ kibana_username }}",
+          "password": "{{ kibana_password }}",
+          "ssl": "#certificate_authorities: [\"/etc/ca.crt\"]\n#certificate: \"/etc/client.crt\"\n#key: \"/etc/client.key\"\n"
+        },
+        "streams": {
+          "kibana.stack_monitoring.cluster_actions": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "kibana.stack_monitoring.cluster_rules": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "kibana.stack_monitoring.node_actions": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "kibana.stack_monitoring.node_rules": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "kibana.stack_monitoring.stats": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "kibana.stack_monitoring.status": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          }
+        }
+      }
+    }
+  }

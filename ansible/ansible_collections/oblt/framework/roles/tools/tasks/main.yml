@@ -1,0 +1,72 @@
+---
+- name: Copy files to the build dir
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Check Google Cloud installed
+  stat: path="{{ bin_dir }}/gcloud_installed"
+  register: gcloud_installed
+
+- name: Check Helm is installed
+  stat: path="{{ bin_dir }}/helm_installed"
+  register: helm_installed
+
+- name: Check Kind installed
+  stat: path="{{ bin_dir }}/kind_installed"
+  register: kind_installed
+
+- name: Check Kubectl installed
+  stat: path="{{ bin_dir }}/kubectl_installed"
+  register: kubectl_installed
+
+- name: Check Terraform installed
+  stat: path="{{ bin_dir }}/terraform_installed"
+  register: terraform_installed
+
+- name: Install Helm
+  include_tasks: helm_cli_install.yml
+  when:
+    - not helm_installed.stat.exists
+    - k8s_enabled|bool
+
+- name: Configure Helm
+  include_tasks: helm_cli_configure.yml
+  when:
+    - k8s_enabled|bool
+
+- name: Install Google Cloud CLI
+  include_tasks: gcloud_cli_install.yml
+  when:
+    - not gcloud_installed.stat.exists
+
+- name: Install Kind CLI
+  include_tasks: kind_cli_install.yml
+  when:
+    - not kind_installed.stat.exists
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'
+
+- name: Install Kubectl CLI
+  include_tasks: kubectl_cli_install.yml
+  when:
+    - not kubectl_installed.stat.exists
+    - k8s_enabled|bool
+
+- name: Install Terraform
+  include_tasks: terraform_cli_install.yml
+  when:
+    - not terraform_installed.stat.exists
+
+- name: Set fatcs
+  set_fact:
+    terraform_version: "{{ terraform_version }}"
+    ess_terraform_version: "{{ ess_terraform_version }}"
+    gcloud_installed: "{{ gcloud_installed.stat.exists }}"
+    helm_installed: "{{ helm_installed.stat.exists }}"
+    kind_installed: "{{ kind_installed.stat.exists }}"
+    kubectl_installed: "{{ kubectl_installed.stat.exists }}"
+    terraform_installed: "{{ terraform_installed.stat.exists }}"

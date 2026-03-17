@@ -1,0 +1,51 @@
+{
+  "development": {
+    "build": "8.15.0-c83a98a2",
+    "date": "Wed, 7 Aug 2024 18:14:02 GMT",
+    "description": "Current SNAPSHOT development version.",
+    "docker": {
+      "elasticsearch": "docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-c83a98a2",
+      "fleet": "docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-c83a98a2",
+      "kibana": "docker.elastic.co/observability-ci/kibana-cloud:8.15.0-c83a98a2",
+      "profiling": "docker.elastic.co/observability-ci/profiling-agent:8.15.0-c83a98a2"
+    },
+    "scheduled": "daily",
+    "version": "8.15.0-SNAPSHOT"
+  },
+  "release": {
+    "build": "8.15.0-3d204fe6",
+    "date": "Wed, 7 Aug 2024 09:48:08 GMT",
+    "description": "Release or BC versions",
+    "docker": {
+      "elasticsearch": "docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-3d204fe6",
+      "fleet": "docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-3d204fe6",
+      "kibana": "docker.elastic.co/observability-ci/kibana-cloud:8.15.0-3d204fe6",
+      "profiling": "docker.elastic.co/observability-ci/profiling-agent:8.15.0-3d204fe6"
+    },
+    "scheduled": "daily",
+    "version": "8.15.0"
+  },
+  "unstable": {
+    "build": "8.16.0-d6515065",
+    "date": "Wed, 7 Aug 2024 16:25:25 GMT",
+    "description": "Current SNAPSHOT of the main branch.",
+    "docker": {
+      "elasticsearch": "docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-d6515065",
+      "fleet": "docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-d6515065",
+      "kibana": "docker.elastic.co/observability-ci/kibana-cloud:8.16.0-d6515065",
+      "profiling": "docker.elastic.co/observability-ci/profiling-agent:8.16.0-d6515065"
+    },
+    "scheduled": "daily",
+    "version": "8.16.0-SNAPSHOT"
+  },
+  "unstable-serverless": {
+    "build": "2024-08-02T00:20:37Z",
+    "date": "2024-08-02T00:20:37Z",
+    "description": "Serverless unestable Docker images.",
+    "docker": {
+      "kibana-serverless": ""
+    },
+    "scheduled": "daily",
+    "version": "serverless"
+  }
+}

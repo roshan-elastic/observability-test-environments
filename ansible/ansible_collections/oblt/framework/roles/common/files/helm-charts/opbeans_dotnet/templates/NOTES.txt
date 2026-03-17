@@ -1,0 +1,2 @@
+The {{ include "opbeans.fullname" . }} is deployed.
+The service {{ include "opbeans.fullname" . }} is deployed at port {{ .Values.opbeans.opbeans.port }}.

@@ -1,0 +1,11 @@
+---
+- name: Destroy serverless deployment
+  uri:
+    url: "{{ serverless_endpoint }}/api/v1/serverless/projects/{{ stack_template }}/{{ serverless_deployment_id }}"
+    method: DELETE
+    headers:
+      Authorization: "ApiKey {{ serverless_apikey }}"
+  register: _result
+  when:
+    - serverless_deployment_id is defined
+    - serverless_deployment_id | length > 0

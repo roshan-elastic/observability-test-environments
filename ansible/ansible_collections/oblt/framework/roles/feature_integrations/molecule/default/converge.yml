@@ -1,0 +1,54 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+    - role: oblt.framework.k8s_kind
+    - role: oblt.framework.stack_ess
+  tasks:
+    - name: Set cluster created flag
+      set_fact:
+        cluster_created: true
+
+    - name: Vault Secrets
+      include_role:
+        name: oblt.framework.common
+        tasks_from: cluster_state.yml
+
+    - name: Docker secrets
+      include_role:
+        name: oblt.framework.k8s
+        tasks_from: docker_secrets.yml
+
+    - name: Deploy Apache integration
+      include_role:
+        name: oblt.framework.feature_integrations
+        tasks_from: deploy.yml
+      vars:
+        feature_integrations_name: "apache"
+
+    - name: Wait until Apache integration is up
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: default
+        label_selectors:
+          - app.kubernetes.io/instance = apache
+      register: pod_list
+      until: pod_list|json_query('resources[*].status.phase')|unique == ["Running"]
+      retries: 10
+      delay: 10
+
+    - name: Undeploy Apache integration
+      include_role:
+        name: oblt.framework.feature_integrations
+        tasks_from: undeploy.yml
+      vars:
+        feature_integrations_name: "apache"

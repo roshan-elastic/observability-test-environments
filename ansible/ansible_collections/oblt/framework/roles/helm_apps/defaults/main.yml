@@ -1,0 +1,5 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param helm_apps [array] List of Helm charts to install, see [K8s helm Role](../k8s_helm/README.md)
+helm_apps: "{{ (apps is defined and apps.helm) | default([], true) }}"

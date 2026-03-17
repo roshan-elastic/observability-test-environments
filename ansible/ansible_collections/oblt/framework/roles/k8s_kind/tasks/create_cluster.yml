@@ -1,0 +1,22 @@
+---
+- name: Import tasks
+  import_tasks: check_cluster_created.yml
+
+- name: Create cluster
+  changed_when: false
+  command: |
+    kind create cluster --config={{ kind_config_file }} \
+      --name "{{ cluster_name }}"
+  when: not kind_cluster_available.stdout_lines
+  tags:
+    - deploy
+    - kind
+    - k8s
+
+- name: Configure kubectl
+  changed_when: false
+  command: |
+    kind export kubeconfig --name "{{ cluster_name }}"
+  tags:
+    - kind
+    - k8s

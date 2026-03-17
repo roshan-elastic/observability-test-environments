@@ -1,0 +1,12 @@
+---
+- name: Configure workload identity
+  changed_when: false
+  command: |
+    gcloud container clusters update {{ gke_cluster_name }} \
+    --region={{ k8s_region }} \
+    --workload-pool={{ k8s_project }}.svc.id.goog
+
+    gcloud container node-pools update {{ gke_cluster_name }}-pool \
+    --cluster={{ gke_cluster_name }} \
+    --region={{ k8s_region }} \
+    --workload-metadata=GKE_METADATA

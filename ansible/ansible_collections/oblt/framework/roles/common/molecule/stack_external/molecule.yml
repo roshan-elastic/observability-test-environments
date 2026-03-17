@@ -1,0 +1,54 @@
+---
+dependency:
+  name: shell
+  command: pip install -r ../../../../../requirements.txt
+driver:
+  name: default
+  options:
+    managed: True
+    ansible_connection_options:
+      ansible_connection: local
+lint: |
+  #!/usr/bin/env bash
+  set -e
+  export ANSIBLE_COLLECTIONS_PATH=.:~/.ansible/collections:/usr/share/ansible/collections:/etc/ansible/collections:$MOLECULE_SCENARIO_DIRECTORY/../../../../../..
+  export ANSIBLE_LINT_CONFIG=$MOLECULE_SCENARIO_DIRECTORY/../../../../.ansible-lint
+  COVERAGE_FILE=$MOLECULE_SCENARIO_DIRECTORY/converge.yml
+  DESTROY_FILE=$MOLECULE_SCENARIO_DIRECTORY/destroy.yml
+  VERIFY_FILE=$MOLECULE_SCENARIO_DIRECTORY/verify.yml
+
+  yamllint .
+
+  for file in "$COVERAGE_FILE" "$DESTROY_FILE" "$VERIFY_FILE"
+  do
+    if [ -f "$file" ]; then
+      ansible-lint -c "$ANSIBLE_LINT_CONFIG" "$file"
+    fi
+  done
+
+  flake8 --exclude '*/build/*'
+platforms:
+  - name: local
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_COLLECTIONS_PATH: .:~/.ansible/collections:/usr/share/ansible/collections:/etc/ansible/collections:$MOLECULE_SCENARIO_DIRECTORY/../../../../../..
+    JUNIT_OUTPUT_DIR: $MOLECULE_SCENARIO_DIRECTORY/test-results
+    # ANSIBLE_VERBOSITY: 3
+  config_options:
+    defaults:
+      callback_plugins: $MOLECULE_SCENARIO_DIRECTORY/../../../../callback_plugins
+      callbacks_enabled: ansible.posix.profile_tasks, community.general.yaml, ansible.builtin.junit
+      stdout_callback: yaml
+      executable: /bin/bash
+      module_lang: en_US.UTF-8
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    # - destroy
+    # - create
+    - converge
+    # - idempotence
+    # - lint
+    # - verify

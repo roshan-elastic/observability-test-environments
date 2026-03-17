@@ -1,0 +1,9 @@
+---
+- name: Delete IP address
+  google.cloud.gcp_compute_address:
+    name: "{{ gke_cluster_name }}-ip"
+    region: "{{ static_ip_region }}"
+    state: absent
+  when:
+    - static_ip is defined
+    - static_ip

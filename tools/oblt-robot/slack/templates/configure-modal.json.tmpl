@@ -1,0 +1,47 @@
+{
+	"type": "modal",
+	"clear_on_close": true,
+	"title": {
+		"type": "plain_text",
+		"text": "Configure Oblt clusters",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hey!\n\nPlease provide your GitHub username, we will use it to configure your Oblt Clusters."
+			}
+		},
+		{
+			"type": "divider"
+		},
+    {
+      "type": "input",
+      "block_id": "oblt-configure",
+      "label": {
+        "type": "plain_text",
+        "text": "Your GitHub username"
+      },
+      "element": {
+        "type": "plain_text_input",
+        "action_id": "oblt-configure-github-username",
+        "placeholder": {
+          "type": "plain_text",
+          "text": "Your GitHub username"
+        }
+      }
+    }
+	]
+}

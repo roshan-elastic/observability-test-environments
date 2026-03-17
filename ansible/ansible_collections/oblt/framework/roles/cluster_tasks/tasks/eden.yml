@@ -1,0 +1,6 @@
+---
+- name: Include tasks from eden-profiling.yml
+  include_tasks: eden-profiling.yml
+
+- name: Include tasks from eden-observe.yml
+  include_tasks: eden-observe.yml

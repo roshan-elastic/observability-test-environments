@@ -1,0 +1,7 @@
+---
+- name: Deploy Opbeans
+  include_role:
+    name: oblt.framework.k8s_opbeans
+  tags:
+    - opbeans
+    - deploy

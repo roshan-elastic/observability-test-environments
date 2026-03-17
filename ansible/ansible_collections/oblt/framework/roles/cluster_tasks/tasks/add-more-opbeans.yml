@@ -1,0 +1,44 @@
+---
+- name: Configure Opbeans
+  vars:
+    opbeans_dir: "{{ helm_deployment_dir }}/opbeans"
+    opbeans_seed: "{{ lookup('password', '{{ build_dir }}/opbeans-seed chars=ascii_letters,digits length=4') | lower }}"
+    _opbeans_namespace: "opbeans-test-load-{{ opbeans_seed }}"
+  set_fact:
+    opbeans_replicas: "{{ opbeans_replicas | default(10) | int }}"
+    opbeans_loaggen_run_length: "{{ opbeans_loaggen_run_length | default(120) | int }}"
+    opbeans_loaggen_rpms: "{{ opbeans_loaggen_rpms | default(4000) | int }}"
+    opbeans_namespace: "{{ _opbeans_namespace }}"
+    opbeans_loaggen_parallelism: "{{ opbeans_loaggen_parallelism | default(10) | int }}"
+    opbeans_loaggen_completions: "{{ opbeans_loaggen_completions | default(10) | int }}"
+    opbeans_helm_charts:
+      - name: "opbeans-go-{{ opbeans_seed }}"
+        chart: "{{ helm_charts_dir }}/opbeans_go"
+        version: "0.1.0"
+        values_file: "{{ opbeans_dir }}/go-load-test/helm-values.yml.j2"
+        build_deps: true
+        extra_args: --create-namespace
+        namespace: "{{ _opbeans_namespace }}"
+
+- block:
+    - name: Generate secret file
+      vars:
+        k8s_docker_namespace: "{{ opbeans_namespace }}"
+      template:
+        src: "{{ k8s_deployment_dir }}/docker-secret.yml.j2"
+        dest: "{{ k8s_deployment_dir }}/docker-secret.yml"
+        mode: 0600
+    - name: Create Secrets
+      shell: |
+        kubectl create namespace {{ opbeans_namespace }} --dry-run=client -o yaml | kubectl apply -f -
+        kubectl apply -f {{ k8s_deployment_dir }}/docker-secret.yml
+
+    - name: Deploy Opbeans
+      vars:
+        apps:
+          helm: |
+            {{ opbeans_helm_charts | to_json }}
+      include_role:
+        name: oblt.framework.helm_apps
+  when:
+    - k8s_enabled|bool

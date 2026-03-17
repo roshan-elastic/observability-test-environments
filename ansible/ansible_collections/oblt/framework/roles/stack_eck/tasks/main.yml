@@ -1,0 +1,45 @@
+---
+- block:
+  - name: Check ECK version
+    assert:
+      that:
+        - eck_version is defined
+        - eck_version is version_compare('2.4.0', '>=')
+
+  - name: Ingress available
+    include_role:
+      name: oblt.framework.k8s_ingress
+      tasks_from: get_ingress_available.yml
+
+  - name: Include tasks from copy_files.yml
+    include_tasks: copy_files.yml
+
+  - name: Include tasks from deploy_eck_operator.yml
+    include_tasks: deploy_eck_operator.yml
+
+  - name: Include tasks from deploy_elasticsearch.yml
+    include_tasks: deploy_elasticsearch.yml
+    when:
+      - elasticsearch_enabled|bool
+      - elasticsearch_type == 'eck'
+
+  - name: Import tasks from deploy_kibana.yml
+    import_tasks: deploy_kibana.yml
+    when:
+      - kibana_enabled|bool
+      - kibana_type == 'eck'
+
+  - name: Import tasks from deploy_apm.yml
+    import_tasks: deploy_apm.yml
+    when:
+      - apm_enabled|bool
+      - apm_type == 'eck'
+
+  when:
+    - k8s_enabled|bool
+    - eck_enabled
+  tags:
+  # FIXME the idempotence tests are failing, so we need to skip them for now.
+  # The wait conditions do not wait for ES and are short for Kibana.
+  # The solution is to move everithign to a helm chart.
+    - molecule-idempotence-notest

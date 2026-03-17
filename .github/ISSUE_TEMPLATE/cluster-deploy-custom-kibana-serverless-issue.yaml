@@ -1,0 +1,22 @@
+name: Deploy Custom Kibana in Serverless
+description: Configure your cluster using a custom Kibana in Serverless.
+title: "[Deploy Kibana Serverless]: "
+# NOTE: deploy-custom-kibana-serverless label is required by .github/workflows/cluster-deploy-custom-kibana-serverless-issue.yml
+labels: ["cluster", "deploy-custom-kibana-serverless"]
+body:
+  - type: input
+    id: kibana_image
+    attributes:
+      label: Kibana image
+      description: The Kibana docker image
+      placeholder: ex. docker.elastic.co/kibana-ci/kibana-serverless:pr-180720-169332206fab
+    validations:
+      required: true
+  - type: input
+    id: kibana_pullrequest
+    attributes:
+      label: Kibana pull request
+      description: Kibana Pull Request (e.g 10000)
+      placeholder: ex. 10000
+    validations:
+      required: true

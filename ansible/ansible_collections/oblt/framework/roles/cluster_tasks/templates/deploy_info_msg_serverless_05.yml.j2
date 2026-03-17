@@ -1,0 +1,7 @@
+{% import 'macros.j2' as fn %}
+# Documentation
+
+{{ fn.showlink("https://docs.elastic.dev/serverless/observability/{}".format(stack_target), "Serverless documentation", slack) }}
+{{ fn.showlink("https://elastic.github.io/observability-test-environments/user-guide/mki", "Access MKI", slack) }}
+{{ fn.showlink("https://docs.elastic.dev/serverless", "Serverless documentation", slack) }}
+{{ fn.showlink("https://github.com/elastic/kibana-controller?tab=readme-ov-file#create-a-project-override", "Override Kibana settings", slack) }}

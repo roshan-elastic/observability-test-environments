@@ -1,0 +1,23 @@
+---
+- name: create build dir
+  file:
+    path: "{{ vm_gcp_terradorm_dir }}/"
+    state: directory
+    mode: 0755
+  tags:
+    - generate-config
+
+- name: Copy files to terraform folder
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ vm_gcp_terradorm_dir }}"
+  tags:
+    - generate_config
+
+- name: Create config files
+  template:
+    src: "{{ role_path }}//templates/main.tf.j2"
+    dest: "{{ vm_gcp_terradorm_dir }}/main.tf"
+    mode: 0644
+  tags:
+    - generate-config

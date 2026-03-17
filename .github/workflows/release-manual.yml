@@ -1,0 +1,46 @@
+---
+## Workflow to perform a manual release of oblt clusters repo and tools. It creates a PR with the changes for a new version.
+name: Release tools (manual PR)
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Type of release [major, minor, patch]
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - "patch"
+          - "minor"
+          - "major"
+jobs:
+  generate:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: "${{ github.ref }}-tools"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: .go-version
+          cache: true
+          cache-dependency-path: tools/oblt-cli/go.sum
+      - name: Perform Release
+        run: |
+          make -C .ci "${RELEASE_TYPE}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          REMOTE_URL: ${{ github.event.repository.html_url }}
+          GH_EXTRA_ARGS: --label "automerge,skip-changelog,release"
+          RELEASE_TYPE: release-${{ inputs.release_type }}

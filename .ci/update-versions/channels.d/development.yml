@@ -1,0 +1,100 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update update channels development
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  elasticStack:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      mergemethod: squash
+      title: '[updatecli] Update channels development'
+      description: 'Update channels Elastic Stack new versions.'
+      labels:
+        - "dependencies"
+        - "update-channels"
+        - "elasticStack"
+        - "automerge"
+        - "development"
+sources:
+  ChannelVersion:
+    name: 'Check development channel'
+    kind: shell
+    spec:
+      command: make stack-version-development
+      environments:
+        - name: PATH
+  ChannelBuild:
+    name: 'Check development channel'
+    kind: shell
+    spec:
+      command: make stack-build-development
+      environments:
+        - name: PATH
+  ChannelDate:
+    name: 'Check development channel'
+    kind: shell
+    spec:
+      command: make build-date-development
+      environments:
+        - name: PATH
+  currentBuild:
+    name: 'Check development current build'
+    kind: json
+    spec:
+      file: update_channels.json
+      value: update_channels.json
+      key: 'development.build'
+conditions:
+  is-downgrade-check:
+    name: Check if it is not a downgrade development channel
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: 'make is-downgrade-channel-development'
+      environments:
+        - name: PATH
+        - name: TO_VERSION
+          value: '{{ source "ChannelVersion" }}'
+  is-different-build:
+    name: Check if it is the same build development channel
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: 'test "${FROM_BUILD}" != "${TO_BUILD}"'
+      environments:
+        - name: PATH
+        - name: FROM_BUILD
+          value: '{{ source "currentBuild" }}'
+        - name: TO_BUILD
+          value: '{{ source "ChannelBuild" }}'
+targets:
+  updateChannelVersion:
+    name: 'Update development channel Version'
+    scmid: githubConfig
+    disablesourceinput: true
+    kind: shell
+    spec:
+      command: make -C .ci/update-versions update-channel-json
+      environments:
+        - name: PATH
+        - name: JSON_FILE
+          value: update_channels.json
+        - name: UPDATE_CHANNEL
+          value: 'development'
+        - name: UPDATE_CHANNEL_VERSION
+          value: '{{ source "ChannelVersion" }}'
+        - name: UPDATE_CHANNEL_BUILD
+          value: '{{ source "ChannelBuild" }}'
+        - name: UPDATE_CHANNEL_DATE
+          value: '{{ source "ChannelDate" }}'

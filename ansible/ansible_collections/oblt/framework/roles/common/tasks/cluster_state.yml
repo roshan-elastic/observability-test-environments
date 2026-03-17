@@ -1,0 +1,21 @@
+---
+- name: "Create {{ build_dir }}/cluster-state.yml file"
+  copy:
+    content: "{{ lookup('ansible.builtin.template', 'cluster-state.yml.j2') }}"
+    dest: "{{ build_dir }}/cluster-state.yml"
+    mode: 0644
+  tags:
+    - vault
+    - molecule-idempotence-notest
+
+- name: "Store {{ cluster_state_gcsm_def_secret }} in Google Secret Manager"
+  vars:
+    digest_yml_content: "{{ lookup('file', '{{ build_dir }}/cluster-state.yml') }}"
+  oblt.framework.gcp_secret_manager:
+    name: "{{ cluster_state_gcsm_def_secret }}"
+    state: present
+    value: |
+      {{ digest_yml_content | from_yaml | to_nice_yaml }}
+    labels:
+      cluster_name: "{{ cluster_name }}"
+      name: "cluster-state"

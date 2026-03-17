@@ -1,0 +1,3 @@
+---
+- name: Init deployment
+  include_tasks: deploy.yml

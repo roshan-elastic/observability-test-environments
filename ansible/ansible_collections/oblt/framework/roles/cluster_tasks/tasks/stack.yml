@@ -1,0 +1,30 @@
+---
+
+
+- name: Stack ECK
+  include_role:
+    name: "oblt.framework.stack_eck"
+  when:
+    - elasticsearch_type == 'eck'
+    - k8s_enabled|bool
+
+- name: Stack ESS
+  include_role:
+    name: "oblt.framework.stack_ess"
+  when:
+      elasticsearch_type == 'ess'
+
+- name: Stack Serverless
+  include_role:
+    name: "oblt.framework.stack_serverless"
+  when:
+      elasticsearch_type == 'serverless'
+
+- name: Set cluster created flag
+  set_fact:
+    cluster_created: true
+
+- name: Cluster State Vault Secret
+  include_role:
+    name: oblt.framework.common
+    tasks_from: cluster_state.yml

@@ -1,0 +1,25 @@
+{
+  "audit_logs-logfile": {
+    "streams": {
+      "microsoft_sqlserver.log": {
+        "vars": {
+          "paths": [
+            "/usr/shared/data/logs/error*"
+          ],
+          "tags": [
+            "mssql-logs"
+          ]
+        }
+      }
+    }
+  },
+  "audit_logs-sql/metrics": {
+    "vars": {
+      "hosts": [
+        "localhost"
+      ],
+      "password": "1234_asdf",
+      "username": "domain\\username"
+    }
+  }
+}

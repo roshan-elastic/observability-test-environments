@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - '{{ deployment_dir }}/bootstrap-saml'
+  - '{{ deployment_dir }}/bootstrap-observability-ci'
+cluster_name: observability-ci
+configure_external_snapshots_repo: true
+golden_cluster: true
+grab_cluster_info: true
+oblt_username: robots
+slack_channel: '#observablt-bots'
+stack:
+  ess:
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-474303bf
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-474303bf
+      zones: 3
+      mem: 8
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-474303bf
+      # increase the max payload size to 4MB to allow uploads of sourcemaps
+      extra_config: |
+        server.maxPayload: 4194304
+    saml_id: exkru7tp4anPtZf6v1t7
+    profiling:
+      image: docker.elastic.co/observability-ci/profiling-agent:8.15.0-474303bf
+  mode: ess
+  observability: true
+  target: production
+  template: observability
+  update_channel: release
+  update_schedule: tuesday
+  version: 8.15.0
+updated_at: "2024-08-06T02:17:24Z"

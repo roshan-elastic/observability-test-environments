@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: "autopilot-apm-managed-gatekeeper"
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+
+k8s:
+  provider: autopilot
+  ingress: false
+  certmanager: false
+
+apps:
+  helm:
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ kube_state_metrics_version }}"
+      namespace: "{{ k8s_default_namespace }}"
+    - name: kubernetes-integration
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/standalone-monitoring-oblt/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent_autopilot"
+      version: 0.1.0
+      namespace: "{{ k8s_default_namespace }}"

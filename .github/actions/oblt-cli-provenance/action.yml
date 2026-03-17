@@ -1,0 +1,70 @@
+---
+name: oblt-cli-provenance
+description: Run the GitHub provenance for the oblt-cli
+
+runs:
+  using: "composite"
+  steps:
+    - name: generate build provenance (binaries)
+      uses: github-early-access/generate-build-provenance@main
+      with:
+        subject-path: "${{ github.workspace }}/tools/oblt-cli/dist/*.*"
+
+    - name: container image digest
+      continue-on-error: true
+      id: image
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Gather the container image generated with goreleaser
+        image=$(jq -r '.[] | select (.type=="Docker Image") | .path' tools/oblt-cli/dist/artifacts.json | cut -d':' -f1 | uniq )
+        # Fetch the digest for the container image (amd64 and arm64)
+        digest_1=$(docker images --format "{{.Digest}}" --no-trunc $image | sed -n 1p)
+        digest_2=$(docker images --format "{{.Digest}}" --no-trunc $image | sed -n 2p)
+        # digest is none if images have not been published yet
+        # if so let's use the ID with sha256 format.
+        # This won't be the case with releases but only with snapshots.
+        if [[ -z "$digest_1" || "$digest_1" == "<none>" ]]; then
+          digest_1=$(docker images --format "{{.ID}}" --no-trunc $image | sed -n 1p)
+        fi
+        if [[ -z "$digest_2" || "$digest_2" == "<none>" ]]; then
+          digest_2=$(docker images --format "{{.ID}}" --no-trunc $image | sed -n 2p)
+        fi
+        echo "name=$image" >> "$GITHUB_OUTPUT"
+        echo "digest_1=$digest_1" >> "$GITHUB_OUTPUT"
+        echo "digest_2=$digest_2" >> "$GITHUB_OUTPUT"
+
+    - name: debug
+      continue-on-error: true
+      shell: bash
+      run: |
+        set -exuo pipefail
+        image="${{ steps.image.outputs.name }}"
+        echo "image=${image}"
+        echo "digest_1=${{ steps.image.outputs.digest_1 }}"
+        echo "digest_2=${{ steps.image.outputs.digest_2 }}"
+        echo "::group::docker images"
+        docker images --digests || true
+        docker images --no-trunc || true
+        docker images --digests $image || true
+        docker images --no-trunc $image || true
+        echo "::endgroup::"
+
+    - name: generate build provenance (containers ARM64)
+      uses: github-early-access/generate-build-provenance@main
+      with:
+        subject-name: ${{ steps.image.outputs.name }}
+        subject-digest: ${{ steps.image.outputs.digest_1 }}
+
+    - name: generate build provenance (containers AMD64)
+      uses: github-early-access/generate-build-provenance@main
+      with:
+        subject-name: ${{ steps.image.outputs.name }}
+        subject-digest: ${{ steps.image.outputs.digest_2 }}
+
+    - uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: oblt-cli-artifacts
+        path: tools/oblt-cli/dist/*.*
+        retention-days: 5

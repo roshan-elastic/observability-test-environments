@@ -1,0 +1,12 @@
+---
+description: Create a Kibana service account token
+api: "/_security/service/elastic/kibana/credential/token/kibana_token"
+method: GET
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+ignore_errors: true
+register: bootstrap_kibana_service_account_token_result
+body: ""

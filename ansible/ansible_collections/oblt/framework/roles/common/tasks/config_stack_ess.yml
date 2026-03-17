@@ -1,0 +1,228 @@
+---
+- name: Load config - ESS
+  set_fact:
+    elasticsearch_enabled: "{{ stack.ess.elasticsearch.enabled | default(true) | bool }}"
+    elasticsearch_type: "{{ stack_mode }}"
+    es_extra_config: "{{ stack.ess.elasticsearch.extra_config | default(None) }}"
+    ess_autoscale: "{{ stack.ess.autoscale | default(true) | bool }}"
+    ess_ccs_remote_cluster: "{{ stack.ess.elasticsearch.ccs_remote_cluster | default(None, true) }}"
+    ess_es_image: "{{ stack.ess.elasticsearch.image | default(None) }}"
+    ess_es_zones: "{{ stack.ess.elasticsearch.zones | default (3) }}"
+    ess_integrations_image: "{{ stack.ess.integrations.image | default(None) }}"
+    ess_integrations_mem: "{{ stack.ess.integrations.mem | default(2) }}"
+    ess_integrations_zones: "{{ stack.ess.integrations.zones | default (1) }}"
+    ess_kb_image: "{{ stack.ess.kibana.image | default(None) }}"
+    ess_kb_mem: "{{ stack.ess.kibana.mem | default(4) }}"
+    ess_kb_zones: "{{ stack.ess.kibana.zones | default (1) }}"
+    ess_observability_deployment_id: "{{ observability_deployment_id | default(None, true) }}"
+    ess_provider: "{{ stack.ess.provider | default('gcp') }}"
+    ess_restore_snapshot_from: "{{ stack.ess.restore_snapshot_from | default(None) }}"
+    ess_restore_snapshot_name: "{{  stack.ess.restore_snapshot_name | default('__latest_success__') }}"
+    ess_stack_pack_version: "{{ stack.version | default(default_stack_version) }}"
+    ess_trusted_org: "{{ stack.ess.trusted_org | default(None) }}"
+    integrations_extra_config: "{{ stack.ess.integrations.extra_config | default(None) }}"
+    kibana_enabled: "{{ stack.ess.kibana.enabled | default(true) | bool }}"
+    kibana_extra_config: "{{ stack.ess.kibana.extra_config | default(None) }}"
+    kibana_further_details: "{{ stack.ess.kibana.further_details | default(false) | bool }}"
+    kibana_type: "{{ stack_mode }}"
+    ess_saml_id: "{{ stack.ess.saml_id | default('disabled', true) }}"
+    kibana_open_ai_secret: "{{ stack.ess.kibana.open_ai_secret | default(None) }}"
+    kibana_open_ai_apikey: ""
+    kibana_open_ai_service: ""
+    ess_reset_password: "{{ stack.ess.reset_password | default(false) | bool }}"
+    profiling_enable: "{{ stack.ess.profiling.enabled | default(false) | bool }}"
+    ess_profiling_image: "{{ stack.ess.profiling.image | default('docker.elastic.co/observability/profiling-agent:' + stack_version) }}"
+    apm_enabled: "{{ stack.ess.integrations.enabled | default(false) | bool }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+
+
+- name: Load config - ESS template Elasticsearch
+  set_fact:
+    elasticsearch_enabled: true
+    elasticsearch_type: "{{ stack_mode }}"
+    kibana_enabled: false
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - stack_template == 'elasticsearch'
+
+- name: Load config - ESS template Observability/Security
+  set_fact:
+    apm_enabled: true
+    apm_type: "{{ stack_mode }}"
+    elasticsearch_enabled: true
+    elasticsearch_type: "{{ stack_mode }}"
+    fleet_enabled: true
+    fleet_type: "{{ stack_mode }}"
+    kibana_enabled: true
+    kibana_type: "{{ stack_mode }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - stack_template == 'observability' or stack_template == 'security'
+
+- name: Load config - ESS template CCS
+  set_fact:
+    elasticsearch_enabled: true
+    elasticsearch_type: "{{ stack_mode }}"
+    kibana_enabled: false
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - stack_template == 'ccs'
+
+- name: Load config - ESS Production
+  set_fact:
+    # trust on the SRE organization
+    ess_endpoint: https://cloud.elastic.co
+    ess_trusted_org: "{{ stack.ess.trusted_org | default('2001152763') }}"
+    secret_ess_user: "elastic-cloud-observability-team-pro"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - stack_target == 'production'
+
+- name: Load config - ESS Staging
+  set_fact:
+    ess_endpoint: https://staging.found.no
+    ess_region: "{{ stack.ess.region | default('us-east-1') }}"
+    secret_ess_user: "elastic-cloud-observability-team-staging"
+    ess_trusted_org: "{{ stack.ess.trusted_org | default('1719154567') }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - stack_target == 'staging'
+
+- name: Load config - ESS QA
+  set_fact:
+    ess_endpoint: https://console.qa.cld.elstc.co
+    ess_trusted_org: "{{ stack.ess.trusted_org | default('1176847267') }}"
+    secret_ess_user: "elastic-cloud-observability-team-qa"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - stack_target == 'qa'
+
+- name: Load config - ESS Production GCP
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('gcp-us-west2') }}"
+    ess_template: "{{ stack.ess.template | default('gcp-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(64) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'gcp'
+    - stack_target == 'production'
+
+- name: Load config - ESS Staging GCP
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('gcp-us-central1') }}"
+    ess_template: "{{ stack.ess.template | default('gcp-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(64) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'gcp'
+    - stack_target == 'staging'
+
+- name: Load config - ESS QA GCP
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('gcp-us-central1') }}"
+    ess_template: "{{ stack.ess.template | default('gcp-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(64) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'gcp'
+    - stack_target == 'qa'
+
+- name: Load config - ESS QA AWS
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('aws-eu-west-1') }}"
+    ess_template: "{{ stack.ess.template | default('aws-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(64) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'aws'
+    - stack_target == 'qa'
+
+- name: Load config - ESS QA Azure
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('azure-eastus2') }}"
+    ess_template: "{{ stack.ess.template | default('azure-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(60) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'azure'
+    - stack_target == 'qa'
+
+- name: Load config - ESS Staging AWS
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('us-east-1') }}"
+    ess_template: "{{ stack.ess.template | default('aws-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(58) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'aws'
+    - stack_target == 'staging'
+
+- name: Load config - ESS Production AWS
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('us-east-1') }}"
+    ess_template: "{{ stack.ess.template | default('aws-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(58) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'aws'
+    - stack_target == 'production'
+
+- name: Load config - ESS Staging Azure
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('azure-eastus2') }}"
+    ess_template: "{{ stack.ess.template | default('azure-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(60) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'azure'
+    - stack_target == 'staging'
+
+- name: Load config - ESS Production Azure
+  set_fact:
+    ess_region: "{{ stack.ess.region | default('eastus2') }}"
+    ess_template: "{{ stack.ess.template | default('azure-storage-optimized') }}"
+    ess_es_mem: "{{ stack.ess.elasticsearch.mem | default(8) }}"
+    ess_max_mem: "{{ stack.ess.elasticsearch.max_mem | default(60) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - ess_provider == 'azure'
+    - stack_target == 'production'
+
+- name: Load OpenAI settings
+  vars:
+    credentials: "{{ lookup('oblt.framework.gcp_secret_manager', key=kibana_open_ai_secret)|safe()|from_yaml }}"
+  set_fact:
+    kibana_open_ai_apikey: "{{ credentials.apiKey | default(None) }}"
+    kibana_open_ai_service: "{{ credentials.service | default(None) }}"
+    kibana_open_ai_resource_name: "{{ credentials.resourceName | default(None) }}"
+    kibana_open_ai_deployment_id: "{{ credentials.deploymentId | default(None) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+    - kibana_open_ai_secret is defined
+    - kibana_open_ai_secret != ''

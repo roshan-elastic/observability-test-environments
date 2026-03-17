@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: integrations-k8s
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+
+k8s:
+  provider: gcp
+  machine_type: e2-highcpu-4
+  max_node_count: 40
+  static_ip: true
+  certificate_issuer: letsencrypt-prod
+
+apps:
+  helm:
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ kube_state_metrics_version }}"
+      namespace: "{{ k8s_default_namespace }}"
+    - name: kubernetes-integration
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/standalone-monitoring-oblt/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent"
+      version: 0.1.0
+      namespace: "{{ k8s_default_namespace }}"
+  k8s:
+    - name: universal-profiling-agent-{{ cluster_hash }}
+      src: "{{ k8s_deployment_dir }}/profiling-monitoring-oblt"

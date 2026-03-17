@@ -1,0 +1,26 @@
+---
+# Description of what the recipe does.
+description: Configure default therad indices in the security solution to use CCS
+# Path to the REST API call.
+api: "api/kibana/settings"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: POST
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+  elastic-api-version: 1
+# The payload to send to the REST API.
+body: |
+  {
+    "changes": {
+      "securitySolution:defaultThreatIndex": [
+        "logs-ti_*",
+        "remote_cluster:logs-ti_*"
+      ]
+    }
+  }
+# The expected return code.
+return_code:
+  - 200
+ignore_errors: true

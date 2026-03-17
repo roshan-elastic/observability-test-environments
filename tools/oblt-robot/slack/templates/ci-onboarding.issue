@@ -1,0 +1,11 @@
+### Your GitHub repository in the elastic org (Required)
+
+{{ .Project }}
+
+### Template
+
+{{ .Type }}
+
+### Further details
+
+Issue created by {{ .User }} using the slackbot (@oblt-robot)

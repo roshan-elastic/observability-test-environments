@@ -1,0 +1,39 @@
+---
+- name: Configure a remote cluster for CCS using the API
+  vars:
+    url: "{{ elasticsearch_url }}"
+  uri:
+    url: "{{ url }}/_cluster/settings?pretty"
+    method: PUT
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body: |
+      {
+        "persistent": {
+          "cluster": {
+            "remote": {
+              "{{ item.name }}": {
+                "skip_unavailable": true,
+                "mode": "proxy",
+                "proxy_address": "{{ item.host }}:{{ item.port }}",
+                "proxy_socket_connections": 3,
+                "server_name": "{{ item.host }}",
+                "seeds": null,
+                "node_connections": null
+              }
+            }
+          }
+        }
+      }
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 20
+  delay: 15
+  loop: "{{ remote_clusters }}"
+  when:
+    - remote_cluster_configure|bool

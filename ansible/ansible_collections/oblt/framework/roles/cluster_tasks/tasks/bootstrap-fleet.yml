@@ -1,0 +1,31 @@
+- name: Processing {{ item }}
+  set_fact:
+    bootstrap_api: "{{ lookup('ansible.builtin.template', '{{ item }}') | from_yaml }}"
+
+- name: Bootstrap a Fleet using the API
+  vars:
+    fleet_headers_tmp: |
+      Authorization: "ApiKey {{ fleet_api_token }}"
+      {% for k,v in (bootstrap_api.headers.items() | default(None)) %}
+      {{ k }}: {{ v }}
+      {% endfor %}
+    fleet_headers: "{{ fleet_headers_tmp | from_yaml }}"
+  uri:
+    url: "{{ fleet_url }}{{ bootstrap_api.api }}"
+    method: "{{ bootstrap_api.method }}"
+    validate_certs: false
+    headers: "{{ fleet_headers }}"
+    body_format: "{{ bootstrap_api.body_format | default('json') }}"
+    body: "{{ bootstrap_api.body }}"
+    status_code: "{{ bootstrap_api.return_code }}"
+  register: bootstrap_fleet_result
+  retries: "{{ bootstrap_api.retries | default(3) | int }}"
+  delay: "{{ bootstrap_api.delay | default(10) | int }}"
+  until: bootstrap_fleet_result.status in bootstrap_api.return_code
+
+- name: Set facts for {{ bootstrap_api.description | default(bootstrap_api.api) }}
+  set_fact:
+    "{{ bootstrap_api.register }}": "{{ bootstrap_fleet_result }}"
+  when:
+    - bootstrap_fleet_result is defined
+    - bootstrap_api.register is defined

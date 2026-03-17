@@ -1,0 +1,23 @@
+* cluster name: `{{ cluster_name }}`
+* environment: `{{ stack_target }}`
+* type: `{{ elasticsearch_type }}`
+* template: `{{ stack_template }}`
+{% if ess_ccs_remote_cluster is defined and ess_ccs_remote_cluster != '' %}
+* remote cluster: `{{ ess_ccs_remote_cluster }}`
+{% endif %}
+{% if oblt_username %}
+* Oblt username: `{{ oblt_username }}`
+{% endif %}
+{% if (expire_date|default('')) != '' %}
+* Expire date: `{{ expire_date }}`
+{% endif %}
+{% if kibana_enabled %}
+* Kibana: {{ kibana_url }}
+{% if kibana_docker_image %}
+  * Docker image: `{{ kibana_docker_image }}`
+{% endif %}
+{% endif %}
+* Elasticsearch: {{ elasticsearch_url }}
+{% if elasticsearch_docker_image %}
+  * Docker image: `{{ elasticsearch_docker_image }}`
+{% endif %}

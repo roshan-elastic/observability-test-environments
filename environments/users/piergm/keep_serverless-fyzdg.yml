@@ -1,0 +1,64 @@
+apps:
+    helm:
+        - chart: prometheus-community/kube-state-metrics
+          name: ksm-serverless-fyzdg
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/kube-state-metrics/helm-values.yml.j2'
+          version: '{{ kube_state_metrics_version }}'
+        - chart: '{{ helm_charts_dir }}/elastic_agent'
+          extra_args: --set metricsService=ksm-serverless-fyzdg-kube-state-metrics:8080
+          name: k8s-int-serverless-fyzdg
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/elastic_agent/standalone-afinity/helm-values.yml.j2'
+          version: 0.1.0
+        - build_deps: true
+          chart: '{{ helm_charts_dir }}/opbeans_go'
+          name: opbeans-go
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/opbeans/go/helm-values.yml.j2'
+          version: 0.1.0
+        - build_deps: true
+          chart: '{{ helm_charts_dir }}/opbeans_java'
+          name: opbeans-java
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/opbeans/java/helm-values.yml.j2'
+          version: 0.1.0
+        - build_deps: true
+          chart: '{{ helm_charts_dir }}/opbeans_python'
+          name: opbeans-python
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/opbeans/python/helm-values.yml.j2'
+          version: 0.1.0
+        - chart: '{{ helm_charts_dir }}/apm-synthtrace'
+          name: apm-synthtrace-ms
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/apm-synthtrace/helm-values-ms.yml.j2'
+          version: 0.1.0
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+    - '{{ deployment_dir }}/bootstrap-serverless'
+cluster_name: keep-serverless-fyzdg
+create_ilm: false
+create_users: false
+expire_date: "2024-12-31"
+grab_cluster_info: true
+k8s:
+    certmanager: false
+    default_namespace: serverless-fyzdg-default
+    ingress: false
+    kube_system_namespace: serverless-fyzdg-kube-system
+    provider: gcp
+    shared: serverless-k8s
+kube_metrics_deploy_name: k8s-int-serverless-fyzdg
+oblt_username: piergm
+slack_channel: '@U058MH72ZF0'
+stack:
+    mode: serverless
+    serverless:
+        search_power: balanced
+    target: qa
+    template: observability
+template_description: |
+    Serverless template configure a oblt cluster that runs on Elastic Stack serverless on the QA environment.
+    For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#serverless)
+template_name: serverless

@@ -1,0 +1,20 @@
+---
+- name: Get Elasticsearch password
+  changed_when: false
+
+  shell: |
+    kubectl get secret {{ cluster_name }}-es-elastic-user -o {% raw %}go-template='{{ .data.elastic | base64decode }}'{% endraw %}
+  register: eck_get_es_password
+  tags:
+    - elasticsearch
+    - load_config
+
+#  TODO create correct facts for elasticsearch
+- name: Configure Elasticsearch variables
+  set_fact:
+    elasticsearch_url: "https://{{ elasticsearch_host }}:443"
+    elasticsearch_password: "{{ eck_get_es_password.stdout }}"
+    elasticsearch_username: "elastic"
+  tags:
+    - elasticsearch
+    - load_config

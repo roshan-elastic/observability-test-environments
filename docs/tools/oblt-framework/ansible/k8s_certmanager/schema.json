@@ -1,0 +1,11 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "certificate_issuer": {
+            "type": "string",
+            "description": "Default issuer name for the certificates",
+            "default": "\"\""
+        }
+    }
+}

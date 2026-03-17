@@ -1,0 +1,41 @@
+---
+name: prepare tool environment
+description: Prepare tool environment
+inputs:
+  toolPath:
+    description: 'Tool Path'
+    required: true
+  token:
+    description: 'GitHub token URL'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: .go-version
+        cache-dependency-path: ${{ inputs.toolPath }}/go.sum
+
+    - name: Rate limit Before
+      shell: bash
+      run: gh api rate_limit
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+
+    - name: Setup Git
+      uses: elastic/oblt-actions/git/setup@v1
+      with:
+        github-token: ${{ inputs.token }}
+
+    - name: Set env GITHUB_TOKEN
+      shell: bash
+      run: echo "GITHUB_TOKEN=$GITHUB_TOKEN" >> $GITHUB_ENV
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+
+    - name: Rate limit after
+      shell: bash
+      run: gh api rate_limit
+      env:
+        GH_TOKEN: ${{ inputs.token }}

@@ -1,0 +1,33 @@
+{
+  "activemq-logfile": {
+    "enabled": true,
+    "streams": {
+      "activemq.audit": {
+        "enabled": true,
+        "vars": {
+          "paths": [
+            "/usr/shared/data/logs/audit.log*"
+          ],
+          "tags": [
+            "forwarded",
+            "activemq-audit"
+          ],
+          "preserve_original_event": false
+        }
+      },
+      "activemq.log": {
+        "enabled": true,
+        "vars": {
+          "paths": [
+            "/usr/shared/data/logs/activemq.log*"
+          ],
+          "tags": [
+            "forwarded",
+            "activemq-log"
+          ],
+          "preserve_original_event": false
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+    - '{{ deployment_dir }}/bootstrap-serverless'
+cluster_name: keep_serverless-production-canary-gatekeeper
+golden_cluster: true
+k8s:
+    default_namespace: keep-serverless-production-canary-gatekeeper-default
+    enabled: true
+    kube_system_namespace: keep-serverless-production-canary-gatekeeper-kube-system
+    provider: autopilot
+    shared: autopilot-apm-managed-gatekeeper
+oblt_username: robots
+slack_channel: '#observablt-bots'
+stack:
+    mode: serverless
+    serverless:
+        cluster: prd-awsuse1-cp-internal-app-1
+        region: aws-us-east-1
+    target: production
+    template: observability

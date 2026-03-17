@@ -1,0 +1,9 @@
+---
+- block:
+    - name: Deploy
+      include_tasks: deploy.yml
+
+    - name: Describe deploy
+      include_tasks: info.yml
+  when:
+    - serverless_enabled

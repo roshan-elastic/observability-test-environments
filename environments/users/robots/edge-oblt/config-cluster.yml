@@ -1,0 +1,111 @@
+apps:
+  helm:
+    - chart: '{{ helm_charts_dir }}/elastic_agent'
+      name: elastic-agent-standalone
+      namespace: kube-system
+      values_file: '{{ helm_deployment_dir }}/elastic_agent/standalone/helm-values.yml.j2'
+      version: 0.1.0
+    - chart: open-telemetry/opentelemetry-demo
+      extra_args: --create-namespace
+      name: opentelemetry-demo
+      namespace: '{{ cluster_name }}-opentelemetry-demo'
+      values_file: '{{ helm_deployment_dir }}/opentelemetry-demo/helm-values.yml.j2'
+      version: 0.22.3
+    - chart: '{{ helm_charts_dir }}/apm-synthtrace'
+      name: apm-synthtrace-all
+      namespace: '{{ k8s_default_namespace }}'
+      values_file: '{{ helm_deployment_dir }}/apm-synthtrace/helm-values-all.yml.j2'
+      version: 0.1.0
+beats:
+  auditbeat:
+    enabled: true
+    image: docker.elastic.co/observability-ci/auditbeat:{{ stack_build }}
+  enabled: true
+  filebeat:
+    enabled: false
+  heartbeat:
+    enabled: false
+  metricbeat:
+    enabled: false
+  packetbeat:
+    enabled: true
+    image: docker.elastic.co/observability-ci/packetbeat:{{ stack_build }}
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - '{{ deployment_dir }}/bootstrap-ilm'
+  - '{{ deployment_dir }}/bootstrap-license'
+  - '{{ deployment_dir }}/bootstrap-fleet-v2'
+  - '{{ deployment_dir }}/bootstrap-slo'
+  - '{{ deployment_dir }}/bootstrap-defend'
+cluster_name: edge-oblt
+configure_external_snapshots_repo: true
+create_ilm: true
+create_users: true
+features:
+  - feature_siem_linux_elastic_agent_version: '{{ stack_version }}'
+    feature_siem_linux_name: siem-linux-{{ cluster_name }}
+    name: siem_linux
+  - feature_integrations_name: activemq
+    name: integrations
+  - feature_integrations_name: akamai
+    name: integrations
+  - feature_integrations_name: apache_spark
+    name: integrations
+  - feature_integrations_name: apache
+    name: integrations
+  - feature_integrations_name: microsoft_sqlserver
+    name: integrations
+  - feature_integrations_name: mysql
+    name: integrations
+force_update: "20240603"
+golden_cluster: true
+grab_cluster_info: true
+k8s:
+  machine_type: e2-highcpu-4
+  max_node_count: 20
+  provider: gcp
+  static_ip: true
+oblt_username: robots
+opbeans:
+  enabled: true
+slack_channel: '#observablt-bots'
+stack:
+  ess:
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-d84b6899
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-d84b6899
+      mem: 4
+      zones: 3
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.16.0-d84b6899
+      mem: 8
+      open_ai_secret: openai-azureopenai
+      zones: 3
+    profiling:
+      enabled: true
+      image: docker.elastic.co/observability-ci/profiling-agent:8.16.0-d84b6899
+    saml_id: exkq4a8l1toKMkHTo1t7
+    template: gcp-storage-optimized
+  mode: ess
+  observability: true
+  reset_password: true
+  target: production
+  template: observability
+  update_channel: unstable
+  update_schedule: tuesday
+  version: 8.16.0-SNAPSHOT
+stack_build: '{{ stack.ess.elasticsearch.image | split('':'') | last }}'
+synthetics_monitors_folders:
+  - folder: '{{ synthetics_deployments_dir }}/generic'
+    id: monitors
+    locale: en-US
+    params:
+      APM_URL: '{{ apm_url | default('''') }}'
+      ELASTICSEARCH_URL: '{{ elasticsearch_url | default('''') }}'
+      KIBANA_PASSWORD: '{{ elasticsearch_password | default('''') }}'
+      KIBANA_URL: '{{ kibana_url | default('''')}}'
+      KIBANA_USERNAME: '{{ elasticsearch_username | default('''') }}'
+    timezone: America/Los_Angeles
+update-dev: "20240528"
+updated_at: "2024-08-06T02:17:27Z"

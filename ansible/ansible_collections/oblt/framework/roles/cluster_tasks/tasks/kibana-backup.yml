@@ -1,0 +1,12 @@
+---
+- block:
+  - name: Backup Kibana index
+    vars:
+      bootstrap_cluster_dir: "{{ deployment_dir }}/kibana-index/backup"
+      bootstrap_cluster: true
+      elasticsearch_username: "admin"
+    include_tasks: bootstrap.yml
+  any_errors_fatal: false
+  ignore_errors: true
+  when:
+    - kibana_backup_enabled or kibana_purge_enabled

@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "apm-synthtrace.fullname" . }}-run-script
+data:
+  run.sh: |
+    #!/usr/bin/env bash
+    set -e
+
+    WORKSPACE=/workspace
+    KIBANA_DIR=${WORKSPACE}/kibana
+
+    cd ${KIBANA_DIR}
+    node scripts/synthtrace \
+      ${SCENARIO} \
+      --target=https://${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}@${ELASTICSEARCH_HOST} \
+      ${CMD_OPTS}

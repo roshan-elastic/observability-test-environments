@@ -1,0 +1,9 @@
+{
+  "username" : "metricbeat_user",
+  "password" : "{{ elasticsearch_password }}",
+  "roles" : [
+    "beats_system",
+    "metricbeat",
+    "kibana_write_role"
+  ]
+}

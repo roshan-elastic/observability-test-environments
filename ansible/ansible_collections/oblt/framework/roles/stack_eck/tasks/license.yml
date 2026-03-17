@@ -1,0 +1,59 @@
+---
+- name: Set License Enterpise
+  kubernetes.core.k8s:
+    state: present
+    namespace: "elastic-system"
+    definition: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        labels:
+          license.k8s.elastic.co/scope: operator
+        name: eck-license
+      type: Opaque
+      data:
+        license: |
+          {{ lookup('oblt.framework.gcp_secret_manager', key='elastic-stack-license-orchestration') | b64encode }}
+  when:
+    - eck_enabled | default(false, true)
+    - eck_license is defined
+    - eck_license == 'enterprise'
+
+- name: Set License Dev
+  kubernetes.core.k8s:
+    state: present
+    namespace: "elastic-system"
+    definition: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        labels:
+          license.k8s.elastic.co/scope: operator
+        name: eck-license
+      type: Opaque
+      data:
+        license: |
+          {{ lookup('oblt.framework.gcp_secret_manager', key='elastic-stack-license-orchestration-dev') | b64encode }}
+  when:
+    - eck_enabled | default(false, true)
+    - eck_license is defined
+    - eck_license == 'dev'
+
+- name: Set Trial License
+  kubernetes.core.k8s:
+    state: present
+    namespace: "elastic-system"
+    definition: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: eck-trial-license
+        namespace: elastic-system
+        labels:
+          license.k8s.elastic.co/type: enterprise_trial
+        annotations:
+          elastic.co/eula: accepted
+  when:
+    - eck_enabled | default(false, true)
+    - eck_license is defined
+    - eck_license == 'trial'

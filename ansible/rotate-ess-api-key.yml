@@ -1,0 +1,97 @@
+---
+- name: Rotate ApiKey for Elastic Cloud user only.
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    api_key_secret: "elastic-cloud-rotate-test"
+  environment:
+    PATH: "{{ playbook_dir }}/build/bin:{{ playbook_dir }}/build/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  tasks:
+    - name: Read old ApiKei Info
+      set_fact:
+        old_api_key: "{{ lookup('oblt.framework.gcp_secret_manager', key=api_key_secret)|safe()|from_yaml }}"
+
+    - name: Create new ApiKey
+      uri:
+        url: "{{ old_api_key.ess_endpoint }}/api/v1/users/auth/keys"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Authorization: "ApiKey {{ old_api_key.apiKey }}"
+        body_format: json
+        body:
+          description: "Oblt_Cluster_API_key_v2 {{ ansible_date_time.iso8601_basic_short }}"
+          expiration: "7200h"
+        status_code:
+          - 200
+          - 201
+      register: _result_api_key
+      until: _result_api_key.status == 200 or _result_api_key.status == 201
+      retries: 3
+      delay: 15
+
+    - name: Update ApiKey
+      block:
+        - name: Write new secret
+          oblt.framework.gcp_secret_manager:
+            name: "{{ api_key_secret }}"
+            state: present
+            value:
+              apiKey: "{{ _result_api_key.json.key }}"
+              apiKeyId: "{{ _result_api_key.json.id }}"
+              date: "{{ ansible_date_time.iso8601_basic_short }}"
+              # not updated
+              description: "{{ old_api_key.description }}"
+              endpoint: "{{ old_api_key.endpoint }}"
+              ess_endpoint: "{{ old_api_key.ess_endpoint }}"
+              organizationID: "{{ old_api_key.organizationID }}"
+              serverless_endpoint: "{{ old_api_key.serverless_endpoint }}"
+              region: "{{ old_api_key.region }}"
+              username: "{{ old_api_key.username }}"
+              password: "{{ old_api_key.password }}"
+              # TODO implement rotation for the console Api Key
+              # update the console Api Key require VPN connection.
+              # it is only used for access the MKI environments
+              console: "{{ old_api_key.console }}"
+              consoleApiKey: "{{ old_api_key.consoleApiKey }}"
+
+        - name: Write new secret (apikey)
+          oblt.framework.gcp_secret_manager:
+            name: "{{ api_key_secret }}-api-key"
+            state: present
+            value: "{{ _result_api_key.json.key }}"
+
+        - name: Write new secret (username)
+          oblt.framework.gcp_secret_manager:
+            name: "{{ api_key_secret }}-username"
+            state: present
+            value: "{{ old_api_key.username }}"
+
+        - name: Write new secret (password)
+          oblt.framework.gcp_secret_manager:
+            name: "{{ api_key_secret }}-password"
+            state: present
+            value: "{{ old_api_key.password }}"
+
+        - name: Delete Old ApiKey
+          uri:
+            url: "{{ old_api_key.ess_endpoint }}/api/v1/users/auth/keys"
+            method: DELETE
+            headers:
+              Content-Type: "application/json"
+              Authorization: "ApiKey {{ _result_api_key.json.key }}"
+            body_format: json
+            body:
+              keys:
+                - "{{ old_api_key.apiKeyId }}"
+            status_code:
+              - 200
+              - 201
+          register: _result_api_key
+          until: _result_api_key.status == 200 or _result_api_key.status == 201
+          retries: 3
+          delay: 15
+      when:
+        - _result_api_key is defined
+        - _result_api_key.status == 200 or _result_api_key.status == 201

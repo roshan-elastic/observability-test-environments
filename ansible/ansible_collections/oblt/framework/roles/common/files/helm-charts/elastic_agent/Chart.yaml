@@ -1,0 +1,19 @@
+apiVersion: v2
+name: elastic-agent
+description: Elastic Agent Helm chart for Kubernetes
+type: application
+version: 0.2.0
+appVersion: 8.7.0
+kubeVersion: ">=1.16.0-0"
+home: https://github.com/elastic/beats/tree/master/x-pack/elastic-agent
+keywords:
+  - elastic
+  - elastic-agent
+  - beats
+  - integrations
+  - logs
+  - metrics
+  - apm
+sources:
+  - https://github.com/elastic/beats/tree/master/x-pack/elastic-agent
+icon: https://helm.elastic.co/icons/elasticsearch.png

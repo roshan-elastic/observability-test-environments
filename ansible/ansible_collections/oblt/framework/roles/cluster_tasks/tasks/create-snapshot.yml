@@ -1,0 +1,37 @@
+---
+- name: Set snapshot fact vars
+  vars:
+    default_snapshot_name: "snapshot-{{ '%Y%m%d%H%M%s' | strftime }}"
+  set_fact:
+    snapshot_name: "{{ lookup('env','SNAP_NAME') | default(default_snapshot_name, true) }}"
+
+- name: Create snapshot tasks
+  vars:
+    url: "{{ elasticsearch_url }}"
+    repo_name: "{{ lookup('env','SNAP_REPO_NAME') | default('external_gcs_repository', true) }}"
+    # snapshot_name: "{{ lookup('file', '{{ build_dir }}/latest_snapshot') | mandatory }}"
+    indices_list: ".kibana*,metrics-*,logs-*,traces-*,heartbeat-*,filebeat-*,auditbeat-*,metricbeat-*,.monitoring-*"
+    es_username: "{{ elasticsearch_username }}"
+    es_password: "{{ elasticsearch_password }}"
+  uri:
+    url: "{{ url }}/_snapshot/{{ repo_name }}/{{ snapshot_name }}"
+    method: "PUT"
+    validate_certs: false
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: |
+      {
+        "indices": "{{ indices_list }}",
+        "ignore_unavailable": true,
+        "include_global_state": true
+      }
+  register: _snapshot_info
+
+- name: Snapshot info
+  debug:
+    msg: "{{ snapshot_name }}"

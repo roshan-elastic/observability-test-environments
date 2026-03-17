@@ -1,0 +1,133 @@
+---
+- name: Generate configuration files for a k8s cluster
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars_files:
+    - "{{ lookup('env','CLUSTER_CONFIG_FILE') | mandatory }}"
+  vars:
+    ess_tf_dir: "{{ build_dir }}/terraform/elastic_cloud"
+    ess_api_key: "{{ (lookup('oblt.framework.gcp_secret_manager', key=secret_ess_user)|safe()|from_yaml).apiKey | mandatory }}"
+    ess_org_id: "{{ (lookup('oblt.framework.gcp_secret_manager', key=secret_ess_user)|safe()|from_yaml).organizationID | mandatory }}"
+    terraform_version: 1.4.6
+    ess_terraform_version: 0.9.0
+    ess_role_path: "{{ playbook_dir }}/roles/stack_ess"
+    _ess_deployment_id: "{{ lookup('env','ESS_DEPLOYMENT_ID') | mandatory }}"
+
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ playbook_dir }}/build/bin:{{ playbook_dir }}/build/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Set Cluster facts
+      set_fact:
+        ess_deployment_id: "{{ _ess_deployment_id }}"
+        ess_custom_settings: false
+        ess_ccs_enabled: false
+
+    - name: Show info
+      debug:
+        msg: "cluster_name: {{ cluster_name }}"
+
+    - name: Create dir
+      file:
+        path: "{{ ess_tf_dir }}"
+        state: directory
+
+    - name: Import Terraform State
+      environment:
+        TF_LOG_PATH: "{{ ess_tf_dir }}/terraform.log"
+        TF_LOG: INFO
+        TF_IN_AUTOMATION: "1"
+        TF_VAR_ess_apikey: "{{ ess_api_key }}"
+      block:
+        - name: "Create clean {{ ess_tf_dir }}/main.tf file"
+          copy:
+            content: |
+              variable "ess_apikey" {
+                type = string
+              }
+              terraform {
+                required_version = ">= 0.12.29"
+                required_providers {
+                  ec = {
+                    source  = "elastic/ec"
+                    version = "{{ ess_terraform_version }}"
+                  }
+                }
+              }
+              provider "ec" {
+                endpoint = "{{ ess_endpoint }}"
+                insecure = true
+                apikey = var.ess_apikey
+                verbose = true
+              }
+              resource "ec_deployment" "main" {
+                # (resource arguments)
+              }
+            dest: "{{ ess_tf_dir }}/main.tf"
+
+        - name: Terraform init
+          changed_when: false
+          shell: terraform init
+          args:
+            chdir: "{{ ess_tf_dir }}"
+
+        - name: Terraform Import
+          changed_when: false
+          shell: terraform import "ec_deployment.main" {{ ess_deployment_id }}
+          args:
+            chdir: "{{ ess_tf_dir }}"
+          register: terraform_import
+
+        # - name: Generate terraform config files
+        #   template:
+        #     src: "{{ ess_role_path }}/templates/terraform/elastic_cloud/main.tf.j2"
+        #     dest: "{{ build_dir }}/terraform/elastic_cloud/main.tf"
+        #     mode: 0640
+
+        # - name: Create/update Elastic Cloud deployment
+        #   no_log: false
+        #   environment:
+        #     TF_LOG_PATH: "{{ ess_tf_dir }}/terraform.log"
+        #     TF_LOG: INFO
+        #     TF_IN_AUTOMATION: "1"
+        #     TF_VAR_ess_apikey: "{{ ess_api_key }}"
+        #   terraform:
+        #     project_path: "{{ ess_tf_dir }}/"
+        #     state: "present"
+        #     force_init: true
+
+
+    - name: Set cluster_created
+      set_fact:
+        cluster_created: true
+
+    - name: Include tasks from load_config_elasticsearch.yml
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: load_config_elasticsearch.yml
+      when:
+        - elasticsearch_enabled|bool
+
+    - name: Include tasks from load_config_kibana.yml
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: load_config_kibana.yml
+      when:
+        - kibana_enabled|bool
+
+    - name: Include tasks from load_config_apm.yml
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: load_config_apm.yml
+      when:
+        - apm_enabled|bool
+
+    - name: Include tasks from tasks-vault-secrets.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: vault-secrets.yml

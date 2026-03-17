@@ -1,0 +1,31 @@
+{
+	"attachments": [
+		{
+			"color": "#f2c744",
+      "blocks": [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "{{ .Header }}"
+          }
+        },
+        {
+          "type": "divider"
+        },
+        {{ range $i, $chunk := .Markdown }}
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "{{ $chunk }}"
+          }
+        },
+        {{ end }}
+        {
+          "type": "divider"
+        }
+      ]
+    }
+  ]
+}

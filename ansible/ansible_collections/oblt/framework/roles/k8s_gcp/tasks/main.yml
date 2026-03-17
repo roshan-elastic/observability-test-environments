@@ -1,0 +1,34 @@
+---
+- block:
+  - name: Create cluster
+    block:
+      - name: Import tasks
+        import_tasks: create_cluster.yml
+
+      - name: Import tasks
+        import_tasks: cluster_credentials.yml
+
+      - name: Import role k8s_common
+        include_role:
+          name: oblt.framework.k8s_common
+          tasks_from: set_default_context.yml
+
+      - name: Import tasks
+        import_tasks: create_cluster_admin.yml
+
+      - name: Import role k8s_common
+        include_role:
+          name: oblt.framework.k8s_common
+          tasks_from: create_default_namespace.yml
+
+      - name: Import tasks
+        import_tasks: volume_expansion.yml
+    rescue:
+      - name: Import tasks
+        import_tasks: destroy_cluster.yml
+      - name: Fail Deploying
+        fail:
+          msg: "Cluster deploy failed"
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'gcp'

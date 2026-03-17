@@ -1,0 +1,63 @@
+---
+- block:
+
+  - name: Include tasks from bootstrap-ess.yml
+    include_tasks: bootstrap-ess.yml
+    loop: "{{ query('fileglob', '{{ bootstrap_cluster_dir }}/ess/*.yml') | sort }}"
+    when:
+      - stack_mode == 'ess'
+
+  - name: Include tasks from bootstrap-es.yml
+    include_tasks: bootstrap-es.yml
+    loop: "{{ query('fileglob', '{{ bootstrap_cluster_dir }}/elasticsearch/*.yml') | sort }}"
+    when:
+      - elasticsearch_enabled|bool
+
+  - name: Include tasks from bootstrap-kibana.yml
+    include_tasks: bootstrap-kibana.yml
+    loop: "{{ query('fileglob', '{{ bootstrap_cluster_dir }}/kibana/*.yml') | sort }}"
+    when:
+      - kibana_enabled|bool
+
+  - name: Include tasks from bootstrap-apm.yml
+    include_tasks: bootstrap-apm.yml
+    loop: "{{ query('fileglob', '{{ bootstrap_cluster_dir }}/apm/*.yml') | sort }}"
+    when:
+      - apm_enabled|bool
+
+  - name: Include tasks from bootstrap-fleet.yml
+    include_tasks: bootstrap-fleet.yml
+    loop: "{{ query('fileglob', '{{ bootstrap_cluster_dir }}/fleet/*.yml') | sort }}"
+    when:
+      - fleet_enabled|bool
+
+  - name: Save Elasticserach bootstrap results
+    copy:
+      content: "{{ bootstrap_es_result }}"
+      dest: "{{ build_dir }}/bootstrap_es_result.json"
+    when:
+      - bootstrap_es_result is defined
+
+  - name: Save Kibana bootstrap results
+    copy:
+      content: "{{ bootstrap_kbn_result }}"
+      dest: "{{ build_dir }}/bootstrap_kbn_result.json"
+    when:
+      - bootstrap_kbn_result is defined
+
+  - name: Save APM bootstrap results
+    copy:
+      content: "{{ bootstrap_apm_result }}"
+      dest: "{{ build_dir }}/bootstrap_apm_result.json"
+    when:
+      - bootstrap_apm_result is defined
+
+  - name: Save Fleet bootstrap results
+    copy:
+      content: "{{ bootstrap_fleet_result }}"
+      dest: "{{ build_dir }}/bootstrap_fleet_result.json"
+    when:
+      - bootstrap_fleet_result is defined
+
+  when:
+    - bootstrap_cluster|bool

@@ -1,0 +1,4 @@
+[flake8]
+extend-ignore = E203
+exclude = .git,__pycache__,.venv,.ci,.github,.vscode,.hermit,.pytest_cache,build,dist,docs,venv
+max-complexity = 10

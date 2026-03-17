@@ -1,0 +1,11 @@
+---
+namespaces:
+  - "{{ k8s_default_namespace }}"
+  - "{{ kube_system_namespace }}"
+{% if kube_system_namespace != "kube-system" %}
+  - "kube-system"
+{% endif %}
+
+rbac:
+  create: true
+  useClusterRole: true

@@ -1,0 +1,34 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+    - role: oblt.framework.k8s_helm
+  tasks:
+
+    - name: Get Cluster credentials
+      import_role:
+        name: k8s_gcp
+        tasks_from: cluster_credentials.yml
+
+    - name: Set Default Context
+      import_role:
+        name: k8s_common
+        tasks_from: set_default_context.yml
+
+    - name: Basic k8s deployment
+      changed_when: false
+      shell: |
+        set -e
+        kubectl create deployment --image=busybox busybox
+        kubectl get all -A

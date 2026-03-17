@@ -1,0 +1,22 @@
+{{- if (not .Values.obltCluster) }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.username }}
+{{- end }}
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-limit-range
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+spec:
+  limits:
+  - default:
+      cpu: 0.05
+      memory: 100Mi
+    defaultRequest:
+      cpu: 0.05
+      memory: 50Mi
+    type: Container

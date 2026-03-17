@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+# Default values for elastic_agent_autopilot.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## @section Docker image settings
+image:
+  ## @param image.name Docker image of the Elastic Agent.
+  name: docker.elastic.co/beats/elastic-agent
+  ## @param image.tag Tag for the Docker image.
+  tag: 7.16.2
+  ## @param image.pullSecrets List of secret names used to pull Docker images.
+  pullSecrets: []
+  ## @param image.pullPolicy Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+## @param imagePullSecrets List of secret names used to pull Docker images.
+imagePullSecrets: []
+## @param nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `elastic-agent`.
+nameOverride: ""
+## @param fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `elastic-agent`.
+fullnameOverride: ""
+## @section serviceAccount settings
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a ServiceAccount should be created.
+  create: true
+  ## @param serviceAccount.name The name of the ServiceAccount to use.
+  name: ""
+
+## @param mode Elastic Agent deployment type [managed, standalone]
+mode: "managed"
+
+## @param metricsService Name of the kube-state-metrics metrics service for standalone mode.
+metricsService: kube-state-metrics:8080
+
+## @section fleet Elastic Agent settings.
+fleet:
+  ## @param fleet.secretName [string] Kubernetes secret name to use for the Elastic Agent configuration. By default `ELACTIC_AGENT_NAME-fleet-creds`.
+  secretName: ""
+  ## @param fleet.enrollToken [string] token to use for the Elastic Agent enrollment. This is not needed in case fleet server is configured and `fleet.enroll` is set. Then the token is fetched from Kibana.
+  enrollToken: ""
+  ## @param fleet.tokenPolicyName [string] token policy name to use for fetching token from Kibana. This requires Kibana configs to be set. This setting is ignored if you provide a `enrollToken`.
+  tokenPolicyName: "Default policy"
+  ## @param fleet.force To ensure that enrollment occurs on every start of the container set `fleet.force` to true.
+  force: true
+  ## @param fleet.enroll set to `true` for enrollment into fleet-server. If not set, Elastic Agent is run in standalone mode.
+  enroll: true
+  ## @param fleet.insecure communicate with Fleet with either insecure HTTP or unverified HTTPS.
+  insecure: false
+  ## @param fleet.serverUrl [string] URL of the Fleet Server to enroll into (e.g. https://fleet-server:8220).
+  serverUrl: "http://fleet-server:8220"
+
+## @section elasticsearch Elasticsearch settings.
+elasticsearch:
+  ## @param elasticsearch.host [string] URL of the Elasticsearch (e.g. https://elasticsearch:9200).
+  host: ""
+  ## @param elasticsearch.username [string] Elasticsearch username.
+  username: ""
+  ## @param elasticsearch.password [string] Elasticsearch password.
+  password: ""
+  ## @param elasticsearch.secretName [string] Kubernetes secret name to use for the Elasticsearch configuration. By default `ELACTIC_AGENT_NAME-es-creds`.
+  secretName: ""
+  ## @param elasticsearch.apiToken [string] service token to use for communication with Elasticsearch.
+  apiToken: ""
+
+## @section kibana Kibana settings.
+kibana:
+  ## @param kibana.host [string] URL of the Kibana (e.g. https://kibana:5601).
+  host: "http://kibana:5601"
+  ## @param kibana.username [string] Elasticsearch username.
+  username: "elastic"
+  ## @param kibana.password [string] Elasticsearch password.
+  password: "changeme"
+  ## @param kibana.secretName [string] service token to use for communication with Kibana.
+  secretName: ""

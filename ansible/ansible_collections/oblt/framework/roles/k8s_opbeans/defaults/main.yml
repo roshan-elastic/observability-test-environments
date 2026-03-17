@@ -1,0 +1,107 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param opbeans_dir [string] The directory where the opbeans Helm Charts are stored
+opbeans_dir: "{{ helm_deployment_dir }}/opbeans"
+## @param apm_attacher_dir [string] The directory where the apm-attacher Helm Chart is stored
+apm_attacher_dir: "{{ opbeans_dir }}/apm_attacher"
+## @param opbeans_transaction_rate [string] The rate of transactions for the opbeans
+opbeans_transaction_rate: 0.9
+## @param opbeans_go_enabled [string] Enable the opbeans-go chart
+opbeans_go_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_dotnet_enabled [string] Enable the opbeans-dotnet chart
+opbeans_dotnet_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_frontend_enabled [string] Enable the opbeans-frontend chart
+opbeans_frontend_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_java_enabled [string] Enable the opbeans-java chart
+opbeans_java_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_node_enabled [string] Enable the opbeans-node chart
+opbeans_node_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_php_enabled [string] Enable the opbeans-php chart
+opbeans_php_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_python_enabled [string] Enable the opbeans-python chart
+opbeans_python_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_ruby_enabled [string] Enable the opbeans-ruby chart
+opbeans_ruby_enabled: "{{ opbeans_enabled }}"
+## @param opbeans_apm_enabled Enable sent traces to the APM service
+opbeans_apm_enabled: true
+## @param opbeans_helm_charts [object] List of opbeans Helm charts to install
+## @descriptionStart
+## It cannot be deploy on the default namespace https://github.com/elastic/apm-mutating-webhook/issues/44
+## NOTE: the orther matter to make the updates with updatecli do no change the order of the charts.
+## see [Helm Apps Role](../helm_apps/README.md)
+## @descriptionEnd
+## @skip opbeans_helm_charts
+opbeans_helm_charts:
+  - name: "apm-attacher"
+    chart: "elastic/apm-attacher"
+    version: 1.1.1
+    values_file: "{{ apm_attacher_dir }}/helm-values.yml.j2"
+    extra_args: --create-namespace
+    namespace: "elastic-apm"
+  - name: "opbeans-go"
+    chart: "{{ helm_charts_dir }}/opbeans_go"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/go/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_go_enabled }}"
+  - name: "opbeans-go-nsn"
+    chart: "{{ helm_charts_dir }}/opbeans_go"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/go_nsn/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_go_enabled }}"
+  - name: "opbeans-dotnet"
+    chart: "{{ helm_charts_dir }}/opbeans_dotnet"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/dotnet/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_dotnet_enabled }}"
+  - name: "opbeans-dotnet-frontend"
+    chart: "{{ helm_charts_dir }}/opbeans_frontend"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/dotnet_frontend/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_dotnet_enabled }}"
+  - name: "opbeans-frontend"
+    chart: "{{ helm_charts_dir }}/opbeans_frontend"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/frontend/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_frontend_enabled }}"
+  - name: "opbeans-java"
+    chart: "{{ helm_charts_dir }}/opbeans_java"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/java/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_java_enabled }}"
+  - name: "opbeans-java-otel"
+    chart: "{{ helm_charts_dir }}/opbeans_java"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/java_otel/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_java_enabled }}"
+  - name: "opbeans-node"
+    chart: "{{ helm_charts_dir }}/opbeans_node"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/node/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_node_enabled }}"
+  - name: "opbeans-php"
+    chart: "{{ helm_charts_dir }}/opbeans_php"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/php/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_php_enabled }}"
+  - name: "opbeans-python"
+    chart: "{{ helm_charts_dir }}/opbeans_python"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/python/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_python_enabled }}"
+  - name: "opbeans-ruby"
+    chart: "{{ helm_charts_dir }}/opbeans_ruby"
+    version: "0.1.0"
+    values_file: "{{ opbeans_dir }}/ruby/helm-values.yml.j2"
+    build_deps: true
+    enabled: "{{ opbeans_ruby_enabled }}"

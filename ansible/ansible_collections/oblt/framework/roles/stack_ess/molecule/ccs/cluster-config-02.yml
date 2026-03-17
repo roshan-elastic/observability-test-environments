@@ -1,0 +1,17 @@
+cluster_name: "oblt-test-{{ cluster_seed }}"
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build/cluster-02"
+save_secrets: true
+deploy_timestamp: foo #always the same to check the idenpotence.
+ephemeral_cluster: true
+stack:
+  mode: "ess"
+  template: "elasticsearch"
+  target: "staging"
+  ess:
+    provider: gcp
+    region: gcp-us-central1
+    elasticsearch:
+      zones: 1
+      ccs_remote_cluster: "{{ cluster_01_name }}"
+
+ess_not_allow_settings: false

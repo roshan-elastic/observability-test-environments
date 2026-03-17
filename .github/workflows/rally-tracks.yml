@@ -1,0 +1,170 @@
+---
+## Workflow create Rally tracks from a oblt cluster.
+## https://github.com/elastic/observability-robots/issues/1738
+name: rally-tracks
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      oblt_cluster:
+        description: Name of the oblt cluster.
+        required: true
+        default: "edge-lite-oblt"
+        type: choice
+        options:
+          - "edge-benchmarks"
+          - "release-benchmarks"
+          - "serverless-benchmarks"
+          - "edge-lite-oblt"
+          - "edge-oblt"
+          - "dev-oblt"
+          - "release-oblt"
+          - "monitoring-oblt"
+      track_type:
+        description: Type of the Rally track to create.
+        required: true
+        default: "metrics"
+        type: choice
+        options:
+          - "metrics"
+          - "logs"
+          - "traces"
+      track_indices:
+        description: Indices to use for the Rally track.(ignore track_type)
+        required: false
+        default: ""
+        type: string
+      delay_upload:
+        description: Delay the upload of the track to GCS.
+        required: false
+        default: false
+        type: boolean
+      fix_track:
+        description: Fix the track removing zero size files.
+        required: false
+        default: false
+        type: boolean
+      esrally_from_sources:
+        description: Use esrally from sources.
+        required: false
+        default: false
+        type: boolean
+jobs:
+  rally-track:
+    name: create Rally track
+    runs-on:
+      group: observability-test
+    steps:
+      - name: Parameters
+        run: |
+          cat <<EOF >> "${GITHUB_STEP_SUMMARY}"
+          Parameters:
+            oblt_cluster=${OBLT_CLUSTER}
+            track_type=${TRACK_TYPE}
+            track_indices=${TRACK_INDICES}
+          EOF
+        env:
+          OBLT_CLUSTER: ${{ inputs.oblt_cluster }}
+          TRACK_TYPE: ${{ inputs.track_type }}
+          TRACK_INDICES: ${{ inputs.track_indices }}
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/free-space
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: 'pip'
+          cache-dependency-path: ansible/requirements.txt
+      - run: pip install --no-compile -r ansible/requirements.txt
+      - uses: ./.github/actions/gcsfuse
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL}}
+
+      - name: Choose store
+        run: |
+          if [ "${DELAY_UPLOAD}" = "false" ]; then
+            echo "GCS_FOLDER=${GITHUB_WORKSPACE}/gcs" >> "${GITHUB_ENV}"
+          else
+            echo "GCS_FOLDER=${GITHUB_WORKSPACE}/gcs_delayed" >> "${GITHUB_ENV}"
+            echo "GCS_FOLDER_REAL=${GITHUB_WORKSPACE}/gcs" >> "${GITHUB_ENV}"
+          fi
+        env:
+          DELAY_UPLOAD: ${{ inputs.delay_upload }}
+
+      - name: Read cluster config
+        id: cluster-config
+        uses: ./.github/actions/cluster-read-config
+        with:
+          clusterName: ${{ env.CLUSTER_NAME }}
+
+      - name: Summary
+        run: |
+          cat << EOF >> "${GITHUB_STEP_SUMMARY}"
+          Cluster config file: ${CLUSTER_CONFIG_FILE}
+          GCS folder: ${GCS_FOLDER}
+          EOF
+
+      - name: Create rally track
+        if: ${{ inputs.track_indices == '' }}
+        uses: ./.github/actions/cluster-target
+        env:
+          TRACK_TYPE: ${{ inputs.track_type }}
+          TRACK_INDICES: ${{ inputs.track_indices }}
+          ESRALLY_FROM_SOURCES: ${{ inputs.esrally_from_sources }}
+        with:
+          target: "tasks-rally-track-${{ inputs.track_type }}"
+          clusterConfigFile: "${{ steps.cluster-config.outputs.clusterConfigFile }}"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Create rally track
+        if: ${{ inputs.track_indices != '' }}
+        uses: ./.github/actions/cluster-target
+        env:
+          ANSIBLE_OPTS: '--extra-vars="rally_track=obs-"${{ inputs.track_type }}" rally_track_indices="${{ inputs.track_indices }}"'
+          TRACK_TYPE: ${{ inputs.track_type }}
+          TRACK_INDICES: ${{ inputs.track_indices }}
+          ESRALLY_FROM_SOURCES: ${{ inputs.esrally_from_sources }}
+        with:
+          target: "tasks-rally-track"
+          clusterConfigFile: "${{ steps.cluster-config.outputs.clusterConfigFile }}"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Summary results
+        run: |
+          REMORE_FOLDER=$(cat ./ansible/build//remote_folder.txt)
+          cat << EOF >> "${GITHUB_STEP_SUMMARY}"
+          Rally track created and uploaded to Google Cloud Storage:
+
+          * [Rally track in Google Cloud](https://console.cloud.google.com/storage/browser/oblt-clusters/${REMORE_FOLDER})
+
+          To download the track, run the following command:
+
+          gsutil cp -r "gs://oblt-clusters/${REMORE_FOLDER}" "."
+
+          for more details check [How to create a Rally track](https://elastic.github.io/observability-test-environments/admin-guide/rally-tracks/)
+          and the [Rally documentation](https://esrally.readthedocs.io/en/stable/index.html).
+          EOF
+
+      - name: Fix track
+        if: ${{ inputs.fix_track }}
+        run: |
+          .ci/scripts/rally-track-fix.py --track-path "${GCS_FOLDER}"
+
+      - name: Delayed upload to GCS
+        if: ${{ inputs.delay_upload }}
+        run: |
+          cp -R "${GCS_FOLDER}"/* "${GCS_FOLDER_REAL}/"

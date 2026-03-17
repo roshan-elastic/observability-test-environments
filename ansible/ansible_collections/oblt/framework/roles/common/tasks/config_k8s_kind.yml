@@ -1,0 +1,21 @@
+---
+- name: Load config - Kind
+  set_fact:
+    certmanager_enabled: "{{ k8s.certmanager | default(false) }}"
+    ingress_enabled: "{{ k8s.ingress| default(false) }}"
+    k8s_default_namespace: "{{ k8s.default_namespace | default('default', true) }}"
+    k8s_region: "none"
+    kube_system_namespace: "{{ k8s.kube_system_namespace | default('kube-system', true) }}"
+    load_balancer_ip: "127.0.0.1"
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'
+
+- name: Set Kind Elasticsearch URL
+  set_fact:
+    apm_url: "{{ 'https://apm.127.0.0.1.' + k8s_domain }}"
+    elasticsearch_url: "{{ 'https://elasticsearch.127.0.0.1.' + k8s_domain }}"
+    fleet_url: "{{ 'https://fleet.127.0.0.1.' + k8s_domain }}"
+    kibana_url: "{{ 'https://kibana.127.0.0.1.' + k8s_domain }}"
+  when:
+    - stack_mode == 'eck'

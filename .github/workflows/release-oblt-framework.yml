@@ -1,0 +1,63 @@
+---
+## Workflow to Release the oblt framework Docker image.
+name: Release-oblt-framework
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - "main"
+    paths:
+      - "Dockerfile"
+      - "ansible/**"
+  push:
+    branches:
+      - "main"
+    paths:
+      - "Dockerfile"
+      - "ansible/**"
+    tags:
+      - "*.*.*"
+permissions:
+  contents: write
+#  packages: write
+
+concurrency:
+  group: "release-oblt-framework-${{ github.ref }}"
+  cancel-in-progress: true
+jobs:
+  docker:
+    if: ${{ ! startsWith(github.head_ref, 'dependabot/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Build and Push Docker images
+        uses: ./.github/actions/docker-images
+        id: build
+        with:
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          images: |
+            docker.elastic.co/observability-ci/oblt-framework
+# TODO enable when we have a new repository
+#            ghcr.io/${{ github.repository }}
+          context: .
+          platforms: linux/amd64,linux/arm64
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          githubUsername: ${{ github.actor }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=pep440,pattern={{version}}
+            type=pep440,pattern={{major}}.{{minor}}
+            type=pep440,pattern={{major}}
+            type=sha
+      - name: Write Summary
+        run: |
+          DOCKER_IMAGE="$(printenv DOCKER_METADATA_OUTPUT_JSON|jq -r '.tags[0]')"
+          echo "docker pull ${DOCKER_IMAGE}" >> "${GITHUB_STEP_SUMMARY}"

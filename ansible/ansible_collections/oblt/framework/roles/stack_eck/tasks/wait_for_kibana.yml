@@ -1,0 +1,11 @@
+---
+- name: Wait for kibana
+  vars:
+    k8s_resource: "pod --selector common.k8s.elastic.co/type=kibana"
+    timeout: 600s
+  include_role:
+    name: oblt.framework.k8s_common
+    tasks_from: wait_for_resource.yml
+  tags:
+    - kibana
+    - deploy

@@ -1,0 +1,51 @@
+---
+apiVersion: ansible.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: ansible-provider-config
+spec:
+  vars:
+    - key: ANSIBLE_OPTS
+      value: -vvv
+  #   # Specify the path where the Ansible roles are located
+  #   - key: ANSIBLE_ROLE_PATH
+  #     value: /path/to/roles
+  #   # Specify the path where the Ansible collections are located
+  #   - key: ANSIBLE_COLLECTION_PATH
+  #     value: /path/to/collections
+  requirements: |
+    ---
+    collections:
+---
+apiVersion: ansible.crossplane.io/v1alpha1
+kind: AnsibleRun
+metadata:
+  name: inline-example
+spec:
+  forProvider:
+    vars:
+      foo: bar
+    # For simple cases, you can use an inline source to specify the content of
+    # playbook.yml as opaque and inline yaml.
+    playbookInline: |
+      ---
+      - hosts: localhost
+        tasks:
+          - name: Test command
+            changed_when: false
+            command: echo "Hello World"
+
+          - name: simple-playbook
+            debug:
+              msg: "You are running 'simple-playbook' -> {{ `{{ foo }}` }}"
+    # varFiles:
+    # - source: ConfigMapKey
+    #   configMapKeyRef:
+    #     namespace: default
+    #     name: plain_vars
+    #     key: plain_vars.yml
+  providerConfigRef:
+    name: ansible-provider-config
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: ansible-inline-example

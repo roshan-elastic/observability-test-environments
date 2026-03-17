@@ -1,0 +1,10 @@
+---
+- name: Destroy k8s cluster
+  ignore_errors: true
+  changed_when: false
+  command: kind delete cluster --name "{{ cluster_name }}"
+  register: _result
+  when:
+    - destroy_cluster
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'

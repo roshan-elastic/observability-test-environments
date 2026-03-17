@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: serverless-k8s
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+
+k8s:
+  provider: gcp
+  machine_type: e2-highcpu-4
+  max_node_count: 40
+  certificate_issuer: letsencrypt-prod
+  static_ip: true

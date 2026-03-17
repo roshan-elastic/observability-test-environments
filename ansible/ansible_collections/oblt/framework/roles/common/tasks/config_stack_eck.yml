@@ -1,0 +1,68 @@
+---
+- name: Load config - ECK
+  vars:
+    agent_image_default: "{{ docker_image_path }}/elastic-agent:{{ stack_version }}"
+    elasticsearch_image_default: "{{ docker_image_path }}/elasticsearch:{{ stack_version }}"
+    kibana_image_default: "{{ docker_image_path }}/kibana:{{ stack_version }}"
+  set_fact:
+    agent_extra_config: "{{ stack.eck.agent.extra_config | default(None) }}"
+    eck_agent_image: "{{ stack.eck.agent.image | default(agent_image_default) }}"
+    eck_agent_mem: "{{ stack.eck.agent.mem | default(2) }}"
+    eck_ccs_remote_cluster: "{{ stack.eck.elasticsearch.ccs_remote_cluster | default(None, true) }}"
+    eck_enabled: true
+    eck_es_image: "{{ stack.eck.elasticsearch.image | default(elasticsearch_image_default) }}"
+    eck_es_mem: "{{ stack.eck.elasticsearch.mem | default(4) }}"
+    eck_es_node_count: "{{ stack.eck.elasticsearch.node_count | default(3) }}"
+    eck_es_node_storage: "{{ stack.eck.elasticsearch.node_storage | default(256) }}"
+    eck_kb_image: "{{ stack.eck.kibana.image | default(kibana_image_default) }}"
+    eck_kb_mem: "{{ stack.eck.kibana.mem | default(2) }}"
+    eck_license: "{{ stack.eck.license | default('trial') }}"
+    elasticsearch_enabled: "{{ stack.eck.elasticsearch.enabled | default(true) | bool }}"
+    elasticsearch_type: "{{ stack_mode }}"
+    es_extra_config: "{{ stack.eck.elasticsearch.extra_config | default(None) }}"
+    kibana_enabled: "{{ stack.eck.kibana.enabled | default(true) | bool }}"
+    kibana_extra_config: "{{ stack.eck.kibana.extra_config | default(None) }}"
+    kibana_further_details: "{{ stack.eck.kibana.further_details | default(false) | bool }}"
+    kibana_type: "{{ stack_mode }}"
+    apm_enabled: "{{ stack.eck.integrations.enabled | default(true) | bool }}"
+    fleet_enabled: "{{ stack.eck.integrations.enabled | default(true) | bool }}"
+  when:
+    - stack is defined
+    - stack_mode == 'eck'
+
+- name: Load config - ECK template Elasticsearch
+  set_fact:
+    elasticsearch_enabled: true
+    elasticsearch_type: "{{ stack_mode }}"
+    kibana_enabled: false
+  when:
+    - stack is defined
+    - stack_mode == 'eck'
+    - stack_template == 'elasticsearch'
+
+- name: Load config - ECK template Observability/Security
+  set_fact:
+    elasticsearch_enabled: true
+    kibana_enabled: "{{ stack.eck.kibana.enabled | default(true) | bool }}"
+    apm_enabled: "{{ stack.eck.integrations.enabled | default(true) | bool }}"
+    fleet_enabled: "{{ stack.eck.integrations.enabled | default(true) | bool }}"
+    elasticsearch_type: "{{ stack_mode }}"
+    kibana_type: "{{ stack_mode }}"
+    apm_type: "{{ stack_mode }}"
+    fleet_type: "{{ stack_mode }}"
+  when:
+    - stack is defined
+    - stack_mode == 'eck'
+    - stack_template == 'observability' or stack_template == 'security'
+
+- name: Load config - ECK on Kind defaults
+  set_fact:
+    eck_es_node_count: "{{ stack.eck.elasticsearch.node_count | default(1) }}"
+    eck_es_mem: "{{ stack.eck.elasticsearch.mem | default(4) }}"
+    eck_kb_mem: "{{ stack.eck.kibana.mem | default(2) }}"
+    eck_agent_mem: "{{ stack.eck.agent.mem | default(2) }}"
+    eck_es_node_storage: "{{ stack.eck.elasticsearch.node_storage | default(1) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'eck'
+    - k8s_provider == 'kind'

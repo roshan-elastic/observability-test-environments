@@ -1,0 +1,55 @@
+{{- if ((.Values.fleetServer).enabled) }}
+{{- $fleet_server_port := (default 8220 .Values.fleetServer.port) }}
+{{- $fleet_server_service_name := (include "elastic-agent.fullname" .) }}
+{{- if (((.Values.fleetServer).service).type) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fleet_server_service_name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "elastic-agent.labels" . | nindent 4 }}
+    service: fleet-server
+spec:
+  type: {{ default "LoadBalancer" .Values.fleetServer.service.type }}
+  selector:
+    {{- include "elastic-agent.labels" . | nindent 4 }}
+  ports:
+  - port: {{ $fleet_server_port }}
+    name: http
+{{- end }}
+---
+{{- if (((.Values.fleetServer).ingress).hosts) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  {{- with (((.Values.fleetServer).ingress).annotations) }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "elastic-agent.labels" . | nindent 4 }}
+  name: {{ $fleet_server_service_name }}
+spec:
+  rules:
+  {{- range $host := (((.Values.fleetServer).ingress).hosts) }}
+    - host: {{ $host.name }}
+      http:
+        paths:
+        - backend:
+            service:
+              name: {{ $fleet_server_service_name }}
+              port:
+                number: {{ $fleet_server_port }}
+          path: /
+          pathType: Prefix
+  {{- end }}
+  tls:
+  {{- range $host := (((.Values.fleetServer).ingress).hosts) }}
+    - hosts:
+      - {{ $host.name }}
+      secretName: {{ $host.secret }}
+  {{- end }}
+{{- end }}
+{{- end }}

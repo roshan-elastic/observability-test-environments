@@ -1,0 +1,15 @@
+- name: KIBANA_HOST
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.kibanaCreds" . }}
+      key: host
+- name: KIBANA_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.kibanaCreds" . }}
+      key: username
+- name: KIBANA_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.kibanaCreds" . }}
+      key: password

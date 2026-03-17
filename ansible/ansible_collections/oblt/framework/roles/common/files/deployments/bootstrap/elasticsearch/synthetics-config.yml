@@ -1,0 +1,22 @@
+---
+description: Add user agent information for APM events
+api: "/_ingest/pipeline/apm_user_agent"
+method: PUT
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+body: |
+  {
+    "description": "Add user agent information for APM events",
+    "processors": [{
+      "user_agent": {
+        "field": "user_agent.original",
+        "target_field": "user_agent",
+        "ignore_missing": true,
+        "extract_device_type": true,
+        "ignore_failure": true
+      }
+    }]
+  }
+return_code:
+  - 200

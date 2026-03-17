@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+function oblt_cli::create-custom-cluster(){
+    local cluster_name_prefix=${1:?"cluster name prefix is required"}
+    local template=${2:?"template name prefix is required"}
+    local parameters=${3}
+    local TEMP
+    TEMP=$(mktemp -d)
+    local create_output_file="${TEMP}/cluster.json"
+    echo "[INFO] Creating serverless cluster"
+    oblt-cli cluster create custom \
+        --cluster-name-prefix "${cluster_name_prefix}" \
+        --template "${template}" \
+        --parameters "$parameters" \
+        --disable-banner \
+        --output-file "${create_output_file}"
+
+    echo "[INFO] Created file: ${create_output_file}"
+
+    local cluster_name=$(jq -r '.ClusterName' < "${create_output_file}")
+
+    echo "[INFO] Cluster name: ${cluster_name}"
+    CLUSTER_NAME="${cluster_name}"
+    export CLUSTER_NAME
+}
+
+function oblt_cli::destroy(){
+    local cluster_name=${1:?"cluster name is required"}
+    oblt-cli cluster destroy \
+        --force \
+        --disable-banner \
+        --cluster-name="${cluster_name}"
+}
+
+function oblt_cli::credentials(){
+    local cluster_name=${1:?"cluster name is required"}
+    local TEMP
+    TEMP=$(mktemp -d)
+    oblt-cli cluster secrets \
+        env --cluster-name "${cluster_name}" \
+        --output-file "${TEMP}/.env"
+    # shellcheck source=/dev/null
+    source "${TEMP}/.env"
+    if [ -n "$GITHUB_WORKFLOW" ]; then
+        echo "::add-mask::${ELASTICSEARCH_HOST}"
+        echo "::add-mask::${ELASTICSEARCH_PASSWORD}"
+        echo "::add-mask::${KIBANA_PASSWORD}"
+        echo "::add-mask::${KIBANA_HOST}"
+        echo "::add-mask::${ELASTIC_APM_SECRET_TOKEN}"
+    fi
+}

@@ -1,0 +1,10 @@
+FROM python:alpine3.20
+
+RUN mkdir /docs
+COPY mkdocs.yml /mkdocs.yml
+COPY docs /docs
+COPY .ci/requirements-mkdocs.txt /requirements-mkdocs.txt
+RUN pip install -r requirements-mkdocs.txt
+
+ENTRYPOINT [ "mkdocs" ]
+CMD [ "serve", "--dev-addr", "0.0.0.0:8000" ]

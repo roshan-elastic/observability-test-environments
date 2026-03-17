@@ -1,0 +1,24 @@
+---
+name: Close PR and delete branch
+description: Close PR and delete branch
+inputs:
+  number:
+    description: 'PR number'
+    required: true
+  token:
+    description: 'GitHub token'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Git
+      uses: elastic/oblt-actions/git/setup@v1
+      with:
+        github-token: ${{ inputs.token }}
+    - name: Close and delete branch
+      shell: bash
+      run: |
+        gh pr close ${{ inputs.number }} --delete-branch
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}

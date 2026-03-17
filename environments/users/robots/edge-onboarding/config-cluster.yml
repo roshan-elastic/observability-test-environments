@@ -1,0 +1,123 @@
+opbeans_dir: "{{ helm_deployment_dir }}/opbeans"
+apm_attacher_dir: "{{ opbeans_dir }}/apm_attacher"
+opbeans_transaction_rate: 0.9
+apps:
+  helm:
+    - chart: '{{ helm_charts_dir }}/elastic_agent'
+      name: elastic-agent-standalone
+      namespace: kube-system
+      values_file: '{{ helm_deployment_dir }}/elastic_agent/standalone/helm-values.yml.j2'
+      version: 0.1.0
+    - chart: open-telemetry/opentelemetry-demo
+      extra_args: --create-namespace
+      name: opentelemetry-demo
+      namespace: '{{ cluster_name }}-opentelemetry-demo'
+      values_file: '{{ helm_deployment_dir }}/opentelemetry-demo/helm-values.yml.j2'
+      version: 0.22.3
+    - name: "apm-attacher"
+      chart: "elastic/apm-attacher"
+      version: "1.0.0"
+      values_file: "{{ apm_attacher_dir }}/helm-values.yml.j2"
+      extra_args: --create-namespace
+      namespace: "elastic-apm"
+    - name: "opbeans-go"
+      chart: "{{ helm_charts_dir }}/opbeans_go"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/go/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-dotnet"
+      chart: "{{ helm_charts_dir }}/opbeans_dotnet"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/dotnet/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-java"
+      chart: "{{ helm_charts_dir }}/opbeans_java"
+      version: "0.1.0"
+      values_file: "{{ helm_deployment_dir }}/opbeans/java/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-go-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_go"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/go/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-dotnet-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_dotnet"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/dotnet/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-java-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_java"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/java/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-node"
+      chart: "{{ helm_charts_dir }}/opbeans_node"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/node/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-node-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_node"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/node/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - '{{ deployment_dir }}/bootstrap-ilm'
+  - '{{ deployment_dir }}/bootstrap-license'
+  - '{{ deployment_dir }}/bootstrap-fleet-v2'
+  - '{{ deployment_dir }}/bootstrap-slo'
+  - '{{ deployment_dir }}/bootstrap-defend'
+cluster_name: edge-onboarding
+configure_external_snapshots_repo: true
+create_users: true
+features:
+  - feature_integrations_name: apache
+    name: integrations
+  - feature_integrations_name: apache_tomcat
+    name: integrations
+  - feature_integrations_name: microsoft_sqlserver
+    name: integrations
+  - feature_integrations_name: mysql
+    name: integrations
+  - feature_integrations_name: nginx
+    name: integrations
+golden_cluster: true
+grab_cluster_info: true
+k8s:
+  machine_type: e2-highcpu-4
+  max_node_count: 20
+  provider: gcp
+  static_ip: true
+oblt_username: robots
+slack_channel: '#observablt-bots'
+stack:
+  ess:
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-d84b6899
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-d84b6899
+      mem: 4
+      zones: 3
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.16.0-d84b6899
+      mem: 8
+      open_ai_secret: openai-azureopenai
+      zones: 3
+    profiling:
+      enabled: true
+      image: docker.elastic.co/observability-ci/profiling-agent:8.16.0-d84b6899
+    saml_id: exk10xpu2o0HiE4gz1t8
+    template: gcp-storage-optimized
+  mode: ess
+  observability: true
+  reset_password: true
+  target: production
+  template: observability
+  update_channel: unstable
+  update_schedule: tuesday
+  version: 8.16.0-SNAPSHOT
+updated_at: "2024-08-06T02:17:24Z"

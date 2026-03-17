@@ -1,0 +1,23 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+    features:
+      - name: dummy
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  pre_tasks:
+    - name: Create build directory
+      file:
+        path: "{{ build_dir }}"
+        state: directory
+        mode: '0750'
+  tasks:
+    - name: Destroy features
+      include_role:
+        name: oblt.framework.features
+        tasks_from: undeploy.yml

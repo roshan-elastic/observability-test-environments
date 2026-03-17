@@ -1,0 +1,7 @@
+### Email of the user (`@elastic.co` or `@elasticsearch.com`)
+
+{{ .Email }}
+
+### Further details
+
+Issue created by {{ .User }}

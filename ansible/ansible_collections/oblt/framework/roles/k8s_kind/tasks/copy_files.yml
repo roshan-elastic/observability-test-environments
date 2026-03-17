@@ -1,0 +1,21 @@
+---
+- name: Copy kind files to the build dir
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - generate_config
+    - kind
+    - k8s
+    - molecule-idempotence-notest
+
+- name: Generate Kind config files
+  template:
+    src: "{{ file_item }}"
+    dest: "{{ build_dir }}/kind/{{ file_item | basename | splitext | first }}"
+    mode: 0600
+  with_fileglob:
+    - "{{ role_path }}/templates/*.yml.j2"
+    - "{{ role_path }}/templates/*.yaml.j2"
+  loop_control:
+    loop_var: file_item

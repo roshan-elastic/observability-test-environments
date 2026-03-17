@@ -1,0 +1,168 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "image": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Docker image of the Elastic Agent.",
+                    "default": "docker.elastic.co/beats/elastic-agent"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Tag for the Docker image.",
+                    "default": "7.16.2"
+                },
+                "pullSecrets": {
+                    "type": "array",
+                    "description": "List of secret names used to pull Docker images.",
+                    "default": [],
+                    "items": {}
+                },
+                "pullPolicy": {
+                    "type": "string",
+                    "description": "Pull Docker images policy [IfNotPresent, Always, Never].",
+                    "default": "IfNotPresent"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "type": "array",
+            "description": "List of secret names used to pull Docker images.",
+            "default": [],
+            "items": {}
+        },
+        "nameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `elastic-agent`.",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `elastic-agent`.",
+            "default": ""
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a ServiceAccount should be created.",
+                    "default": true
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the ServiceAccount to use.",
+                    "default": ""
+                }
+            }
+        },
+        "mode": {
+            "type": "string",
+            "description": "Elastic Agent deployment type [managed, standalone]",
+            "default": "managed"
+        },
+        "metricsService": {
+            "type": "string",
+            "description": "Name of the kube-state-metrics metrics service for standalone mode.",
+            "default": "kube-state-metrics:8080"
+        },
+        "fleet": {
+            "type": "object",
+            "properties": {
+                "secretName": {
+                    "type": "string",
+                    "description": "Kubernetes secret name to use for the Elastic Agent configuration. By default `ELACTIC_AGENT_NAME-fleet-creds`.",
+                    "default": ""
+                },
+                "enrollToken": {
+                    "type": "string",
+                    "description": "token to use for the Elastic Agent enrollment. This is not needed in case fleet server is configured and `fleet.enroll` is set. Then the token is fetched from Kibana.",
+                    "default": ""
+                },
+                "tokenPolicyName": {
+                    "type": "string",
+                    "description": "token policy name to use for fetching token from Kibana. This requires Kibana configs to be set. This setting is ignored if you provide a `enrollToken`.",
+                    "default": "Default policy"
+                },
+                "force": {
+                    "type": "boolean",
+                    "description": "To ensure that enrollment occurs on every start of the container set `fleet.force` to true.",
+                    "default": true
+                },
+                "enroll": {
+                    "type": "boolean",
+                    "description": "set to `true` for enrollment into fleet-server. If not set, Elastic Agent is run in standalone mode.",
+                    "default": true
+                },
+                "insecure": {
+                    "type": "boolean",
+                    "description": "communicate with Fleet with either insecure HTTP or unverified HTTPS.",
+                    "default": false
+                },
+                "serverUrl": {
+                    "type": "string",
+                    "description": "URL of the Fleet Server to enroll into (e.g. https://fleet-server:8220).",
+                    "default": "http://fleet-server:8220"
+                }
+            }
+        },
+        "elasticsearch": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "URL of the Elasticsearch (e.g. https://elasticsearch:9200).",
+                    "default": ""
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Elasticsearch username.",
+                    "default": ""
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Elasticsearch password.",
+                    "default": ""
+                },
+                "secretName": {
+                    "type": "string",
+                    "description": "Kubernetes secret name to use for the Elasticsearch configuration. By default `ELACTIC_AGENT_NAME-es-creds`.",
+                    "default": ""
+                },
+                "apiToken": {
+                    "type": "string",
+                    "description": "service token to use for communication with Elasticsearch.",
+                    "default": ""
+                }
+            }
+        },
+        "kibana": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "URL of the Kibana (e.g. https://kibana:5601).",
+                    "default": "http://kibana:5601"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Elasticsearch username.",
+                    "default": "elastic"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Elasticsearch password.",
+                    "default": "changeme"
+                },
+                "secretName": {
+                    "type": "string",
+                    "description": "service token to use for communication with Kibana.",
+                    "default": ""
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,63 @@
+---
+template_name: deploy-kibana
+template_description: |
+  Deploy Kibana template configure a oblt cluster that has a remote cluster configured for CCS and deploy a custom Kibana Docker image.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#deploy-kibana)
+cluster_name: "roshan-elastic-deplo-xnenb-main"
+slack_channel: "#observablt-bots"
+oblt_username: "deploykibana"
+ephemeral_cluster: "true"
+create_users: true
+expire_date: '2024-08-14'
+stack:
+  version: "8.16.0-SNAPSHOT"
+  mode: ess
+  template: custom
+  target: production
+  observability: true
+  ess:
+    elasticsearch:
+      enabled: true
+      ccs_remote_cluster: "edge-logs"
+      image: "docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-d84b6899"
+    kibana:
+      enabled: true
+      extra_config: |
+        # APM
+        {% if '8.16.0-SNAPSHOT' is version('7.16.0', '>=') %}
+        xpack.apm.indices.error: remote_cluster:apm-*,remote_cluster:logs-apm*,apm-*,logs-apm*
+        xpack.apm.indices.onboarding: remote_cluster:apm-*,apm-*
+        xpack.apm.indices.span: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        xpack.apm.indices.transaction: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        xpack.apm.indices.metric: remote_cluster:apm-*,remote_cluster:metrics-apm*,apm-*,metrics-apm*
+        xpack.apm.indices.sourcemap: remote_cluster:apm-*,apm-*
+        {% endif %}
+        {% if '8.16.0-SNAPSHOT' is version('8.0.0', '>=') %}
+        xpack.uptime.index: remote_cluster:heartbeat-*,remote_cluster:synthetics-*,heartbeat-*,synthetics-*
+        {% endif %}
+        {% if '8.16.0-SNAPSHOT' is version('8.1.0', '>=') %}
+        xpack.uptime.service.manifestUrl: https://manifest.synthetics.elastic-cloud.com/v1/manifest.json
+        xpack.uptime.service.tls.certificate: config/certs/node.crt
+        xpack.uptime.service.tls.key: config/certs/node.key
+        xpack.uptime.service.showExperimentalLocations: true
+        {% endif %}
+        {% if '8.16.0-SNAPSHOT' is version('7.16.0', '<=') %}
+        apm_oss.errorIndices: remote_cluster:apm-*,remote_cluster:logs-apm*,apm-*,logs-apm*
+        apm_oss.onboardingIndices: remote_cluster:apm-*,apm-*
+        apm_oss.spanIndices: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        apm_oss.transactionIndices: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        apm_oss.metricsIndices: remote_cluster:apm-*,remote_cluster:metrics-apm-*,apm-*,metrics-apm*
+        apm_oss.sourcemapIndices: remote_cluster:apm-*,apm-*
+        {% endif %}
+        # Logs and Metrics - see https://elastic.github.io/observability-test-environments/tools/oblt-cli/local-kibana/#post-configuration
+        # Monitoring
+        monitoring.ui.logs.index: remote_cluster:filebeat-*,filebeat-*
+      image: "docker.elastic.co/observability-ci/kibana-cloud:8.16.0-d84b6899"
+    integrations:
+      enabled: false
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-d84b6899
+gitops:
+  enabled: "true"
+  issue: "41707"
+  repository: "elastic/observability-test-environments"
+updated_at: "2024-08-07T13:31:24Z"

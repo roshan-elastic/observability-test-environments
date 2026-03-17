@@ -1,0 +1,80 @@
+{
+	"type": "modal",
+	"clear_on_close": true,
+	"title": {
+		"type": "plain_text",
+		"text": "{{ .Title }}",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	{{ $length := len .Clusters }}
+	{{ if eq $length 0 }}
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Bad news! You don't own any cluster, want to create one? use either `/create-ccs-cluster` or `/create-serverless-cluster` command."
+			}
+		}
+  ]
+  {{else}}
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hey!\n\nPlease select one of your clusters."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "input",
+			"block_id": "{{ .Block }}",
+			"element": {
+				"type": "static_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select a template cluster",
+					"emoji": true
+				},
+				"options": [
+					{{$first := true}}
+					{{ range $label := .Clusters }}
+					{{if $first}}
+						{{$first = false}}
+					{{else}}
+					,
+					{{end}}
+					{
+						"text": {
+								"type": "plain_text",
+								"text": "{{ $label }}",
+								"emoji": true
+						},
+						"value": "{{ $label }}"
+					}
+					{{ end }}
+				],
+				"action_id": "select-cluster"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Cluster",
+				"emoji": true
+			}
+		}
+	]
+	{{ end }}
+}

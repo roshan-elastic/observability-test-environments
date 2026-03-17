@@ -1,0 +1,103 @@
+{% if not kibana_enabled and elasticsearch_enabled and stack_mode != 'serverless' %}
+elasticsearch:
+  hosts: {{ elasticsearch_url }}
+  username: kibana_system_user
+  password: {{ elasticsearch_password }}
+  ssl:
+    verificationMode: none
+server:
+  host: 0.0.0.0
+{% if stack_version is version('8.15.0', '>=') %}
+#
+# Enable HTTP/2 and TLS
+# To generate a new encryption key and self-signed certificate, run:
+# openssl req -x509 -newkey rsa:2048 -keyout ${PWD}/key.pem -out ${PWD}/cert.crt -days 365 -subj '/CN=*' -nodes
+#
+#  protocol: http2
+#  ssl:
+#    enabled: true
+#    key: path/to/key.pem
+#    certificate: path/my/cerf.crt
+{% endif %}
+# Logs and Metrics - see https://elastic.github.io/observability-test-environments/tools/oblt-cli/local-kibana/#post-configuration
+# Monitoring
+monitoring.ui.logs.index: remote_cluster:filebeat-*,filebeat-*
+xpack:
+  encryptedSavedObjects:
+    encryptionKey: +8v9e/XMV54RsPThrAfoOWMxOyh9ZZ1BCyTA0z8A97I=
+  security:
+    encryptionKey: AdKUEsCmSj40lfIzuIhhdX2wdIiMRLHo
+    loginAssistanceMessage: 'Credentials: admin / {{ elasticsearch_password }}'
+# APM
+  apm:
+{% if stack_version is version('8.0.0', '>=') and (template_name | default(None)) != 'ess-overview' %}
+    indices:
+      error: remote_cluster:apm-*,remote_cluster:logs-apm*,apm-*,logs-apm*
+      onboarding: remote_cluster:apm-*,apm-*
+      span: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+      transaction: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+      metric: remote_cluster:apm-*,remote_cluster:metrics-apm*,apm-*,metrics-apm*
+      sourcemap: remote_cluster:apm-*,apm-*
+{% endif %}
+{% if (template_name | default(None)) == 'ess-overview' %}
+      error: metrics-*:apm-*,metrics-*:logs-apm*,apm-*,logs-apm*
+      onboarding: metrics-*:apm-*,apm-*
+      span: metrics-*:apm-*,metrics-*:traces-apm*,apm-*,traces-apm*
+      transaction: metrics-*:apm-*,metrics-*:traces-apm*,apm-*,traces-apm*
+      metric: metrics-*:apm-*,metrics-*:metrics-apm*,apm-*,metrics-apm*
+      sourcemap: metrics-*:apm-*,apm-*
+{% endif %}
+  uptime:
+{% if stack_version is version('8.0.0', '>=') and (template_name | default(None)) != 'ess-overview' %}
+    index: synthetics-*,heartbeat-*,remote_cluster:heartbeat-*,remote_cluster:synthetics-*
+{% endif %}
+{% if (template_name | default(None)) == 'ess-overview' %}
+    index: metrics:heartbeat-*,heartbeat-*
+{% endif %}
+{% if stack_version is version('8.4.0', '>=') %}
+{% set _secret = (lookup('oblt.framework.gcp_secret_manager', key='elastic-cloud_synthetics-credentials-qa-dev')|safe()|from_yaml) %}
+{% set _manifest = _secret.manifest %}
+{% set _password = _secret.password %}
+{% set _username = _secret.username %}
+    service:
+      manifestUrl: {{ _manifest }}
+      password: {{ _password }}
+      username: {{ _username }}
+      hosts: ["{{ elasticsearch_url }}"]
+{% endif %}
+# Miscellaneous
+# only valid on dev mode
+# elasticsearch.ignoreVersionMismatch: true
+{% if observability_apm_url is defined %}
+# Monitoring with APM
+# elastic:
+#   apm:
+#     active: true
+#     serverUrl: {{ observability_apm_url | default('NA') }}
+#     secretToken: {{ observability_apm_token | default('NA') }}
+#     centralConfig: false
+#     breakdownMetrics: true
+#     transactionSampleRate: 0.5
+#     metricsInterval: '120s'
+#     globalLabels:
+#       deploymentName: {{ cluster_name }}
+#       elasticStack: {{ stack_version | default('unknown') }}
+{% endif %}
+# Add this to kibana.dev.yml to see debug statements just for the APM plugin
+# logging.loggers:
+#   - name: plugins.apm
+#     level: debug
+#     appenders: [console]
+{% endif %}
+
+{% if kibana_enabled and stack_mode != 'serverless' %}
+# Kibana is enabled, only one instance can run at a time.
+{% endif %}
+
+{% if not elasticsearch_enabled %}
+# Elasticsearch is not enabled.
+{% endif %}
+
+{% if stack_mode == 'serverless' %}
+See how to connect a local Kibana at https://elastic.github.io/observability-test-environments/user-guide/mki
+{% endif %}

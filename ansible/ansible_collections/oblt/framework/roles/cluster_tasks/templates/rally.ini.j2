@@ -1,0 +1,43 @@
+{% set observability_ci_state = (lookup('oblt.framework.gcp_secret_manager', key=observability_ci_secret)|safe()|from_yaml) %}
+{% set es_password = (observability_ci_state.elasticsearch_password | mandatory) %}
+{% set es_url = (observability_ci_state.elasticsearch_url | mandatory) %}
+{% set es_user = (observability_ci_state.elasticsearch_username | mandatory) %}
+{% set es_host = (es_url | urlsplit("hostname")) %}
+{% set es_port = (es_url | urlsplit("port") | default(443)) %}
+[meta]
+config.version = 17
+
+[system]
+env.name = {{ cluster_name }}
+
+[node]
+root.dir = {{ build_dir }}/.rally/benchmarks
+src.root.dir = {{ build_dir }}/.rally/benchmarks/src
+
+[source]
+remote.repo.url = https://github.com/elastic/elasticsearch.git
+elasticsearch.src.subdir = elasticsearch
+
+[benchmarks]
+local.dataset.cache = {{ build_dir }}/.rally/benchmarks/data
+
+[reporting]
+datastore.type = elasticsearch
+datastore.host = {{ es_host }}
+datastore.port = {{ es_port }}
+datastore.secure = True
+datastore.user = {{ es_user }}
+datastore.password = {{ es_password }}
+# output.processingtime = True
+
+[tracks]
+default.url = https://github.com/elastic/rally-tracks
+
+[teams]
+default.url = https://github.com/elastic/rally-teams
+
+[defaults]
+preserve_benchmark_candidate = false
+
+[distributions]
+release.cache = true

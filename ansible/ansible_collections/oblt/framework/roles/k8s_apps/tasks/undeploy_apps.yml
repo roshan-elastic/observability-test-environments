@@ -1,0 +1,10 @@
+---
+- name: Uninstall k8s deployments
+  changed_when: false
+  shell: |
+    if [ -f "{{ k8s_app_dir }}/kustomization.yaml" ] || [ -f "{{ k8s_app_dir }}/kustomization.yml" ]; then
+      kubectl delete -k "{{ k8s_app_dir }}"
+    else
+      kubectl delete -R -f "{{ k8s_app_dir }}"
+    fi
+  loop: "{{ k8s_apps }}"

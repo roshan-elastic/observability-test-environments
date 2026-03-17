@@ -1,0 +1,105 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+## @section opbeans Opbeans Python Helm chart configuration
+opbeans:
+  ## @param opbeans.enabled Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.
+  enabled: true
+  ## @param opbeans.nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.
+  nameOverride: ""
+  ## @param opbeans.fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.
+  fullnameOverride: ""
+  ## @section opbeans.image Docker image settings
+  image:
+    ## @param opbeans.image.name Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).
+    ## @param opbeans.image.tag Tag of the Docker image (latest).
+    ## @param opbeans.image.pullPolicy Docker image pull policy (IfNotPresent|Always|Never)
+    name: docker.elastic.co/observability-ci/opbeans-java
+    tag: daily
+    pullPolicy: IfNotPresent
+  ## @param opbeans.extraEnvVars Array to add extra environment variables
+  extraEnvVars:
+    ## @skip opbeans.extraEnvVars
+    - name: DATABASE_DRIVER
+      value: "org.postgresql.Driver"
+    - name: "DATABASE_DIALECT"
+      value: "POSTGRESQL"
+    - name: DATABASE_URL
+      value: "jdbc:postgresql://$(PGHOST):$(PGPORT)/$(PGDATABASE)?user=$(PGUSER)&password=$(PGPASSWORD)"
+  ## @section apm APM configuration settings.
+  apm:
+    ## @param opbeans.apm.type Type of reporting API [apm|otel|annotations]
+    ## @param opbeans.apm.annotationType Type of annotations to use [none|nodejs|java]
+    ## @param opbeans.apm.enabled [boolean,nullable] Enable to send data to the APM service.
+    enabled: true
+    type: annotations
+    annotationType: java
+  ## @section db Database settings.
+  db:
+    ## @param opbeans.db.enabled Enable the database service deploy.
+    ## @param opbeans.db.host Database host.
+    ## @param opbeans.db.name Database name.
+    ## @param opbeans.db.port Database port.
+    ## @param opbeans.db.type Database type [mysql|postgresql]
+    ## @param opbeans.db.username Database Username.
+    ## @param opbeans.db.password Database Password.
+    enabled: true
+    host: opbeans-java-db
+    name: opbeans-java
+    port: 5432
+    type: postgresql
+    username: elastic
+    password: none
+  ## @section ingress Ingress settings
+  ingress:
+    ## @param opbeans.ingress.enabled Enable or disable the ingress resource.
+    ## @param opbeans.ingress.certificateIssuer Name of the certificates issuer.
+    ## @param opbeans.ingress.host Hostname exposed by the ingress resource.
+    ## @param opbeans.ingress.annotations Additional annotation to the ingress resource.
+    enabled: true
+    certificateIssuer: "letsencrypt-stage"
+    host: opbeans-java.127.0.0.1.ip.es.io
+    ## @skip opbeans.ingress.annotations
+    annotations:
+      ingress.kubernetes.io/ssl-redirect: "true"
+      kubernetes.io/ingress.class: nginx
+      kubernetes.io/tls-acme: "true"
+      nginx.ingress.kubernetes.io/app-root: /dashboard
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: elastic-basic-auth
+      nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+  ## @section opbeans.redis Redis settings.
+  redis:
+    ## @param opbeans.redis.url Redis URL.
+    url: redis://opbeans-java-redis-master:6379
+
+## @section postgresql PostgreSQL Helm chart configuration
+postgresql:
+  ## @param postgresql.fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.
+  fullnameOverride: "opbeans-java-db"
+  ## @section postgresql.auth PostgreSQL authentication settings
+  auth:
+    ## @param postgresql.auth.username Name for a custom user to create
+    username: "elastic"
+    ## @param postgresql.auth.existingSecret Name of existing secret to use for PostgreSQL credentials. `auth.postgresPassword`, `auth.password`, and `auth.replicationPassword` will be ignored and picked up from this secret. The secret might also contains the key `ldap-password` if LDAP is enabled. `ldap.bind_password` will be ignored and picked from this secret in this case.
+    existingSecret: "opbeans-java-db-creds"
+  ## @section postgresql.primary
+  primary:
+    ## @param postgresql.primary.persistence.enabled Enable persistence using PVC
+    persistence:
+      enabled: false
+    ## @section postgresql.primary.initdb Scripts to run at first boot.
+    initdb:
+      ## @param postgresql.primary.initdb.scriptsConfigMap Name of existing ConfigMap containing the initdb scripts.
+      scriptsConfigMap: opbeans-java-initdb
+
+## @section resources requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+## @param resources.limits.memory The memory limit for the Opbean
+## @param resources.requests.memory The requested memory for the Opbean
+## @param resources.requests.cpu The requested cpu for the Opbean
+resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 0.1
+      memory: 400Mi

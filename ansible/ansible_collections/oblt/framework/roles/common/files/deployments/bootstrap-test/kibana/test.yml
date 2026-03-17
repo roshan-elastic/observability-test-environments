@@ -1,0 +1,16 @@
+---
+# Description of what the recipe do.
+description: Basic test request
+# Path to the REST API call.
+api: "/"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: GET
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+# The payload to send to the REST API.
+body: ""
+# The expected return code.
+return_code:
+  - 200

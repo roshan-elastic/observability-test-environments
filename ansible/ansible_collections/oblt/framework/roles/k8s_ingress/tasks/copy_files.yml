@@ -1,0 +1,45 @@
+---
+- name: Copy files to the build dir
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - ingress
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Helm chart config
+  template:
+    src: "helm/lb/helm-values.yaml.j2"
+    dest: "{{ ingress_dir }}/helm-values.yaml"
+    mode: 0644
+  tags:
+    - ingress
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Set Ingress Credentials facts
+  vars:
+    username: "admin"
+    plaintext: "{{ username }}:{{ password_plaintext }}"
+    auth_string: "{{ username }}:{{ password_apr1 }}"
+  set_fact:
+    ingress_username: "{{ username }}"
+    ingress_password: "{{ password_plaintext }}"
+    ingress_plaintext: "{{ plaintext }}"
+    ingress_auth: "{{ auth_string }}"
+  when:
+    - ingress_config.password is not defined
+  tags:
+    - ingress
+    - secrets
+
+- name: Generate Secret files
+  template:
+    force: no
+    src: "helm/lb/ingress-secret.yaml.j2"
+    dest: "{{ ingress_dir }}/ingress-secret.yaml"
+    mode: 0600
+  tags:
+    - ingress
+    - generate_secrets

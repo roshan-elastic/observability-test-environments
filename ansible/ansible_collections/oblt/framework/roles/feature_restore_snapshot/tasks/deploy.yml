@@ -1,0 +1,191 @@
+---
+- name: Get Data Streams
+  uri:
+    method: GET
+    url: "{{ elasticsearch_url }}/_data_stream?expand_wildcards=all"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result_get_data_streams
+
+- name: Get Indices
+  uri:
+    method: GET
+    url: "{{ elasticsearch_url }}/_alias?expand_wildcards=all"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result_get_indices
+
+- name: Get Ongoing Restore
+  uri:
+    method: GET
+    url: "{{ elasticsearch_url }}/_recovery?active_only"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result_get_ongoing_restore
+
+- name: Set Existing Facts
+  set_fact:
+    _feature_restore_snapshot_ongoing_indices: "{{ _result_get_ongoing_restore.json | community.general.json_query('keys(@)') | sort }}"
+    _feature_restore_snapshot_existing_data_streams: "{{ _result_get_data_streams.json.data_streams | community.general.json_query('[].name') | sort }}"
+    _feature_restore_snapshot_existing_indices: "{{ _result_get_indices.json | community.general.json_query('keys(@)') | sort }}"
+    _feature_restore_snapshot_dry_run: "{{ role_parameters.dry_run is defined and role_parameters.dry_run is true }}"
+
+- name: Debug Ongoing Indices Restore
+  debug:
+    var: _feature_restore_snapshot_ongoing_indices
+
+# - name: Debug Existing Data Streams
+#   debug:
+#     var: _feature_restore_snapshot_existing_data_streams
+#
+# - name: Debug Existing Indices
+#   debug:
+#     var: _feature_restore_snapshot_existing_indices
+
+- name: Check Repository
+  uri:
+    method: GET
+    url: "{{ elasticsearch_url }}/_snapshot/{{ role_parameters.repository | mandatory }}"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result_get_repository
+
+- name: Get All Snapshots
+  uri:
+    method: GET
+    url: "{{ elasticsearch_url }}/_snapshot/{{ role_parameters.repository }}/_all"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result_get_all_snapshots
+  when: "role_parameters.snapshot is undefined"
+
+- name: Set Latest Snapshot
+  set_fact:
+    _feature_restore_snapshot_latest: "{{ _result_get_all_snapshots.json | community.general.json_query('snapshots[].snapshot | [-1]') }}"
+  when: "role_parameters.snapshot is undefined"
+
+- name: Get Snapshot
+  vars:
+    _feature_restore_snapshot_name: "{{ role_parameters.snapshot | default(_feature_restore_snapshot_latest) }}"
+  uri:
+    method: GET
+    url: "{{ elasticsearch_url }}/_snapshot/{{ role_parameters.repository }}/{{ _feature_restore_snapshot_name }}"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result_get_snapshot
+
+# - name: Debug Get Repository
+#   debug:
+#     var: _result_get_repository.json
+#
+# - name: Debug Get Snapshot
+#   debug:
+#     var: _result_get_snapshot.json
+
+- name: Set Snapshot Facts
+  vars:
+    ds_skip:
+      - ".fleet-actions-results"
+    ds_filter: "[?!contains({{ ds_skip }}, @)]"
+  set_fact:
+    _feature_restore_snapshot_data_streams: "{{ _result_get_snapshot.json.snapshots[0].data_streams | community.general.json_query(ds_filter) }}"
+    _feature_restore_snapshot_indices: "{{ _result_get_snapshot.json.snapshots[0].indices }}"
+    _feature_restore_snapshot_feature_states: "{{ _result_get_snapshot.json.snapshots[0].feature_states }}"
+
+- name: Delete Data Streams
+  vars:
+    query: "[?contains(not_null({{ _feature_restore_snapshot_existing_data_streams }}, ''), @)]"
+    data_streams: "{{ _feature_restore_snapshot_data_streams | community.general.json_query(query) | sort }}"
+  uri:
+    method: DELETE
+    url: "{{ elasticsearch_url }}/_data_stream/{{ item }}?expand_wildcards=all"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  loop: "{{ data_streams }}"
+  when: "_feature_restore_snapshot_dry_run is false"
+
+- name: Delete Indices
+  uri:
+    method: DELETE
+    url: "{{ elasticsearch_url }}/{{ item }}?expand_wildcards=all&ignore_unavailable=true"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  loop: "{{ _feature_restore_snapshot_ongoing_indices }}"
+  when: "_feature_restore_snapshot_dry_run is false"
+
+- name: Close Indices
+  vars:
+    query: "[? contains(not_null({{ _feature_restore_snapshot_existing_indices }}, ''), @)]"
+    indices: "{{ _feature_restore_snapshot_indices | community.general.json_query(query) | sort }}"
+  uri:
+    method: POST
+    url: "{{ elasticsearch_url }}/{{ item }}/_close?expand_wildcards=all&ignore_unavailable=true"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  loop: "{{ indices }}"
+  when: "_feature_restore_snapshot_dry_run is false"
+
+- name: Prepare The Environment
+  vars:
+    payload:
+      persistent:
+        cluster.routing.allocation.node_concurrent_recoveries: 20
+        indices:
+          recovery:
+            max_concurrent_file_chunks: 8
+            max_concurrent_operations: 4
+            max_bytes_per_sec: -1
+  block:
+    # - name: Debug Cluster setting
+    #   debug:
+    #     var: payload
+
+    - uri:
+        method: PUT
+        url: "{{ elasticsearch_url }}/_cluster/settings"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ payload | to_nice_json }}"
+      when: "_feature_restore_snapshot_dry_run is false"
+
+- name: Restore Snapshot
+  vars:
+    _feature_restore_snapshot_name: "{{ role_parameters.snapshot | default(_feature_restore_snapshot_latest) }}"
+    payload:
+      indices: "{{ role_parameters.indices | default([], true) }}"
+      include_global_state: "{{ role_parameters.include_global_state | default(false, true) }}"
+      ignore_unavailable: "{{ role_parameters.ignore_unavailable | default(false, true) }}"
+      feature_states: "{{ role_parameters.feature_states | default([], true) }}"
+      index_settings: "{{ role_parameters.index_settings | default({}, true) }}"
+
+  block:
+    - name: Debug Restore Snapshot
+      debug:
+        var: payload
+
+    - name: Restore Snapshot Request
+      uri:
+        method: POST
+        url: "{{ elasticsearch_url }}/_snapshot/{{ role_parameters.repository }}/{{ _feature_restore_snapshot_name }}/_restore"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        timeout: 600
+        body_format: json
+        body: "{{ payload | to_nice_json }}"
+      when: "_feature_restore_snapshot_dry_run is false"
+
+- name: Wait For Completion
+  include_tasks: progress.yml
+  when: "role_parameters.wait_for_completion | default(true) and _feature_restore_snapshot_dry_run is false"

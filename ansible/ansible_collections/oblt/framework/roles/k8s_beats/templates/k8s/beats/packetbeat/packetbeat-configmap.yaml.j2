@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: packetbeat-config
+  namespace: "{{ kube_system_namespace }}"
+  labels:
+    k8s-app: packetbeat
+data:
+  packetbeat.yml: |-
+{% if stack_version is version('7.10.0', '>=') %}
+    queue.disk:
+      max_size: 1GB
+{% else %}
+    queue.mem:
+      events: 20000
+{% endif %}
+    packetbeat.interfaces.snaplen: 1514
+    packetbeat.interfaces.type: af_packet
+    packetbeat.interfaces.buffer_size_mb: 250
+    packetbeat.protocols:
+      - type: icmp
+        enabled: true
+
+      - type: amqp
+        ports: [5672]
+
+      - type: cassandra
+        ports: [9042]
+
+      - type: dhcpv4
+        ports: [67, 68]
+
+      - type: dns
+        ports: [53]
+
+      - type: http
+        ports: [80, 8080, 8000, 5000, 8002]
+
+      - type: memcache
+        ports: [11211]
+
+      - type: mysql
+        ports: [3306,3307]
+
+      - type: pgsql
+        ports: [5432]
+
+      - type: redis
+        ports: [6379]
+
+      - type: thrift
+        ports: [9090]
+
+      - type: mongodb
+        ports: [27017]
+
+      - type: nfs
+        ports: [2049]
+
+      - type: tls
+        ports: [443, 993, 995, 5223, 8443, 8883, 9243]
+
+      - type: sip
+        ports: [5060]
+    packetbeat.flows:
+      timeout: 30s
+      period: 10s
+    packetbeat.procs:
+      enabled: true
+      system.hostfs: "/hostfs/proc"
+    fields: { interface: "${INTERFACE}" }
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+      - add_host_metadata:
+          #extremely verbose if enabled
+          netinfo.enabled: false
+      - add_kubernetes_metadata:
+          in_cluster: true
+          host: ${NODE_NAME}
+      - # Add forwarded to tags when processing data from a network tap or mirror.
+        if.contains.tags: forwarded
+        then:
+          - drop_fields:
+              fields: [host]
+        else:
+          - add_host_metadata: ~
+      - add_cloud_metadata: ~
+      - add_docker_metadata: ~
+      - detect_mime_type:
+          field: http.request.body.content
+          target: http.request.mime_type
+      - detect_mime_type:
+          field: http.response.body.content
+          target: http.response.mime_type
+    output.elasticsearch:
+      hosts: ['${ELASTICSEARCH_HOST}']
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
+      ssl.enabled: true
+      ssl.verification_mode: none
+      bulk_max_size: 2000
+      worker: 2
+      compression_level: 5
+    monitoring.enabled: true
+    setup.kibana.host: ${KIBANA_HOST}
+    setup.kibana.username: ${KIBANA_USERNAME}
+    setup.kibana.password: ${KIBANA_PASSWORD}
+    setup.dashboards.enabled: true
+    setup.template.overwrite: true
+    instrumentation:
+      enabled: true
+      environment: production
+      hosts:
+        - "${ELASTIC_APM_SERVER_URL}"
+      secret_token: ${ELASTIC_APM_SECRET_TOKEN}
+  start_packetbeat.sh: |-
+    #!/usr/bin/env bash
+    echo "Starting for interface: $INTERFACE"
+    yum install -y -q ethtool
+    #turn off offloading for all interfaces
+    ethtool --offload $INTERFACE rx off tx off
+    ethtool -K $INTERFACE gso off
+    ethtool -K $INTERFACE gro off
+    ethtool -K $INTERFACE tso off
+
+    packetbeat -c /etc/packetbeat.yml -e --strict.perms=false -E "packetbeat.interfaces.device=$INTERFACE"

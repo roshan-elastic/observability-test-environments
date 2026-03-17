@@ -1,0 +1,7 @@
+---
+- name: Import role k8s
+  include_role:
+    name: "oblt.framework.k8s"
+  when:
+    - k8s_enabled|bool
+    - update_k8s | default(true, true)

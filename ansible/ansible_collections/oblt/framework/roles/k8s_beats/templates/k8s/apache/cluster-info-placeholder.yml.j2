@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apache-cluster-info
+  namespace: {{ k8s_default_namespace }}
+  labels:
+    app: apache
+data:
+  index.html: |-
+    <html>
+      <head>Cluster Info</head>
+      <body>
+        <h1>Cluster Info</h1>
+        <p>{{ cluster_name }} - {{ stack_version }}.</p>
+      </body>
+    </html>

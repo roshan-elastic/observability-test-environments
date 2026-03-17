@@ -1,0 +1,14 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "helm_apps": {
+            "type": "array",
+            "description": "List of Helm charts to install, see [K8s helm Role](../k8s_helm/README.md)",
+            "default": "[]",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}

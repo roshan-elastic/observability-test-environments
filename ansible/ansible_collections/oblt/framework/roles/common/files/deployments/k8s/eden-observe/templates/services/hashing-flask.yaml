@@ -1,0 +1,179 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hashingservice-flask-blake2b
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: hashingservice-flask-blake2b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hashingservice-flask-blake2b
+  template:
+    metadata:
+      labels:
+        app: hashingservice-flask-blake2b
+      annotations:
+        co.elastic.logs/enabled: "true"
+        co.elastic.logs/json.keys_under_root: "true"
+    spec:
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: hashingservice-flask-blake2b
+        image: docker.elastic.co/{{ .Values.docker_namespace }}/{{ .Chart.Name }}-hashingservice-flask:{{ .Values.es_version }}-18
+        imagePullPolicy: Always
+        resources:
+          limits:
+           memory: 100Mi
+          requests:
+           cpu: 0.05
+           memory: 50Mi
+        env:
+        - name: FOR
+          value: "50000"
+        - name: METHOD
+          value: "blake2b"
+        - name: SERVER_URL
+          value: "https://ece723dd2bc946e9b5da2f8b6ab5161b.apm.us-west2.gcp.elastic-cloud.com:443"
+        - name: SERVICE_NAME
+          value: "hashingservice-flask-blake2b"
+        - name: SECRET_TOKEN
+          value: "50CiCwtuEaS2YLSovT"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hashingservice-flask-sha3-512
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: hashingservice-flask-sha3-512
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hashingservice-flask-sha3-512
+  template:
+    metadata:
+      labels:
+        app: hashingservice-flask-sha3-512
+      annotations:
+        co.elastic.logs/enabled: "true"
+        co.elastic.logs/json.keys_under_root: "true"
+    spec:
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: hashingservice-flask-sha3-512
+        image: docker.elastic.co/{{ .Values.docker_namespace }}/{{ .Chart.Name }}-hashingservice-flask:{{ .Values.es_version }}-18
+        imagePullPolicy: Always
+        resources:
+          limits:
+           memory: 100Mi
+          requests:
+           cpu: 0.05
+           memory: 50Mi
+        env:
+        - name: FOR
+          value: "50000"
+        - name: METHOD
+          value: "sha3_512"
+        - name: SERVER_URL
+          value: "https://ece723dd2bc946e9b5da2f8b6ab5161b.apm.us-west2.gcp.elastic-cloud.com:443"
+        - name: SERVICE_NAME
+          value: "hashingservice-flask-sha3-512"
+        - name: SECRET_TOKEN
+          value: "50CiCwtuEaS2YLSovT"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hashingservice-flask-sha3-512-env
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: hashingservice-flask-sha3-512-env
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hashingservice-flask-sha3-512-env
+  template:
+    metadata:
+      labels:
+        app: hashingservice-flask-sha3-512-env
+      annotations:
+        co.elastic.logs/enabled: "true"
+        co.elastic.logs/json.keys_under_root: "true"
+    spec:
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: hashingservice-flask-sha3-512-env
+        image: docker.elastic.co/{{ .Values.docker_namespace }}/{{ .Chart.Name }}-hashingservice-flask:{{ .Values.es_version }}-18
+        imagePullPolicy: Always
+        resources:
+          limits:
+           memory: 100Mi
+          requests:
+           cpu: 0.05
+           memory: 50Mi
+        env:
+        - name: FOR
+          value: "50000"
+        - name: METHOD
+          value: "sha3_512"
+        - name: ENV_CHECK
+          value: "True"
+        - name: SERVER_URL
+          value: "https://ece723dd2bc946e9b5da2f8b6ab5161b.apm.us-west2.gcp.elastic-cloud.com:443"
+        - name: SERVICE_NAME
+          value: "hashingservice-flask-sha3-512-env"
+        - name: SECRET_TOKEN
+          value: "50CiCwtuEaS2YLSovT"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hashingservice-flask-sha3-512-env
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: hashingservice-flask-sha3-512-env
+spec:
+  clusterIP: 'None'
+  ports:
+  - port: 5001
+    targetPort: 5001
+  selector:
+    app: hashingservice-flask-sha3-512-env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hashingservice-flask-blake2b
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: hashingservice-flask-blake2b
+spec:
+  clusterIP: 'None'
+  ports:
+  - port: 5001
+    targetPort: 5001
+  selector:
+    app: hashingservice-flask-blake2b
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hashingservice-flask-sha3-512
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: hashingservice-flask-sha3-512
+spec:
+  clusterIP: 'None'
+  ports:
+  - port: 5001
+    targetPort: 5001
+  selector:
+    app: hashingservice-flask-sha3-512

@@ -1,0 +1,8 @@
+---
+- name: Enable Volume expansion
+  changed_when: false
+  command: "kubectl patch sc standard -p '{\"allowVolumeExpansion\": true}'"
+  tags:
+    - k8s
+    - deploy
+    - gcp

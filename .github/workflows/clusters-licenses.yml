@@ -1,0 +1,89 @@
+---
+# Workflow to check the licenses of the oblt clusters and notify the owners.
+name: Oblt Clusters check licenses
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 9 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  check-licenses:
+    runs-on: ubuntu-latest
+    outputs:
+      clusters: ${{ steps.licenses.outputs.clusters }}
+      expired: ${{ steps.licenses.outputs.expired }}
+      unknown: ${{ steps.licenses.outputs.unknown }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: licenses
+        name: Check licenses
+        run: |
+          .ci/scripts/check-licenses-dev-clusters.sh
+          {
+            echo "clusters=$(cat licenses_all.json)";
+            echo "expired=$(cat expired.json)";
+            echo "unknown=$(cat unknown.json)";
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Debug generated files
+        run: |
+          echo "::group::debug expired.json"
+          cat expired.json || true
+          echo "::endgroup::"
+          echo "::group::debug unknown.json"
+          cat unknown.json || true
+          echo "::endgroup::"
+
+  notify-expired:
+    if: ${{ fromJSON(needs.check-licenses.outputs.expired)[0] != '' }}
+    runs-on: ubuntu-latest
+    needs:
+      - check-licenses
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: "${{ fromJson(needs.check-licenses.outputs.expired) }}"
+    steps:
+      - name: Slack notification
+        uses: elastic/oblt-actions/slack/send@v1
+        with:
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: '${{ matrix.cluster.slack_channel }}'
+          message: |
+            License expired on cluster `${{ matrix.cluster.name }}`
+            This cluster would not work properly until the license is renewed.
+            Please destroy and create a new cluster if it is needed
+
+            ```
+            oblt-cli cluster destroy --cluster-name ${{ matrix.cluster.name }}
+            oblt-cli cluster create ccs --remote-cluster ${{ matrix.cluster.remote_cluster }}
+            ```
+
+  notify-unknown:
+    if: ${{ fromJSON(needs.check-licenses.outputs.unknown)[0] != '' }}
+    runs-on: ubuntu-latest
+    needs:
+      - check-licenses
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: "${{ fromJson(needs.check-licenses.outputs.unknown) }}"
+    steps:
+      - name: Slack notification
+        uses: elastic/oblt-actions/slack/send@v1
+        with:
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: '${{ matrix.cluster.slack_channel }}'
+          message: |
+            The cluster `${{ matrix.cluster.name }}` is in unknown state.
+            This cluster would not work properly.
+            Please destroy and create a new cluster if it is needed
+
+            ```
+            oblt-cli cluster destroy --cluster-name ${{ matrix.cluster.name }}
+            oblt-cli cluster create ccs --remote-cluster ${{ matrix.cluster.remote_cluster }}
+            ```

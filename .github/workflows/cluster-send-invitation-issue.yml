@@ -1,0 +1,93 @@
+---
+## Workflow to send invitation to the robots org.
+name: Oblt Cluster Send Invitation to Users (issue)
+
+on:
+  workflow_dispatch:
+    inputs:
+      user_email:
+        description: 'User email'
+        required: true
+  issues:
+    types:
+      - edited
+      - opened
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+# Avoid running if there is already an on-going action running for the same
+# GitHub issue
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.issue.number }}"
+
+jobs:
+  send-invitations:
+    if: contains(github.event.issue.labels.*.name, 'invitation')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify - started
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🏃 I am processing your invitation request ([logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))'
+            })
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse GitHub issue form
+        if: github.event_name == 'issues'
+        uses: stefanbuck/github-issue-parser@c1a559d78bfb8dd05216dab9ffd2b91082ff5324
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/cluster-send-invitation-issue.yaml
+
+      - name: Debug GitHub issue form (fetch content)
+        run: |
+          echo "${JSON_STRING}" > issue.json
+          jq . issue.json
+        env:
+          JSON_STRING: ${{ steps.issue-parser.outputs.jsonString || '{}' }}
+
+      - name: Authenticate to Google Cloud
+        uses: ./.github/actions/gcp-auth
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL}}
+          accessTokenLifetime: 300s
+
+      - name: Send invitation to users
+        run: |
+          . .ci/scripts/lib/ess.sh
+          ess::send-invitation "staging" "${USER_EMAIL}" > /dev/null || true
+          ess::send-invitation "pro" "${USER_EMAIL}" > /dev/null || true
+          ess::send-invitation "qa" "${USER_EMAIL}" > /dev/null || true
+        env:
+          USER_EMAIL: ${{ inputs.user_email || fromJson(steps.issue-parser.outputs.jsonString).email }}
+
+      - name: Notify - Failure
+        if: ${{ github.event_name == 'issues' && failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚨 The request has failed ([logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))'
+            })
+
+      - if: ${{ github.event_name == 'issues' && success() }}
+        name: Notify - Result
+        uses: peter-evans/close-issue@v3
+        with:
+          comment: |
+            The invitation request has been processed.

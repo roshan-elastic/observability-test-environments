@@ -1,0 +1,24 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vmware-mock
+  name: vmware-mock
+  namespace: "{{ k8s_default_namespace }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vmware
+  template:
+    metadata:
+      labels:
+        app: vmware
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: docker.elastic.co/observability-ci/vcsim:latest
+          name: vmware
+          ports:
+            - containerPort: 443

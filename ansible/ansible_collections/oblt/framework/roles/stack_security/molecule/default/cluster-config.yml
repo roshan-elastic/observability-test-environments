@@ -1,0 +1,15 @@
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: false
+deploy_timestamp: none
+ephemeral_cluster: true
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+kind_config_file: "{{ build_dir }}/kind/config_single_node-ports.yml"
+
+stack:
+  mode: eck
+  template: elasticsearch
+
+k8s:
+  provider: kind
+  ingress: true
+  certmanager: false

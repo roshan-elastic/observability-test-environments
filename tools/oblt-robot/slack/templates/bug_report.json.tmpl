@@ -1,0 +1,28 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Hey there 👋 I'm oblt-robot. I'm here to help you with Oblt Clusters, CI and some automation!\n"
+			}
+		},
+		{{ if .Success }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "<@{{ .User }}>, everything went smooth and the bug has been created. <{{ .Issue }}|{{ .Issue }}>"
+			}
+		}
+		{{ else }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "I'm sorry <@{{ .User }}>, something went wrong when creating the issue {{ .Error }}"
+			}
+		}
+		{{ end }}
+	]
+}

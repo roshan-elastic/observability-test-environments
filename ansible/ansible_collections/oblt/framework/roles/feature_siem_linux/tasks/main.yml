@@ -1,0 +1,6 @@
+---
+- name: Undeploy existing deployment
+  ignore_errors: true
+  include_tasks: undeploy.yml
+- name: Init deployment
+  include_tasks: deploy.yml

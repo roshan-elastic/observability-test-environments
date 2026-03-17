@@ -1,0 +1,11 @@
+---
+- name: Include tasks from copy_files_beats.yml
+  include_tasks: copy_files_beats.yml
+
+- name: Deploy Beats
+  changed_when: false
+  command: |
+    kubectl apply -R -f "{{ k8s_dir }}/beats"
+  tags:
+    - beats
+    - deploy

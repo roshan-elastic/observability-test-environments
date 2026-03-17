@@ -1,0 +1,10 @@
+---
+description: Enable logs_ui_categories ML module
+api: "/api/ml/modules/setup/logs_ui_categories"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+body: '{"indexPatternName": "logs-*"}'
+return_code:
+  - 200

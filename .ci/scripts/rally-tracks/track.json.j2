@@ -1,0 +1,72 @@
+{{ '{%' }} import "rally.helpers" as rally with context {{ '%}' }}
+{
+  "version": 2,
+  "description": "Tracker-generated track for {{ track_name }}",
+  "indices": [
+    {% for index in indices -%}
+    {% if not loop.index == 1 %},{% endif %}
+    {
+      "name": "{{ index.name }}",
+      "body": "{{ index.name }}.json"
+    }
+    {% endfor %}
+  ],
+  "corpora": [
+    {% for index in indices -%}
+    {% if not loop.index == 1 %},{% endif %}
+    {
+      "name": "{{ index.name }}",
+      "documents": [
+        {
+          "target-index": "{{ index.name }}",
+          "source-file": "{{ index.name_bz2 }}",
+          "document-count": {{ index.documents }}
+        }
+      ]
+    }
+    {% endfor %}
+  ],
+  "schedule": [
+    {
+      "operation": "delete-index"
+    },
+    {
+      "operation": {
+        "operation-type": "create-index",
+        "settings": {% raw %}{{index_settings | default({}) | tojson}}{% endraw %}
+      }
+    },
+    {
+      "operation": {
+        "operation-type": "cluster-health",
+        "index": "{{ indices_pattern }}",
+        "request-params": {
+          "wait_for_status": {% raw %}"{{cluster_health | default('green')}}"{% endraw %},
+          "wait_for_no_relocating_shards": "true"
+        },
+        "retry-until-success": true
+      }
+    },
+    {% for pipeline in pipelines -%}
+    {
+      "operation": {
+        "name": "{{ pipeline.name }}",
+        "operation-type": "put-pipeline",
+        "id": "{{ pipeline.name }}",
+        "body":
+          {{ '{%' }} raw {{ '%}' }}
+            {{ pipeline.body | indent(12) }}
+          {{ '{%' }} endraw {{ '%}' }}
+      }
+    },
+    {% endfor %}
+    {
+      "operation": {
+        "operation-type": "bulk",
+        "bulk-size": {% raw %}{{bulk_size | default(5000)}}{% endraw %},
+        "ingest-percentage": {% raw %}{{ingest_percentage | default(100)}}{% endraw %}
+      },
+      "clients": {% raw %}{{bulk_indexing_clients | default(8)}}{% endraw %}
+    }
+  ]
+}

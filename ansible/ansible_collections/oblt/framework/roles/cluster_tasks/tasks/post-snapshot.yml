@@ -1,0 +1,56 @@
+---
+- name: Post snapshot settings
+  ignore_errors: true
+  vars:
+    url: "{{ elasticsearch_url }}"
+    requests_list:
+      - url: "_cluster/settings?pretty"
+        method: "PUT"
+        payload: |
+          {
+            "persistent": {
+              "ingest.geoip.downloader.enabled": true
+            }
+          }
+      - url: "_ilm/start?pretty"
+        method: POST
+        payload: ""
+      - url: "_ml/set_upgrade_mode?enabled=false&pretty"
+        method: "POST"
+        payload: ""
+      - url: "_cluster/settings?pretty"
+        method: "PUT"
+        payload: |
+          {
+            "persistent": {
+              "xpack.monitoring.collection.enabled": true
+            }
+          }
+      - url: "_watcher/_start?pretty"
+        method: "POST"
+        payload: ""
+      - url: "_cluster/settings?pretty"
+        method: "PUT"
+        payload: |
+          {
+            "persistent": {
+              "action.destructive_requires_name": null
+            }
+          }
+  uri:
+    url: "{{ url }}/{{ item.url }}"
+    method: "{{ item.method }}"
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: "{{ item.payload }}"
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 3
+  delay: 30
+  loop: "{{ requests_list }}"

@@ -1,0 +1,47 @@
+{
+  "apache_spark-jolokia/metrics": {
+    "enabled": true,
+    "streams": {
+      "apache_spark.application": {
+        "enabled": true,
+        "vars": {
+          "hosts": [
+            "http://localhost:7777"
+          ],
+          "path": "/jolokia/?ignoreErrors=true&canonicalNaming=false",
+          "period": "60s"
+        }
+      },
+      "apache_spark.driver": {
+        "enabled": true,
+        "vars": {
+          "hosts": [
+            "http://localhost:7777"
+          ],
+          "path": "/jolokia/?ignoreErrors=true&canonicalNaming=false",
+          "period": "60s"
+        }
+      },
+      "apache_spark.executor": {
+        "enabled": true,
+        "vars": {
+          "hosts": [
+            "http://localhost:7777"
+          ],
+          "path": "/jolokia/?ignoreErrors=true&canonicalNaming=false",
+          "period": "60s"
+        }
+      },
+      "apache_spark.node": {
+        "enabled": true,
+        "vars": {
+          "hosts": [
+            "http://localhost:7777"
+          ],
+          "path": "/jolokia/?ignoreErrors=true&canonicalNaming=false",
+          "period": "60s"
+        }
+      }
+    }
+  }
+}

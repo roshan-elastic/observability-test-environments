@@ -1,0 +1,19 @@
+{{- if .Values.enabled }}
+{{- if .Values.serviceGroup.deploy }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.serviceGroup.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    service-group: {{ .Values.serviceGroup.name }}
+spec:
+  ports:
+  - protocol: TCP
+    port: {{ .Values.serviceGroup.port }}
+    targetPort: {{  .Values.serviceGroup.targetPort }}
+  selector:
+    service-group: {{ .Values.serviceGroup.name }}
+{{- end }}
+{{- end -}}

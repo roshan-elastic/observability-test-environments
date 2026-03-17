@@ -1,0 +1,21 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "gcp_dir": {
+            "type": "string",
+            "description": "The directory where the GCP files are stored",
+            "default": "\"\""
+        },
+        "cluster_context": {
+            "type": "string",
+            "description": "The name of the k8s configuration context to create",
+            "default": "\"\""
+        },
+        "static_ip_region": {
+            "type": "string",
+            "description": "The region to create the static IP",
+            "default": "\"\""
+        }
+    }
+}

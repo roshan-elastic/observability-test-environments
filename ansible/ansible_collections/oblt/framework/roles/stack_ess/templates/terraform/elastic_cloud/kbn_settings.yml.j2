@@ -1,0 +1,92 @@
+# timestamp {{ deploy_timestamp }}
+{% if kibana_enabled %}
+{% if ess_stack_pack_version is version('7.6.0', '>=') and kibana_further_details %}
+xpack.security.loginAssistanceMessage: "Further&#32;details&#32;[here](https://ela.st/{{ cluster_name }}-credentials)"
+{% endif -%}
+{% if ess_stack_pack_version is version('7.15.0', '>=') and ess_stack_pack_version is version('8.0.0', '<') %}
+xpack.fleet.enabled: true
+{% endif -%}
+{% if false and ess_stack_pack_version is version('7.14.0', '>=') %}
+# Disabled until we whitelist the settings on staging
+xpack.ruleRegistry.write.enabled: true
+xpack.observability.unsafe.alertingExperience.enabled: true
+xpack.observability.unsafe.cases.enabled: true
+{% endif -%}
+{% if ess_stack_pack_version is version('7.16.2', '>=') and grab_cluster_info %}
+# It is not possible to overwrite the setting in CTF https://github.com/elastic/observability-robots/issues/1393#issuecomment-1296966674
+# telemetry.sendUsageTo: staging
+xpack.banners:
+  placement: "top"
+  textContent: "{{ cluster_name }} [version info]({{ cluster_readme_url }})"
+  textColor: "#FFFFFF"
+  backgroundColor: "#A8BFDA"
+{% endif -%}
+{% if ess_saml_id != 'disabled' %}
+xpack.security.authc.providers:
+  saml.saml1:
+    order: 0
+    realm: "cloud-saml"
+    description: "Log in with Okta"
+    icon: "https://www.okta.com/themes/custom/okta_www_theme/images/logo.svg"
+  basic.basic1:
+    order: 1
+{% endif -%}
+{% if ess_stack_pack_version is version('7.10.0', '>=') and observability_enabled and ess_not_allow_settings %}
+# commented due to https://github.com/elastic/observability-test-environments/issues/2314
+elastic.apm.active: true
+elastic.apm.serverUrl: {{ observability_apm_url }}
+elastic.apm.secretToken: {{ observability_apm_token }}
+elastic.apm.centralConfig: false
+elastic.apm.breakdownMetrics: true
+elastic.apm.transactionSampleRate: 0.5
+elastic.apm.metricsInterval: '120s'
+elastic.apm.global_labels.deploymentName: {{ cluster_name }}
+elastic.apm.global_labels.elasticStack: {{ stack_version | default('unknown') }}
+{% endif -%}
+{% if (kibana_open_ai_service|default(None)) %}
+xpack.actions.preconfigured:
+{% if kibana_open_ai_service == 'azureOpenAI' %}
+  azure-open-ai:
+    actionTypeId: .gen-ai
+    name: Azure OpenAI GPT-4
+    config:
+      apiUrl: https://{{ kibana_open_ai_resource_name }}.openai.azure.com/openai/deployments/{{ kibana_open_ai_deployment_id }}/chat/completions?api-version=2023-07-01-preview
+      apiProvider: Azure OpenAI
+    secrets:
+      apiKey: {{ kibana_open_ai_apikey }}
+{% endif -%}
+{% endif -%}
+{% if ess_stack_pack_version is version('8.5.0', '>=') %}
+xpack.profiling.enabled: true
+{% if stack_package_registry %}
+xpack.fleet.registryUrl: https://{{ stack_package_registry }}
+{% endif -%}
+{% if ess_not_allow_settings %}
+xpack.fleet.packages:
+  - name: system
+    version: latest
+  - name: elastic_agent
+    version: latest
+  - name: apm
+    version: latest
+  - name: fleet_server
+    version: latest
+  - name: log
+    version: latest
+  - name: kubernetes
+    version: latest
+  - name: network_traffic
+    version: latest
+  - name: endpoint
+    version: latest
+  - name: cloud_security_posture
+    version: latest
+{% endif -%}
+{% endif -%}
+{% if stack_version is version('8.15.0', '>=') and ess_not_allow_settings %}
+server.protocol: http2
+{% endif %}
+{% if kibana_extra_config is defined %}
+{{ kibana_extra_config }}
+{% endif -%}
+{% endif -%}

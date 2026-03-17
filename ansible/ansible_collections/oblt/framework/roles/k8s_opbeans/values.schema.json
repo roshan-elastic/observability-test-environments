@@ -1,0 +1,16 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "opbeans": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable Opbeans",
+                    "default": true
+                }
+            }
+        }
+    }
+}

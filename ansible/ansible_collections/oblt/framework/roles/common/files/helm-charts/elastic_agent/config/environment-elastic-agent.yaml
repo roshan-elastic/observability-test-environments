@@ -1,0 +1,46 @@
+{{- if ((.Values.fleet).enrollToken) }}
+- name: FLEET_ENROLLMENT_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.fleetCreds" . }}
+      key: token
+{{- else if ((.Values.fleet).tokenPolicyName) }}
+- name: FLEET_TOKEN_POLICY_NAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.fleetCreds" . }}
+      key: token_policy_name
+# {{ required "Kibana access details are needed if you provide a policy name (not a policy token)" ((.Values.kibana).host) }}
+- name: KIBANA_HOST
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.kibanaCreds" . }}
+      key: host
+- name: KIBANA_FLEET_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.kibanaCreds" . }}
+      key: username
+- name: KIBANA_FLEET_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.kibanaCreds" . }}
+      key: password
+{{- end }}
+- name: FLEET_FORCE
+  value: {{ if ((.Values.fleet).force) }}"1"{{ else }}"0"{{ end }}
+- name: FLEET_ENROLL
+  value: {{ if ((.Values.fleet).enroll) }}"1"{{ else }}"0"{{ end }}
+- name: FLEET_INSECURE
+  value: {{ if ((.Values.fleet).insecure) }}"1"{{ else }}"0"{{ end }}
+{{- if not ((.Values.fleetServer).enabled) }}
+- name: FLEET_URL
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.fleetCreds" . }}
+      key: fleet_server
+{{- end }}
+- name: NODE_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: spec.nodeName

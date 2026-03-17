@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update Kind
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  chart:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      labels:
+        - "dependencies"
+        - "automerge"
+sources:
+  lastKind:
+    kind: githubrelease
+    spec:
+      owner: "kubernetes-sigs"
+      repository: "kind"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      versionfilter:
+        kind: latest
+    transformers:
+      - trimprefix: "v"
+
+targets:
+  updateKind:
+    name: "Update Kind"
+    sourceid: lastKind
+    scmid: githubConfig
+    kind: yaml
+    spec:
+      file: "ansible/ansible_collections/oblt/framework/roles/tools/defaults/main.yml"
+      key: "$.kind_version"

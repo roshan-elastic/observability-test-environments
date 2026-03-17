@@ -1,0 +1,121 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+## @param replicaCount number of replicas to deploy.
+replicaCount: 1
+## @param stackVersion Elastic Stack version to use.
+stackVersion: 8.7.0
+## @section kibana Kibana connection configuration
+kibana:
+  ## @param kibana.url Kibana host to connect to.
+  url: http://kibana:5601
+  ## @param kibana.username Kibana username to use.
+  username: elastic
+  ## @param kibana.password Kibana password to use.
+  password: changeme
+## @section fleet Fleet Server connection configuration.
+fleet:
+  ## @param fleet.url Fleet Server host to connect to.
+  url: http://fleet-server:8220
+  ## @param fleet.policy Fleet Server policy to configure the integration.
+  policy: Default Integration
+
+## @section elasticAgent Elastic Agent configuration
+elasticAgent:
+  ## @param elasticAgent.enabled Enable or disable the Elastic Agent.
+  enabled: true
+## @section workspace Workspace configuration
+workspace:
+  ## @param workspace.enabled Enable or disable the workspace.
+  enabled: true
+## @section packageRegistry Package Registry configuration
+packageRegistry:
+  ## @param packageRegistry.enabled Enable or disable the package registry.
+  enabled: true
+## @section integration System integration configuration
+integration:
+  ## @param integration.name name of the integration.
+  name: system
+  ## @param integration.branch version/branch of the integration.
+  branch: main
+  ## @param integration.repository repository of the integration.
+  repository: elastic/integrations
+
+## @param imagePullSecrets list of imagePullSecrets to use.
+imagePullSecrets: []
+
+## @param nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `elastic-agent`.
+nameOverride: ""
+## @param fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `elastic-agent`.
+fullnameOverride: ""
+
+## @section serviceAccount Kubernetes Service Account settings
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a service account should be created
+  create: true
+  ## @param serviceAccount.annotations Annotations to add to the service account
+  annotations: {}
+  ## @param serviceAccount.name The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+## @section serviceAccount Additional labels to add to the Kubernetes objects.
+## @skip labels
+labels: {}
+
+## @section resources Allows you to set the [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) for the kubernetes pods.
+## @skip resources
+resources:
+  limits:
+    memory: 1Gi
+  requests:
+    cpu: 0.1
+    memory: 500Mi
+
+## @section nodeSelector Configurable [nodeSelector](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector) so that you can target specific nodes for your Elasticsearch cluster.
+## @skip nodeSelector
+nodeSelector: {}
+
+## @param tolerations Configurable [tolerations](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).
+tolerations: []
+
+## @section affinity Value for the [node affinity settings](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity-beta-feature).
+## @skip affinity
+affinity: {}
+
+## @param extraEnvs Additional environment variables for pods.
+extraEnvs: []
+
+## @section service service Service settings
+service:
+  ## @param service.type Service type
+  type: ClusterIP
+  ## @param service.port Service port
+  port: 8080
+
+## @section ingress Ingress settings
+ingress:
+  ## @param ingress.enabled Enable or disable the ingress resource.
+  ## @param ingress.certificateIssuer Name of the certificates issuer.
+  ## @param ingress.host Hostname exposed by the ingress resource.
+  ## @param ingress.annotations Additional annotation to the ingress resource.
+  enabled: false
+  certificateIssuer: "letsencrypt-stage"
+  host: package-registry.127.0.0.1.ip.es.io
+  annotations: {}
+    # ingress.kubernetes.io/ssl-redirect: "true"
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # nginx.ingress.kubernetes.io/app-root: /dashboard
+    # nginx.ingress.kubernetes.io/auth-type: basic
+    # nginx.ingress.kubernetes.io/auth-secret: elastic-basic-auth
+    # nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  # hosts:
+  #   - host: chart-example.local
+  #     paths:
+  #       - path: /
+  #         pathType: ImplementationSpecific
+  # tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local

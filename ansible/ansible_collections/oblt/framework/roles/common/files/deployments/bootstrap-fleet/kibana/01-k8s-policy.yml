@@ -1,0 +1,22 @@
+---
+description: Create the Kubernetes Integration Policy
+api: "/api/fleet/agent_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+body: |
+  {
+    "name": "Kubernetes Integration",
+    "id": "k8s-integration",
+    "description": "Policy to configure the k8s integration.",
+    "namespace": "default",
+    "monitoring_enabled": [
+      "logs",
+      "metrics"
+    ]
+  }
+return_code:
+  - 200
+  - 409

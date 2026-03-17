@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param ingress_dir [string] The directory where the ingress deploy files are stored
+ingress_dir: "{{ helm_dir }}/lb"
+## @param password_apr1 [string] The password hash for the ingress, it is generated with the password_plaintext value.
+password_apr1: "{{ password_plaintext | password_hash('apr_md5_crypt') }}"
+## @param ingress_version_default [string] The default version for the ingress
+ingress_version_default: 4.11.1
+## @param ingress_version [string] The version for the ingress
+ingress_version: "{{ ingress.version | default(ingress_version_default, true) }}"

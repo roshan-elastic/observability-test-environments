@@ -1,0 +1,28 @@
+cluster_name: edge-oblt-ccs-gdxpv
+configure_external_snapshots_repo_ro: true
+create_users: true
+expire_date: 2024-9-31
+gitops:
+    enabled: "false"
+oblt_username: neptunian
+slack_channel: '@UN9HGUX6K'
+stack:
+    ess:
+        elasticsearch:
+            ccs_remote_cluster: edge-oblt
+            image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-6d3fbeed
+        integrations:
+            image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-6d3fbeed
+        kibana:
+            image: docker.elastic.co/observability-ci/kibana-cloud:8.16.0-6d3fbeed
+        trusted_org: "2001152763"
+    mode: ess
+    observability: true
+    target: production
+    template: elasticsearch
+    version: 8.16.0-SNAPSHOT
+template_description: |
+    Cross Cluster Search (CCS) template configures a oblt cluster that has a remote cluster configured for CCS.
+    For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#ccs)
+template_name: ccs
+updated_at: "2024-07-23T01:54:28Z"

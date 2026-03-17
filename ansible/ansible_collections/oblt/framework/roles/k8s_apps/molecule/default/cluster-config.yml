@@ -1,0 +1,17 @@
+---
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: false
+ephemeral_cluster: true
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+
+k8s:
+  provider: kind
+
+apps:
+  k8s:
+    - name: Dummy Deployment
+      src: "{{ playbook_dir }}/k8s/dummy"
+      version: 1.4
+    - name: Dummy Deployment 1
+      src: "{{ playbook_dir }}/k8s/dummy1"
+      version: 1.4

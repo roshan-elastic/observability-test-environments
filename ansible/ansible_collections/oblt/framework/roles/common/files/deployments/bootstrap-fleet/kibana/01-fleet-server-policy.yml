@@ -1,0 +1,22 @@
+---
+description: Create a Fleet Server Policy
+api: "/api/fleet/agent_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+body: |
+  {
+    "name": "Fleet Server Policy",
+    "id": "fleet-server-policy",
+    "description": "Policy to configure a Fleet Server.",
+    "namespace": "default",
+    "monitoring_enabled": [
+      "logs",
+      "metrics"
+    ]
+  }
+return_code:
+  - 409
+  - 200

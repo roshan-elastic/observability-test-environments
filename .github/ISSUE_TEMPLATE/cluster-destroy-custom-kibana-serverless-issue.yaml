@@ -1,0 +1,14 @@
+name: Destroy Custom Kibana in Serverless
+description: Destroy Kibana PR in Serverless.
+title: "[Destroy Kibana Serverless]: "
+# NOTE: destroy-custom-kibana-serverless label is required by .github/workflows/cluster-destroy-custom-kibana-serverless-issue.yml
+labels: ["cluster", "destroy-custom-kibana-serverless"]
+body:
+  - type: input
+    id: kibana_pullrequest
+    attributes:
+      label: Kibana pull request
+      description: Kibana Pull Request (e.g 10000)
+      placeholder: ex. 10000
+    validations:
+      required: true

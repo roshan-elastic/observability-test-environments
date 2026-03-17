@@ -1,0 +1,76 @@
+---
+- name: Create GKE cluster
+  block:
+    - name: create a network
+      google.cloud.gcp_compute_network:
+        name: "{{ gcp_default_network }}"
+        auto_create_subnetworks: 'true'
+        state: present
+      when:
+        - gcp_default_network is defined
+        - gcp_default_network != "oblt-clusters-vpc"
+        - gcp_default_network != "oblt-clusters-test-vpc"
+        - gcp_default_network != "oblt-clusters-vm-vpc"
+        - gcp_default_network != "oblt-clusters-test-vm-vpc"
+    - name: create a cluster
+      google.cloud.gcp_container_cluster:
+        name: "{{ gke_cluster_name }}"
+        initial_node_count: 1
+        logging_service: 'none'
+        monitoring_service: 'none'
+        zone: "{{ k8s_region }}"
+        network: "{{ gcp_default_network }}"
+        state: present
+        resource_labels:
+          name: "{{ gke_cluster_name }}"
+          owner: "{{ oblt_username | lower | regex_replace('[^a-z0-9-]', '') }}"
+          division: engineering
+          org: obs
+          team: observability
+          project: oblt-clusters
+      register: gcp_cluster
+
+    - name: get info on a cluster
+      google.cloud.gcp_container_cluster_info:
+        zone: "{{ k8s_region }}"
+
+    - name: create a node pool
+      gcp_container_node_pool:
+        name: "{{ gke_cluster_name }}-pool"
+        initial_node_count: 1
+        autoscaling:
+          enabled: true
+          max_node_count: "{{ k8s_max_node_count }}"
+          min_node_count: 0
+        cluster: "{{ gcp_cluster }}"
+        zone: "{{ k8s_region }}"
+        config:
+          machine_type: "{{ k8s_machine_type }}"
+          labels:
+            name: "{{ gke_cluster_name }}"
+            owner: "{{ oblt_username }}"
+            division: engineering
+            org: obs
+            team: observability
+            project: oblt-clusters
+          tags:
+            - "oblt-cluster"
+            - "{{ gke_cluster_name }}"
+        state: present
+
+    - name: get info on a node pool
+      gcp_container_node_pool_info:
+        cluster: "{{ gcp_cluster }}"
+        zone: "{{ k8s_region }}"
+
+    - name: Create a static IP
+      import_tasks: create_static_ip.yml
+      when:
+        - static_ip is defined
+        - static_ip
+  when:
+    - gke_create_cluster
+  tags:
+    - k8s
+    - deploy
+    - gcp

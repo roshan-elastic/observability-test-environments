@@ -1,0 +1,44 @@
+---
+name: Oblt Clusters create oblt-cli/* PR
+on:
+  push:
+    branches:
+      - "oblt-cli/*"
+    paths:
+      - 'environments/users/**/*.yml'
+      - 'environments/users/**/*.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: false
+
+      - uses: elastic/oblt-actions/git/setup@v1
+
+      - name: Configure remote origin
+        continue-on-error: true
+        run: |
+          # This should help with using git diff --name-status main rather than
+          # git diff --name-status origin/main used by the oblt-cli pull-request created
+          git checkout main
+          git checkout -
+          git diff --name-status main || true
+
+      - name: Get git commit message
+        run: echo "COMMIT_MESSAGE=$(git log --format=%B -n 1|head -1)" >> "${GITHUB_ENV}"
+
+      - name: Create a new PR
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        with:
+          command: 'ci pull-request create --title "$COMMIT_MESSAGE" --body "$COMMIT_MESSAGE" --labels "automerge,skip-changelog,oblt-cli-cluster"'
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}

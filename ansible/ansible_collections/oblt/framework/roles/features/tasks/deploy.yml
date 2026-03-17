@@ -1,0 +1,9 @@
+---
+- name: Deploy '{{ feature.name }}'
+  vars:
+    role_parameters: "{{ feature }}"
+  include_role:
+    name: "oblt.framework.feature_{{ feature.name }}"
+  loop: "{{ features }}"
+  loop_control:
+    loop_var: feature

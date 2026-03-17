@@ -1,0 +1,41 @@
+---
+# Description of what the recipe do.
+description: Alert Rule - Error count threshold
+# Path to the REST API call.
+api: "/app/observability/alerts/rules?_a=(lastResponse:!())"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PUT
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+# The payload to send to the REST API.
+body: |
+  {
+    "throttle": null,
+    "name": "Error count threshold",
+    "tags": ["apm"],
+    "schedule": { "interval": "1m" },
+    "params": {
+      "environment": "production",
+      "threshold": 25,
+      "windowSize": 1,
+      "windowUnit": "m",
+      "serviceName": "elastic-co-frontend"
+    },
+    "notify_when": "onActionGroupChange",
+    "actions": [
+      {
+        "group": "threshold_met",
+        "id": "elastic-cloud-email",
+        "params": {
+          "message": "{{alertName}} alert is firing because of the following conditions:\\n\\n- Service name: {{context.serviceName}}\\n- Environment: {{context.environment}}\\n- Threshold: {{context.threshold}} errors\\n- Triggered value: {{context.triggerValue}} errors over the last {{context.interval}}",
+          "to": ["observability-robots@elasti.co"],
+          "subject": "☠️☠️☠️ Alerts for errors "
+        }
+      }
+    ]
+  }
+# The expected return code.
+return_code:
+  - 200

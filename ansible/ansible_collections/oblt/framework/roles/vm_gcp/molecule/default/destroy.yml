@@ -1,0 +1,19 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+    bin_dir: "{{ build_dir }}/bin"
+    cluster_name: "vm-gcp-{{ cluster_seed }}"
+    vm_gcp_name: "test-instance-{{ cluster_seed }}"
+  roles:
+    - role: oblt.framework.common
+  tasks:
+    - name: Destroy VM
+      include_role:
+        name: oblt.framework.vm_gcp
+        tasks_from: undeploy.yml
+        apply:
+          ignore_errors: true

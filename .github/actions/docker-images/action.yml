@@ -1,0 +1,91 @@
+---
+name: docker-image
+description: Build and push Docker images to Elastic Docker repository and GitHub packages.
+inputs:
+  images:
+    description: 'The images to build and push.'
+    required: true
+  githubUsername:
+    description: 'The GitHub username.'
+    default: ${{ github.actor }}
+  githubToken:
+    description: 'The GitHub token with packages permissions.'
+    default: ${{ github.token }}
+  platforms:
+    description: 'The platforms to build for.'
+    default: 'linux/amd64,linux/arm64'
+  context:
+    description: 'The context to use for the build.'
+    default: '.'
+  tags:
+    description: 'The tags to use for the build. https://github.com/docker/metadata-action?tab=readme-ov-file#tags-input'
+    default: |
+      type=raw,value=latest,enable={{is_default_branch}}
+      type=ref,event=branch
+      type=ref,event=pr
+      type=semver,pattern={{version}}
+      type=semver,pattern={{major}}.{{minor}}
+      type=semver,pattern={{major}}
+      type=sha
+  dockerRegistry:
+    description: 'The Docker registry.'
+    default: 'docker.elastic.co'
+  dockerUsername:
+    description: 'The Docker registry username.'
+    default: ""
+  dockerPassword:
+    description: 'The Docker registry password.'
+    default: ""
+outputs:
+  imageId:
+    description: 'The image ID.'
+    value: ${{ steps.build.outputs.imageId }}
+  digest:
+    description: 'The image digest.'
+    value: ${{ steps.build.outputs.digest }}
+  metadata:
+    description: 'The metadata.'
+    value: ${{ steps.build.outputs.metadata }}
+runs:
+  using: "composite"
+  steps:
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      if: ${{ inputs.dockerUsername != '' }}
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.dockerRegistry }}
+        username: ${{ inputs.dockerUsername }}
+        password: ${{ inputs.dockerPassword }}
+
+    - name: Login to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.githubUsername }}
+        password: ${{ inputs.githubToken }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ inputs.images }}
+        # generate Docker tags based on the following events/attributes
+        tags: ${{ inputs.tags }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      id: build
+      with:
+        context: ${{ inputs.context }}
+        platforms: ${{ inputs.platforms }}
+        push: true
+        sbom: true
+        provenance: mode=max
+        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}

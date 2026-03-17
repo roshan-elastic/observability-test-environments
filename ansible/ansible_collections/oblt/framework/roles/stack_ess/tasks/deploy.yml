@@ -1,0 +1,26 @@
+---
+- name: Copy files
+  include_tasks: copy_files.yml
+
+- name: Create/update Elastic Cloud deployment
+  no_log: false
+  environment:
+    TF_LOG_PATH: "{{ ess_tf_dir }}/terraform.log"
+    TF_LOG: INFO
+    TF_IN_AUTOMATION: "1"
+    TF_VAR_ess_apikey: "{{ ess_api_key }}"
+  terraform:
+    project_path: "{{ ess_tf_dir }}/"
+    state: "present"
+    force_init: true
+  when:
+    - elasticsearch_enabled|bool
+  tags:
+    - deploy
+    - molecule-idempotence-notest
+
+- name: Load configuration
+  include_tasks: load_config.yml
+
+- name: Wait for Stack
+  include_tasks: wait_for_stack.yml

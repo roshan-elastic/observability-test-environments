@@ -1,0 +1,7 @@
+---
+- name: "Create {{ build_dir }}/github-summary.md file"
+  copy:
+    content: "{{ lookup('ansible.builtin.template', '{{ templates_dir }}/github-summary.md.j2') }}"
+    dest: "{{ build_dir }}/github-summary.md"
+  when:
+    - elasticsearch_enabled | bool

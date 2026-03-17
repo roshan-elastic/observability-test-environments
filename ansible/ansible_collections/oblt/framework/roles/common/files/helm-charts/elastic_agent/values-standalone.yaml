@@ -1,0 +1,54 @@
+# Default values for elastic-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/beats/elastic-agent
+  # -- Tag for the Docker image.
+  tag: 7.16.2
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+
+# -- Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: standalone
+
+standalonePackages:
+  # -- Kubernetes package versions in used standalone mode.
+  kubernetes: 0.5.2
+  # -- log package versions in used standalone mode.
+  log: 0.4.6
+  # -- system package versions in used standalone mode.
+  system: 0.12.7
+standaloneInputs:
+  # -- Collect Kubernetes cluster metrics.
+  kubernetesClusterMetrics: true
+  # -- Collect Kubernetes nodes metrics.
+  kubernetesNodeMetrics: true
+  # -- Collect Nodes logs.
+  systemLogs: true
+  # -- Collect Nodes metrics.
+  systemMetrics: true
+  # -- Collect containers logs.
+  containerLogs: true
+  # -- Configure additional inputs.
+  extra: []
+
+# -- Elastic Common Schema versions.
+ecsVersion: 1.9.0
+
+# -- Elasticsearch settings.
+elasticsearch:
+  # -- URL of the Elasticsearch (e.g. https://elasticsearch:9200).
+  host: "https://elasticsearch:9200"
+  # -- Elasticsearch username.
+  username: "elastic"
+  # -- Elasticsearch password.
+  password: "changeme"
+  # -- service token to use for communication with Elasticsearch.
+  apiToken: "API_TOKEN"
+
+fullnameOverride: "mode-standalone"

@@ -1,0 +1,12 @@
+---
+- name: Generate ECK APM config files
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ build_dir }}/{{ item.file }}"
+    mode: 0600
+  loop:
+    - file: "k8s/apm/apm-deployment.yaml"
+  tags:
+    - apm
+    - generate-config-eck
+    - molecule-idempotence-notest

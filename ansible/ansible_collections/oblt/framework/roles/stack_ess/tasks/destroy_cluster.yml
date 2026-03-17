@@ -1,0 +1,81 @@
+---
+- name: Include tasks from copy_files.yml
+  include_tasks: copy_files.yml
+
+- block:
+    # The standard task of the module pass the argument -force that does not exist
+    # Thus it is not possible to use the Ansible module to destroy the infra.
+    - name: Undeploy Elastic Cloud deployment
+      register: _result
+      changed_when: false
+      environment:
+        TF_LOG_PATH: " {{ ess_tf_dir }}/terraform_destroy.log"
+        TF_LOG: INFO
+        TF_IN_AUTOMATION: "1"
+        TF_VAR_ess_apikey: "{{ ess_api_key }}"
+      shell: |
+        terraform init
+        terraform destroy -no-color -lock=true -auto-approve
+      args:
+        chdir: "{{ ess_tf_dir }}/"
+  when:
+    - ess_deployment_id is defined
+    - ess_deployment_id != ""
+
+- block:
+    - name: Search deployment by Alias
+      vars:
+        _body: |
+          {
+            "size": 10,
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "match_all": {
+                      "metadata.organization_id": "{{ ess_org_id }}",
+                      "metadata.hidden": "false"
+                    }
+                  },
+                  {
+                    "term" : {
+                      "alias" : {
+                        "value" : "{{ cluster_name }}"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+      uri:
+        url: "{{ ess_endpoint }}/api/v1/deployments/_search"
+        method: POST
+        body: "{{ _body | to_json }}"
+        headers:
+          Authorization: "ApiKey {{ ess_api_key }}"
+          Content-Type: application/json
+      register: _deployments_list
+      until: _deployments_list.status == 200
+      retries: 3
+      delay: 10
+    - name: Destroy deployment by Alias
+      vars:
+        _cluster_id: "{{ _deployments_list.json.deployments[0].id }}"
+      uri:
+        url: "{{ ess_endpoint }}/api/v1/deployments/{{ _cluster_id }}/_shutdown?skip_snapshots=true&hide=true"
+        method: POST
+        headers:
+          Authorization: "ApiKey {{ ess_api_key }}"
+          Content-Type: application/json
+      register: _deployment_info
+      until: _deployment_info.status == 200
+      retries: 3
+      delay: 10
+      when:
+        - _deployments_list is defined
+        - _deployments_list.status == 200
+        - _deployments_list.json.deployments | length > 0
+  when:
+    - ess_org_id is defined
+    - ess_org_id | length > 0

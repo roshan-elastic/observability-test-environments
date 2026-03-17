@@ -1,0 +1,65 @@
+---
+# manifest for a kubernetes job that will run the query analyzer script
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: query-analyzer
+  namespace: default
+spec:
+  template:
+    spec:
+      volumes:
+        - name: script
+          configMap:
+            name: query-analyzer-script
+            items:
+              - key: run-query.sh
+                path: run-query.sh
+                mode: 0555
+      containers:
+      - name: query-analyzer
+        image: python:3.11
+        volumeMounts:
+          - name: script
+            mountPath: "/etc/script"
+            readOnly: true
+        envFrom:
+          - secretRef:
+              name: es-creds
+        env:
+          - name: MONITORING_ELASTICSEARCH_HOST
+            valueFrom:
+              secretKeyRef:
+                name: monitoring-metrics-es-ref
+                key: url
+          - name: MONITORING_ELASTICSEARCH_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: monitoring-metrics-es-ref
+                key: username
+          - name: MONITORING_ELASTICSEARCH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: monitoring-metrics-es-ref
+                key: password
+          - name: RALLY_TRACKS_REPO
+            value: https://github.com/elastic/rally-tracks
+          - name: RALLY_TRACK
+            value: elastic/logs
+          - name: RALLY_CHALLENGE
+            value: logging-querying
+          - name: RALLY_INCLUDE_TASKS
+            value: insert-pipelines,insert-ilm,delete-all-datastreams,delete-all-composable-templates,delete-all-component-templates,create-all-component-templates,create-all-composable-templates,create-required-data-streams,validate-package-template-installation,update-custom-package-templates,check-cluster-health,disable_query_cache,search_basic_count_group_0,enable_query_cache
+          - name: TELEMETRY_OPTS
+            value: ingest-pipeline-stats,data-stream-stats,shard-stats,transform-stats,recovery-stats,node-stats,disk-usage-stats
+          - name: TRANSACTION_NAME
+            value: "GET /{index}/_search"
+          - name: TRANSACTION_URL_PATH
+            value: "/logs-*/_search"
+        command: ["/bin/bash", "-c"]
+        args:
+          - /etc/script/run-query.sh
+
+      restartPolicy: Never
+
+  backoffLimit: 4

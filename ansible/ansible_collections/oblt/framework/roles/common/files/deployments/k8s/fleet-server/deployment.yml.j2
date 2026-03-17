@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleet-server
+  labels:
+    app: fleet-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fleet-server
+  template:
+    metadata:
+      labels:
+        app: fleet-server
+    spec:
+      serviceAccountName: fleet-server
+      imagePullSecrets:
+        - name: docker.elastic.co
+      containers:
+      - name: fleet-server
+        image: docker.elastic.co/observability-ci/elastic-agent:{{ stack_version }}
+        args: [
+            "-e", "-d" , "*",
+          ]
+        env:
+        - name: DEPLOY_TIMESTAMP
+          value: "{{ deploy_timestamp }}"
+        - name: FLEET_SERVER_ENABLE
+          value: "1"
+        - name: FLEET_SERVER_INSECURE_HTTP
+          value: "1"
+        - name: FLEET_SERVER_HOST
+          value: "0.0.0.0"
+        - name: FLEET_SERVER_PORT
+          value: "8220"
+        - name: FLEET_SERVER_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: fleet-creds
+              key: server_token
+        - name: FLEET_SERVER_POLICY_ID
+          valueFrom:
+            secretKeyRef:
+              name: fleet-creds
+              key: server_policy_id
+        - name: ELASTICSEARCH_HOST
+          valueFrom:
+            secretKeyRef:
+              name: es-creds
+              key: url

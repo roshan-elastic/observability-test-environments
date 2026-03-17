@@ -1,0 +1,79 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: heartbeat-deploy-au
+  namespace: default
+  labels:
+    k8s-app: heartbeat-deploy-au
+spec:
+  selector:
+    matchLabels:
+      k8s-app: heartbeat-deploy-au
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: heartbeat-deploy-au
+    spec:
+      serviceAccountName: heartbeat
+      hostNetwork: true
+      terminationGracePeriodSeconds: 60
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      initContainers:
+      - name: wait-for-service
+        image: curlimages/curl:latest
+        command: ['sh', '-c', 'until curl -LksS -u ${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD} ${ELASTICSEARCH_HOST}; do echo waiting for ${ELASTICSEARCH_HOST}; sleep 2; done;']
+        envFrom:
+          - secretRef:
+              name: es-creds
+      containers:
+      - name: heartbeat
+        image: {{ beats.heartbeat.image }}
+        imagePullPolicy: Always
+        envFrom:
+          - secretRef:
+              name: es-creds
+          - secretRef:
+              name: apm-creds
+          - secretRef:
+              name: kibana-creds
+        env:
+        - name: ELASTIC_APM_ACTIVE
+          value: 'true'
+        - name: DEPLOY_TIMESTAMMP
+          value: "{{ deploy_timestamp }}"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          limits:
+            memory: 400Mi
+          requests:
+            cpu: 0.05
+            memory: 64Mi
+        volumeMounts:
+        - name: config
+          mountPath: /usr/share/heartbeat/heartbeat.yml
+          readOnly: true
+          subPath: heartbeat.yml
+        - name: monitors
+          mountPath: /usr/share/heartbeat/monitors.d/demo-monitors.yml
+          readOnly: true
+          subPath: demo-monitors.yml
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0755
+          name: heartbeat-config-au
+      - name: monitors
+        configMap:
+          defaultMode: 0755
+          name: heartbeat-demo-monitors
+      - name: data
+        emptyDir: {}
+      imagePullSecrets:
+        - name: docker.elastic.co

@@ -1,0 +1,86 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    k8s-app: filebeat
+    app: beat
+spec:
+  selector:
+    matchLabels:
+      k8s-app: filebeat
+  template:
+    metadata:
+      labels:
+        k8s-app: filebeat
+        app: beat
+    spec:
+      serviceAccountName: filebeat-{{ .Chart.Name }}-{{ .Values.username }}
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: filebeat
+        image: docker.elastic.co/{{ .Values.docker_namespace_beats }}/filebeat:{{ .Values.stack_version }}
+        imagePullPolicy: Always
+        resources:
+          limits:
+           cpu: 5003m
+           memory: 505Mi
+          requests:
+           cpu: 101m
+           memory: 100Mi
+        args: [
+          "-c", "/etc/filebeat.yml",
+          "-d", "autodiscover"
+        ]
+        env:
+        - name: ELASTICSEARCH_USERNAME
+          value: "elastic"
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-es-creds
+              key: ELASTICSEARCH_PASSWORD
+        - name: ELASTICSEARCH_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-es-creds
+              key: ELASTICSEARCH_URL
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: config
+          mountPath: /etc/filebeat.yml
+          readOnly: true
+          subPath: filebeat.yml
+        - name: config
+          mountPath: /etc/ilm_policy.json
+          readOnly: true
+          subPath: ilm_policy.json
+        - name: data
+          mountPath: /usr/share/filebeat/data
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: dockersock
+          mountPath: /var/run
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0600
+          name: filebeat-config
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: dockersock
+        hostPath:
+          path: /var/run
+      - name: data
+        emptyDir: {}

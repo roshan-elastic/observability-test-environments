@@ -1,0 +1,40 @@
+openapi: 3.0.0
+info:
+  title: Oblt Clusters API
+  version: 1.0.0
+servers: []
+paths:
+  /create/ccs:
+    post:
+      summary: Create a new CCS cluster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prefix:
+                  type: string
+                  description: The prefix for the cluster name
+                suffix:
+                  type: string
+                  description: The suffix for the cluster name
+                remote_cluster:
+                  type: string
+                  description: The name of the remote cluster to connect to configure as CCS
+
+  /destroy/{cluster_name}:
+    delete:
+      summary: Destroy a cluster
+      parameters:
+        - name: cluster_name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The name of the cluster to destroy
+components:
+  schemas:
+    ClusterConfig:
+      $ref: './cluster-config-schema.json'

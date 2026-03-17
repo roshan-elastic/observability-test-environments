@@ -1,0 +1,14 @@
+---
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: true
+ephemeral_cluster: true
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+
+k8s:
+  provider: "autopilot"
+  # FIXME try to find a better solution to define the namespaces's names by default.
+  default_namespace: "{{ cluster_name }}-default"
+  kube_system_namespace: "{{ cluster_name }}-kube-system"
+  ingress: false
+  certmanager: false
+  network: "oblt-clusters-test-vpc"

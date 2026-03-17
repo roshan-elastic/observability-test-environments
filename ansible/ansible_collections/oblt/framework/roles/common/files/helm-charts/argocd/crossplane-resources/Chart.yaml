@@ -1,0 +1,6 @@
+apiVersion: v2
+name: crossplane-resources
+description: Crossplane Managed Resources
+type: application
+version: 1.14.3
+appVersion: "1.14.3"

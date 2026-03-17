@@ -1,0 +1,126 @@
+---
+- name: Copy Elastic Cloud files to the build dir
+  copy:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+    mode: preserve
+  tags:
+    - generate_config-ec
+
+- name: Check number of data Nodes
+  ignore_errors: true
+  uri:
+    url: "{{ elasticsearch_url }}/_cluster/health"
+    method: GET
+    return_content: yes
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    status_code: 200
+    body_format: json
+    body: ""
+  register: cluster_health
+  when:
+    - elasticsearch_enabled|bool
+    - cluster_created|bool
+
+- name: Set number of data Nodes
+  set_fact:
+    ess_data_nodes: "{{ cluster_health.json.number_of_data_nodes | default(ess_es_zones) }}"
+    ess_total_nodes: "{{ cluster_health.json.number_of_nodes | default(ess_es_zones) }}"
+  when:
+    - elasticsearch_enabled|bool
+    - cluster_created|bool
+
+- name: Import Terraform State
+  environment:
+    TF_LOG_PATH: "{{ ess_tf_dir }}/terraform.log"
+    TF_LOG: INFO
+    TF_IN_AUTOMATION: "1"
+    TF_VAR_ess_apikey: "{{ ess_api_key }}"
+  block:
+    - name: "Create clean {{ ess_tf_dir }}/main.tf file"
+      copy:
+        content: |
+          variable "ess_apikey" {
+            type = string
+          }
+          terraform {
+            required_version = ">= 0.12.29"
+            required_providers {
+              ec = {
+                source  = "elastic/ec"
+                version = "{{ ess_terraform_version }}"
+              }
+            }
+          }
+          provider "ec" {
+            endpoint = "{{ ess_endpoint }}"
+            insecure = true
+            apikey = var.ess_apikey
+            verbose = true
+          }
+          resource "ec_deployment" "main" {
+            # (resource arguments)
+          }
+        dest: "{{ ess_tf_dir }}/main.tf"
+
+    - name: Terraform init
+      changed_when: false
+      shell: terraform init
+      args:
+        chdir: "{{ ess_tf_dir }}"
+
+    - name: Terraform Import
+      changed_when: false
+      shell: terraform import "ec_deployment.main" {{ ess_deployment_id }}
+      args:
+        chdir: "{{ ess_tf_dir }}"
+    - name: Update credentials
+      environment:
+        TFSTATE_FILE: "{{ ess_tf_dir }}/terraform.tfstate"
+        KEY: "resources[0].instances[0].attributes"
+        ES_USERNAME: "{{ elasticsearch_username }}"
+        ES_PASSWORD: "{{ elasticsearch_password }}"
+        APM_TOKEN: "{{ apm_token }}"
+      shell: |
+        {{ bin_dir }}/update_json.py \
+          --filename ${TFSTATE_FILE} \
+          --key "${KEY}.elasticsearch_username" \
+          --value "${ES_USERNAME}"
+        {{ bin_dir }}/update_json.py \
+          --filename ${TFSTATE_FILE} \
+          --key "${KEY}.elasticsearch_password" \
+          --value "${ES_PASSWORD}"
+        {{ bin_dir }}/update_json.py \
+          --filename ${TFSTATE_FILE} \
+          --key "${KEY}.apm_secret_token" \
+          --value "${APM_TOKEN}"
+  when:
+    - ess_deployment_id is defined
+    - ess_deployment_id != ""
+  tags:
+    - elasticsearch
+    - generate-config
+    - molecule-idempotence-notest
+
+- name: Generate terraform config files
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ build_dir }}/{{ item.file }}"
+    mode: 0640
+  loop:
+    - file: "terraform/elastic_cloud/main.tf"
+    - file: "terraform/elastic_cloud/es_settings.yml"
+    - file: "terraform/elastic_cloud/kbn_settings.yml"
+    - file: "terraform/elastic_cloud/apm_settings.yml"
+  tags:
+    - elasticsearch
+    - generate-config
+    - molecule-idempotence-notest
+
+- name: Create Credentials file
+  copy:
+    content: "{{ lookup('oblt.framework.gcp_secret_manager', key=ess_gcs_credentials) }}"
+    dest: "{{ ess_tf_dir }}/gcp-credentials.json"

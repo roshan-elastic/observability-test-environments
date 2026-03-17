@@ -1,0 +1,23 @@
+---
+description: Create a Elastic Stack Monitoring Agent Policy
+api: "/api/fleet/agent_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+register: fleet_stack_monitoring_policy_result
+body: |
+  {
+    "name": "Stack Monintoring",
+    "id": "stack-monitoring-policy",
+    "description": "Policy to Monintoring the Elastic Stack, it is similar to Stack monitoring but using regular Observability.",
+    "namespace": "default",
+    "monitoring_enabled": [
+      "logs",
+      "metrics"
+    ]
+  }
+return_code:
+  - 409
+  - 200

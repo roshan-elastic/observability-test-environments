@@ -1,0 +1,4 @@
+---
+- name: Undeploy process
+  debug:
+    msg: "Undeploying feature {{ role_name }}"

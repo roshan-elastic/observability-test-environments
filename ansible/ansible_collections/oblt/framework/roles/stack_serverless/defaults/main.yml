@@ -1,0 +1,9 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param serverless_credentials [string] The credentials for the serverless account from GCSM
+serverless_credentials: "{{ lookup('oblt.framework.gcp_secret_manager', key=secret_serverless_account, on_error='warn')|safe()|from_yaml }}"
+## @param serverless_endpoint [string] The endpoint for the serverless API
+serverless_endpoint: "{{ serverless_credentials.serverless_endpoint | mandatory }}"
+## @param serverless_apikey [string] The API key for the serverless API
+serverless_apikey: "{{ serverless_credentials.apiKey | mandatory }}"

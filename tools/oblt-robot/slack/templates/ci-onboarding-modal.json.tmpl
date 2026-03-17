@@ -1,0 +1,102 @@
+{
+  "type": "modal",
+  "clear_on_close": true,
+  "title": {
+    "type": "plain_text",
+    "text": "{{ .Title }}",
+    "emoji": true
+  },
+  "submit": {
+    "type": "plain_text",
+    "text": "Submit",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Cancel",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":wave: Hey!\n\nPlease fill the form, and I will enroll your GitHub project in the CI."
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": " *NOTE* `Grant admin access` to the `obltmachine` GitHub user in the GitHub repository before onboarding the project."
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "block_id": "project",
+      "type": "input",
+      "element": {
+        "type": "plain_text_input",
+        "action_id": "project",
+        "placeholder": {
+          "type": "plain_text",
+          "text": "ex. apm-server"
+        }
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "What GitHub project (without the org)?",
+        "emoji": true
+      }
+    },
+    {
+      "block_id": "projectType",
+      "type": "input",
+      "element": {
+        "type": "static_select",
+        "placeholder": {
+          "type": "plain_text",
+          "text": "Pick a CI Pipeline type from the dropdown list",
+          "emoji": true
+        },
+        "options": [
+          {
+            "text": {
+              "type": "plain_text",
+              "text": "other",
+              "emoji": true
+            },
+            "value": "other"
+          },
+          {
+            "text": {
+              "type": "plain_text",
+              "text": "go",
+              "emoji": true
+            },
+            "value": "go"
+          },
+          {
+            "text": {
+              "type": "plain_text",
+              "text": "npm",
+              "emoji": true
+            },
+            "value": "npm"
+          }
+        ],
+        "action_id": "projectType"
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "Pipeline type",
+        "emoji": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+  tasks:
+
+    - name: Import role
+      include_role:
+        name: oblt.framework.k8s_ingress
+        tasks_from: wait_for_ingress.yml
+
+    - name: Check The ingress endpoint on port 80 works.
+      uri:
+        url: http://localhost:80
+        return_content: yes
+        status_code: [200, 202, 302, 304, 404]
+      register: _result
+      until: _result.status != -1
+      retries: 10
+      delay: 10
+
+    - name: Check The ingress endpoint on port 443 works.
+      uri:
+        url: https://localhost:443
+        validate_certs: no
+        return_content: yes
+        status_code: [200, 202, 302, 304, 404]
+      register: _result
+      until: _result.status != -1
+      retries: 10
+      delay: 10

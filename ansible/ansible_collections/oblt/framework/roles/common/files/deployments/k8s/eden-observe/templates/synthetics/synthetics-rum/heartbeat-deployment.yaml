@@ -1,0 +1,85 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: heartbeat-synthetics
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+spec:
+  selector:
+    matchLabels:
+      k8s-app: heartbeat
+  template:
+    metadata:
+      labels:
+        k8s-app: heartbeat
+    spec:
+      serviceAccountName: heartbeat-{{ .Chart.Name }}-{{ .Values.username }}
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: heartbeat
+        image: docker.elastic.co/{{ .Values.docker_namespace_beats }}/heartbeat:8.1.3
+        # enable for debugging
+        #command: [ "/bin/bash", "-c", "--" ]
+        #args: [ "while true; do sleep 30; done;" ]
+        args: ["-e"]
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 903Mi
+          requests:
+            cpu: 0.05
+            memory: 500Mi
+        env:
+        - name: HIPSTER_BASIC_URL
+          value: "http://frontend-js"
+        - name: HIPSTER_BASIC_PORT
+          value: "3000"
+        - name: ELASTICSEARCH_USERNAME
+          value: "elastic"
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-es-creds
+              key: ELASTICSEARCH_PASSWORD
+        - name: ELASTICSEARCH_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-es-creds
+              key: ELASTICSEARCH_URL
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: todo
+          mountPath: /etc/heartbeat/todo
+        - name: config
+          mountPath: /usr/share/heartbeat/heartbeat.yml
+          readOnly: true
+          subPath: heartbeat.yml
+        - name: config
+          mountPath: /usr/share/heartbeat/ilm_policy.json
+          readOnly: true
+          subPath: ilm_policy.json
+        - name: config
+          mountPath: /etc/heartbeat/todo/add-remove.journey.ts
+          subPath: add-remove.journey.ts
+        #- name: config
+        #  mountPath: /etc/heartbeat/todo/o365.journey.ts
+        #  subPath: o365.journey.ts
+        - name: config
+          mountPath: /etc/heartbeat/todo/package.json
+          subPath: package.json
+        - name: dockersock
+          mountPath: /var/run
+      volumes:
+      - name: dockersock
+        hostPath:
+          path: /var/run
+      - name: config
+        configMap:
+          defaultMode: 0755
+          name: heartbeat-config-synthetics
+      - name: todo
+        emptyDir: {}

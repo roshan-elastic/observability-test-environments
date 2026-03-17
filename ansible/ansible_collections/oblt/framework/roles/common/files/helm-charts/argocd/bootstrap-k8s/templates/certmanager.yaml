@@ -1,0 +1,55 @@
+{{ if .Values.certmanager.enabled -}}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  project: {{ .Values.projectName }}
+  source:
+    chart: cert-manager
+    repoURL: https://charts.jetstack.io
+    targetRevision: {{ .Values.certmanager.version }}
+    helm:
+      releaseName: cert-manager
+      valuesObject:
+        global:
+          leaderElection:
+            namespace: "default"
+        startupapicheck:
+          startupapicheck: 10m
+        installCRDs: true
+        ingressShim:
+          defaultIssuerName: {{ .Values.certmanager.issuer }}
+          defaultIssuerKind: ClusterIssuer
+        resources:
+          requests:
+            cpu: 0.1
+            memory: "64Mi"
+          limits:
+            memory: "128Mi"
+        webhook:
+          resources:
+            requests:
+              cpu: 0.1
+              memory: "64Mi"
+            limits:
+              memory: "128Mi"
+        cainjector:
+          resources:
+            requests:
+              cpu: 0.1
+              memory: "64Mi"
+            limits:
+              memory: "256Mi"
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true
+{{- end }}

@@ -1,0 +1,56 @@
+---
+- name: Include tasks from copy_files_elasticsearch.yml
+  include_tasks: copy_files_elasticsearch.yml
+
+- name: Deploy ECK Elasticsearch
+  changed_when: false
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_default_namespace }}"
+    state: present
+    src: "{{ k8s_dir }}/observability-secrets.yml"
+  tags:
+    - elasticsearch
+    - deploy
+
+- name: Deploy ECK Elasticsearch
+  changed_when: false
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_default_namespace }}"
+    state: present
+    src: "{{ k8s_dir }}/elasticsearch/elasticsearch-deployment.yaml"
+  tags:
+    - elasticsearch
+    - deploy
+
+- name: Include tasks from wait_for_elasticsearch.yml
+  include_tasks: wait_for_elasticsearch.yml
+
+- name: Include tasks from load_config_elasticsearch.yml
+  include_tasks: load_config_elasticsearch.yml
+
+- name: Generate ECK Elasticsearch ingress files
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ build_dir }}/{{ item.file }}"
+    mode: 0600
+  loop:
+    - file: "k8s/elasticsearch/elasticsearch-ingress.yaml"
+  when:
+    - ingress_available
+  tags:
+    - elasticsearch
+    - generate-config-eck
+
+- name: Deploy ingress Elasticsearch
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_default_namespace }}"
+    state: present
+    src: "{{ k8s_dir }}/elasticsearch/elasticsearch-ingress.yaml"
+  when:
+    - ingress_available
+  tags:
+    - elasticsearch
+    - deploy
+
+- name: Include tasks from license.yml
+  include_tasks: license.yml

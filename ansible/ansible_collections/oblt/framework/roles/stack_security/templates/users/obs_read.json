@@ -1,0 +1,7 @@
+{
+  "username": "obs_read",
+  "password": "{{ elasticsearch_password }}",
+  "roles": [
+    "obs_read_only"
+  ]
+}

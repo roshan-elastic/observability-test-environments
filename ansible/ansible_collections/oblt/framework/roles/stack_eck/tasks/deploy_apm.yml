@@ -1,0 +1,43 @@
+---
+- name: Include tasks from copy_files_apm.yml
+  include_tasks: copy_files_apm.yml
+
+- name: Deploy ECK APM
+  changed_when: false
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_default_namespace }}"
+    state: present
+    src: "{{ k8s_dir }}/apm/apm-deployment.yaml"
+  tags:
+    - apm
+    - deploy
+
+- name: Include tasks from wait_for_apm.yml
+  include_tasks: wait_for_apm.yml
+
+- name: Include tasks from wait_for_apm.yml
+  include_tasks: load_config_apm.yml
+
+- name: Generate ECK APM ingress files
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ build_dir }}/{{ item.file }}"
+    mode: 0600
+  loop:
+    - file: "k8s/apm/apm-ingress.yaml"
+  when:
+    - ingress_available
+  tags:
+    - apm
+    - generate-config-eck
+
+- name: Deploy ingress APM
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_default_namespace }}"
+    state: present
+    src: "{{ k8s_dir }}/apm/apm-ingress.yaml"
+  when:
+    - ingress_available
+  tags:
+    - apm
+    - deploy

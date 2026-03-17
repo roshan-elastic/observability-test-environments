@@ -1,0 +1,233 @@
+---
+name: Oblt Cluster deploy custom Kibana (issue)
+
+on:
+  issues:
+    types:
+      - edited
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+
+# Avoid running if there is already an on-going action running for the same
+# GitHub issue
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.issue.number }}"
+
+env:
+  JOB_LOGS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
+jobs:
+  # Read GitHub issue form, generate the required outputs to be consumed later on and
+  # validate whether the given ref refers to an external pull request
+  # since it's not supported for security reasons.
+  prepare_context:
+    if: contains(github.event.issue.labels.*.name, 'deploy-custom-kibana')
+    runs-on: ubuntu-latest
+    outputs:
+      continue: ${{ steps.block-pr-external-contributor.outputs.continue }}
+      ref: ${{ steps.data_parser.outputs.ref }}
+      kibana-branch: ${{ steps.data_parser.outputs.kibana-branch }}
+      pull-request: ${{ steps.data_parser.outputs.pull-request }}
+      template: ${{ steps.issue-parser.outputs.issueparser_template }}
+      oblt_template: ${{ steps.issue-parser.outputs.issueparser_oblt_template || 'deploy-kibana' }}
+      prefix: ${{ steps.data_parser.outputs.prefix }}
+      oblt_user: ${{ steps.issue-parser.outputs.issueparser_oblt_user || 'deploykibana' }}
+      slack: ${{ steps.issue-parser.outputs.issueparser_slack || '#observablt-bots' }}
+      suffix: ${{ steps.data_parser.outputs.suffix }}
+      is_serverless: ${{ steps.data_parser.outputs.is_serverless }}
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+
+      # Use https://github.com/stefanbuck/github-issue-parser/releases/tag/v3.0.1
+      - name: Parse GitHub issue form
+        uses: stefanbuck/github-issue-parser@c1a559d78bfb8dd05216dab9ffd2b91082ff5324
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/cluster-deploy-custom-kibana-issue.yaml
+
+      - name: Debug GitHub issue form (fetch content)
+        uses: actions/github-script@v7
+        env:
+          ISSUE_CONTENT: ${{ steps.issue-parser.outputs.jsonString }}
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const issteFilePath = path.join(process.env.GITHUB_WORKSPACE, 'issue.json')
+            const issue = fs.writeFileSync(issteFilePath, process.env.ISSUE_CONTENT)
+            core.info(`Wrote issue to ${issteFilePath}`)
+            core.debug(issue)
+
+      - name: Transform Kibana git reference
+        uses: actions/github-script@v7
+        id: data_parser
+        env:
+          KIBANA_BRANCH: ${{ steps.issue-parser.outputs.issueparser_kibana_branch }}
+          RAW_PREFIX: ${{ steps.issue-parser.outputs.issueparser_prefix || github.event.issue.user.login || '' }}
+          TEMPLATE: ${{ steps.issue-parser.outputs.issueparser_template }}
+        with:
+          script: |
+            const branch = process.env.KIBANA_BRANCH.toLowerCase();
+            // Normalise the suffix on the fly to be used internally so it can reuse the cluster for the same PR/branch
+            const suffix = process.env.KIBANA_BRANCH.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const prefix = process.env.RAW_PREFIX.toLowerCase();
+            const isPR = branch.startsWith('pr/') || branch.startsWith('pull/');
+            const template = process.env.TEMPLATE;
+
+            if (isPR) {
+              const prNumber = branch.split('/')[1];
+              core.setOutput('ref', `refs/pull/${prNumber}/merge`);
+              core.setOutput('pull-request', prNumber);
+              core.setOutput('kibana-branch', `pr${prNumber}`);
+            } else {
+              core.setOutput('ref', branch);
+              core.setOutput('pull-request', false);
+              core.setOutput('kibana-branch', branch);
+            }
+
+            const isServerless = template.startsWith('serverless') || template.startsWith('keep_serverless-');
+
+            core.setOutput('is_serverless', isServerless);
+            core.setOutput('prefix', prefix);
+            core.setOutput('suffix', suffix);
+
+      - id: is_elastic_pr_author
+        if: ${{ !contains(steps.data_parser.outputs.pull-request, 'false') }}
+        uses: elastic/apm-pipeline-library/.github/actions/is-pr-author-member-elastic-org@current
+        with:
+          pull-request: ${{ steps.data_parser.outputs.pull-request }}
+          repository: "elastic/kibana"
+          token: ${{ secrets.IS_MEMBER_GITHUB_TOKEN }}
+
+      - name: Block - PR owned by external contributor
+        id: block-pr-external-contributor
+        uses: actions/github-script@v7
+        env:
+          IS_PR: ${{ steps.data_parser.outputs.pull-request }}
+          IS_ELASTIC_PR_AUTHOR: ${{ steps.is_elastic_pr_author.outputs.result }}
+        with:
+          script: |
+            if (process.env.IS_PR != 'true') {
+              core.setOutput('continue', 'true');
+            } else {
+              core.setOutput('continue', process.env.IS_ELASTIC_PR_AUTHOR);
+            }
+
+      - name: Notify - PR owned by external contributor
+        if: contains(steps.block-pr-external-contributor.outputs.continue, 'false')
+        uses: peter-evans/close-issue@276d7966e389d888f011539a86c8920025ea0626
+        with:
+          comment: 🚫 This automation cannot deploy PRs from external contributors. [${{ steps.data_parser.outputs.pull-request }}](${{ github.server_url }}/elastic/kibana/pull/${{ steps.data_parser.outputs.pull-request }}) ([logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))
+
+  deploy_custom_kibana:
+    needs: prepare_context
+    runs-on:
+      group: observability-test
+    if: contains(needs.prepare_context.outputs.continue, 'true')
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+
+      - name: Notify - started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🏃 I am building and deploying your Kibana ([logs](${{ env.JOB_LOGS }}))'
+            })
+
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+
+      # IMPORTANT: the secrets below are managed through IASC (contact robots if you need further assistance)
+      - name: Log in to the Elastic Container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          username: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          password: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+
+      - name: Build and Push Kibana Docker Image 🐳
+        uses: elastic/apm-pipeline-library/.github/actions/kibana-docker-image@current
+        id: kibana-docker-image
+        with:
+          serverless: ${{ needs.prepare_context.outputs.is_serverless == 'true' }}
+          git-ref: ${{ needs.prepare_context.outputs.ref }}
+
+      - name: Read Cluster Config template file
+        if: ${{ needs.prepare_context.outputs.is_serverless != 'true' }}
+        id: cluster-config
+        uses: ./.github/actions/cluster-read-config
+        with:
+          clusterName: ${{ needs.prepare_context.outputs.template }}
+
+      - name: Deploy in cloud ☁️
+        if: ${{ needs.prepare_context.outputs.is_serverless != 'true' }}
+        uses: elastic/oblt-actions/oblt-cli/cluster-create-custom@v1
+        with:
+          template: ${{ needs.prepare_context.outputs.oblt_template }}
+          cluster-name-prefix: ${{ needs.prepare_context.outputs.prefix || 'issue' }}
+          cluster-name-suffix: ${{ needs.prepare_context.outputs.suffix }}
+          parameters: |
+            {
+              "RemoteClusterName": "${{ needs.prepare_context.outputs.template }}",
+              "StackVersion": "${{ steps.cluster-config.outputs.elasticsearch_version }}",
+              "ElasticsearchDockerImage":"${{ steps.cluster-config.outputs.elasticsearch_image }}",
+              "KibanaDockerImage":"${{ steps.kibana-docker-image.outputs.ref }}",
+              "EphemeralCluster": true
+            }
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          gitops: true
+          slack-channel: ${{ needs.prepare_context.outputs.slack }}
+          username: ${{ needs.prepare_context.outputs.oblt_user }}
+
+      - name: Deploy in serverless ☁️
+        if: ${{ needs.prepare_context.outputs.is_serverless == 'true' }}
+        uses: elastic/oblt-actions/oblt-cli/cluster-create-custom@v1
+        with:
+          template: serverless
+          cluster-name-prefix: ${{ needs.prepare_context.outputs.prefix || 'issue' }}
+          cluster-name-suffix: ${{ needs.prepare_context.outputs.suffix }}
+          parameters: |
+            {
+              "KibanaDockerImage": "${{ steps.kibana-docker-image.outputs.ref }}",
+              "EphemeralCluster": true
+            }
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          gitops: true
+          slack-channel: ${{ needs.prepare_context.outputs.slack }}
+          username: ${{ needs.prepare_context.outputs.oblt_user }}
+
+      - name: Notify - deploy on-going 🔜
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔜 I am deploying your Kibana in the Observability cluster ([logs](${{ env.JOB_LOGS }}))'
+            })
+
+      - name: Notify - failure 💔
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            var message = '💔 Something went wrong with the deployment ([logs](${{ env.JOB_LOGS }}))'
+            if ('${{ steps.kibana-docker-image.conclusion }}' === 'failure') {
+              message = '💔 Something went wrong when building the Kibana docker image ([logs](${{ env.JOB_LOGS }}))'
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })

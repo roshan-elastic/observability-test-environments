@@ -1,0 +1,223 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "integrations.fullname" . }}
+  labels:
+    {{- include "integrations.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "integrations.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: workspace
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "integrations.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: {{ include "integrations.serviceAccountName" . }}-shared-pvc
+        - name: init-script
+          configMap:
+            name: {{ include "integrations.fullname" . }}-init-script
+            defaultMode: 0777
+            items:
+              - key: init.sh
+                path: init.sh
+        - name: secret-docker
+          secret:
+            secretName: docker.elastic.co
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        - name: shared-run
+          emptyDir: {}
+        - name: shared-lib-docker
+          emptyDir: {}
+      serviceAccountName: {{ include "integrations.serviceAccountName" . }}
+      shareProcessNamespace: true
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+        # This container clones the desired git repo to the EmptyDir volume.
+        - name: git-clone
+          image: alpine/git # Any image with git will do
+          env:
+            - name: SHARE_DIR
+              value: /usr/shared/data
+          command: ["/bin/sh", "/tmp/init.sh"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+            - name: init-script
+              mountPath: /tmp
+      containers:
+        - name: dind
+          image: docker.elastic.co/observability-ci/integrations/dind:1.0.2
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+            - dockerd
+          args:
+            - -H tcp://localhost:2375
+            - -H unix:///var/run/docker.sock
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+            - mountPath: /run
+              name: shared-run
+            - mountPath: /var/lib/docker
+              name: shared-lib-docker
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.elasticAgent.enabled }}
+        - name: elastic-agent
+          image: "docker.elastic.co/observability-ci/elastic-agent:{{ .Values.stackVersion }}"
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+            - name: FLEET_ENROLL
+              value: "1"
+            - name: FLEET_INSECURE
+              value: "true"
+            - name: FLEET_TOKEN_POLICY_NAME
+              value: "{{ .Values.fleet.policy }}"
+            - name: KIBANA_HOST
+              value: "{{ .Values.kibana.url }}"
+            - name: KIBANA_FLEET_USERNAME
+              value: "{{ .Values.kibana.username }}"
+            - name: KIBANA_FLEET_PASSWORD
+              value: "{{ .Values.kibana.password }}"
+            - name: FLEET_URL
+              value: "{{ .Values.fleet.url }}"
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+            - mountPath: /run
+              name: shared-run
+            - mountPath: /var/lib/docker
+              name: shared-lib-docker
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- end }}
+        - name: service
+          image: docker.elastic.co/observability-ci/integrations/dind:1.0.2
+          command:
+            - "/run-integration.sh"
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+          args:
+            - "{{ .Values.integration.name }}"
+            - "{{ .Values.integration.branch }}"
+            - "{{ .Values.integration.repository }}"
+          env:
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+          {{- with .Values.extraEnvs }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+            - name: secret-docker
+              mountPath: /.docker
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{ if (.Values.workspace).enabled }}
+        - name: workspace
+          image: docker.elastic.co/observability-ci/workspace:1.0.3
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              add:
+              - SYS_PTRACE
+          env:
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+            {{- if .Values.kibana }}
+            - name: ELASTIC_PACKAGE_KIBANA_HOST
+              value: "{{ .Values.kibana.url }}"
+            {{- end }}
+            {{- if .Values.elasticsearch }}
+            - name: ELASTIC_PACKAGE_ELASTICSEARCH_HOST
+              value: "{{ .Values.elasticsearch.url }}"
+            - name: ELASTIC_PACKAGE_ELASTICSEARCH_USERNAME
+              value: "{{ .Values.elasticsearch.username }}"
+            - name: ELASTIC_PACKAGE_ELASTICSEARCH_PASSWORD
+              value: "{{ .Values.elasticsearch.password }}"
+            {{- end }}
+          volumeMounts:
+            - name: shared-data
+              mountPath: /workspace
+            - name: secret-docker
+              mountPath: /home/gitpod/.docker
+              readOnly: true
+        {{- end }}
+        {{- if (.Values.packageRegistry).enabled }}
+        - name: package-registry
+          image: docker.elastic.co/observability-ci/integrations/package-registry:1.0.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+          env:
+            - name: EPR_LOG_LEVEL
+              value: debug
+            - name: EPR_ADDRESS
+              value: 0.0.0.0:{{ .Values.service.port }}
+            - name: EPR_METRICS_ADDRESS
+              value: 0.0.0.0:9000
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

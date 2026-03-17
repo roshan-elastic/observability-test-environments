@@ -1,0 +1,64 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update Elastic Stack Serverless {{ requiredEnv "CLUSTER_NAME" }}
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  elasticStack:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      mergemethod: squash
+      title: '[updatecli][{{ requiredEnv "CLUSTER_NAME" }}] Update Elastic Stack Serverless'
+      description: '[updatecli][{{ requiredEnv "CLUSTER_NAME" }}] Update Elastic Stack Serverless'
+      labels:
+        - "dependencies"
+        - '{{ requiredEnv "CLUSTER_NAME" }}'
+        - "elasticStack"
+        - "automerge"
+        - "serverless"
+sources:
+  lastKibanaDockerImage:
+    name: "Check Kibana  Docker image"
+    kind: json
+    spec:
+      file: 'update_channels.json'
+      key: '.{{ requiredEnv "UPDATE_CHANNEL" }}.docker.kibana-serverless'
+  nowDate:
+    name: "Check now date"
+    kind: shell
+    spec:
+      command: date -u +"%Y-%m-%dT%H:%M:%SZ"
+      environments:
+        - name: PATH
+targets:
+  updateVersion:
+    name: "Update Elastic Stack version"
+    scmid: githubConfig
+    kind: shell
+    disablesourceinput: true
+    spec:
+      changedif:
+        kind: file/checksum
+        spec:
+          files:
+            - 'environments/{{ requiredEnv "CLUSTER_CONFIG_FILE" }}'
+      command: |
+        KEY="${KEY}" SET_VALUE="${SET_VALUE}" yq -i 'eval(strenv(KEY)) = strenv(SET_VALUE)' $(pwd)/${FILE}
+      environments:
+        - name: KEY
+          value: '.stack.serverless.kibana.image'
+        - name: SET_VALUE
+          value: '{{ source "lastKibanaDockerImage" }}'
+        - name: FILE
+          value: 'environments/{{ requiredEnv "CLUSTER_CONFIG_FILE" }}'
+        - name: PATH

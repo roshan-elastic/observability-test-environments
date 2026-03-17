@@ -1,0 +1,9 @@
+---
+image:
+  tag: {{ stack_version }}
+elasticsearch:
+  host: {{ elasticsearch_url |  urlsplit("hostname")}}
+  username: {{ elasticsearch_username }}
+  password: {{ elasticsearch_password }}
+scenarios:
+  - mobile.ts

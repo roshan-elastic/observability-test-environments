@@ -1,0 +1,159 @@
+---
+## Workflow run a rally test against a oblt cluster.
+## https://github.com/elastic/observability-robots/issues/1738
+name: rally-tracks-test
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      oblt_cluster:
+        description: Name of the oblt cluster.
+        default: "edge-benchmarks"
+        type: choice
+        options:
+          - "edge-benchmarks"
+          - "release-benchmarks"
+          - "serverless-benchmarks"
+      track_path:
+        description: Path to the rally track inside https://console.cloud.google.com/storage/browser/oblt-clusters/.
+        required: true
+      disable_disk_usage_stats:
+        description: Disable disk usage stats.
+        required: false
+        default: false
+        type: boolean
+      fetch_track:
+        description: Fetch the track from the remote storage.
+        required: false
+        default: false
+        type: boolean
+      esrally_from_sources:
+        description: Use esrally from sources.
+        required: false
+        default: false
+        type: boolean
+      esrally_on_error:
+        description: Continue or Abort the race on a error.
+        required: false
+        default: "continue"
+        type: choice
+        options:
+          - "continue"
+          - "abort"
+  workflow_call:
+    inputs:
+      oblt_cluster:
+        description: Name of the oblt cluster.
+        default: "edge-benchmarks"
+        type: string
+      track_path:
+        description: Path to the rally track inside https://console.cloud.google.com/storage/browser/oblt-clusters/.
+        required: true
+        type: string
+      fetch_track:
+        description: Fetch the track from the remote storage.
+        required: false
+        default: false
+        type: boolean
+      disable_disk_usage_stats:
+        description: Disable disk usage stats.
+        required: false
+        default: false
+        type: boolean
+      esrally_from_sources:
+        description: Use esrally from sources.
+        required: false
+        default: false
+        type: boolean
+      esrally_on_error:
+        description: Continue or Abort the race on a error.
+        required: false
+        default: "continue"
+        type: string
+jobs:
+  rally-track:
+    name: Run Rally track test
+    runs-on:
+      group: observability-test
+    env:
+      CLUSTER_NAME: ${{ inputs.oblt_cluster }}
+      DISABLE_DISK_USAGE_STATS: ${{ inputs.disable_disk_usage_stats }}
+      TRACK_PATH: ${{ github.workspace }}/gcs/${{ inputs.track_path }}
+      ESRALLY_FROM_SOURCES: ${{ inputs.esrally_from_sources }}
+      ESRALLY_ON_ERROR: ${{ inputs.esrally_on_error }}
+      FETCH_TRACK: ${{ inputs.fetch_track }}
+    steps:
+      - name: Parameters
+        run: |
+          cat <<EOF >> "${GITHUB_STEP_SUMMARY}"
+          Parameters:
+            oblt_cluster=${CLUSTER_NAME}
+            track_path=${TRACK_PATH}
+            disable_disk_usage_stats=${DISABLE_DISK_USAGE_STATS}
+            fetch_track=${FETCH_TRACK}
+            esrally_from_sources=${ESRALLY_FROM_SOURCES}
+            esrally_on_error=${ESRALLY_ON_ERROR}
+          EOF
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: 'pip'
+          cache-dependency-path: ansible/requirements.txt
+      - run: pip install --no-compile -r ansible/requirements.txt
+
+      - uses: ./.github/actions/gcsfuse
+        if: ${{ !inputs.fetch_track }}
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL}}
+
+      - name: Fech track from remote storage
+        if: ${{ inputs.fetch_track }}
+        uses: ./.github/actions/download-bucket
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL}}
+          bucketUrl: gs://oblt-clusters/${{ inputs.track_path }}
+          destination: ${{ github.workspace }}/gcs/${{ inputs.track_path }}
+
+      - name: Read cluster config
+        id: cluster-config
+        uses: ./.github/actions/cluster-read-config
+        with:
+          clusterName: ${{ env.CLUSTER_NAME }}
+
+      - name: Run rally track test
+        uses: ./.github/actions/cluster-target
+        with:
+          target: "tasks-rally-track-test"
+          clusterConfigFile: "${{ steps.cluster-config.outputs.clusterConfigFile }}"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Report rally track test
+        run: |
+          cat ansible/build/rally-report.md >> "${GITHUB_STEP_SUMMARY}"
+          cp ansible/build/rally-report.md "${{ github.workspace }}/ansible/build/.rally/rally-report.md"
+
+      - name: Copy benchmarks results
+        run: |
+          cp -R "${LOCAL_BENCHMARKS_DIR}" "${REMOTE_BENCHAMARKS_DIR}"
+        env:
+          LOCAL_BENCHMARKS_DIR: ${{ github.workspace }}/ansible/build/.rally/benchmarks
+          REMOTE_BENCHAMARKS_DIR: ${{ github.workspace }}/gcs/rally-tracks/
+
+      - name: Upload benchmarks results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rally-tracks-benchmarks
+          path: ${{ github.workspace }}/ansible/build/.rally

@@ -1,0 +1,152 @@
+---
+- name: Set facts
+  vars:
+    job_name_var: "dummy-job"
+  set_fact:
+    job_name: "{{ job_name_var }}"
+    es_url: "{{  elasticsearch_url }}"
+    kb_url: "{{ kibana_url }}"
+    create_job_json: |
+      {
+        "job_id": "{{ job_name_var }}",
+        "description": "created to provision a ML node",
+        "groups": [],
+        "analysis_config": {
+          "bucket_span": "15m",
+          "detectors": [
+            {
+              "function": "count"
+            }
+          ],
+          "influencers": [],
+          "summary_count_field_name": "doc_count"
+        },
+        "data_description": {
+          "time_field": "@timestamp"
+        },
+        "custom_settings": {
+          "created_by": "single-metric-wizard"
+        },
+        "analysis_limits": {
+          "model_memory_limit": "11MB"
+        },
+        "model_plot_config": {
+          "enabled": true,
+          "annotations_enabled": true
+        }
+      }
+    create_datafeed_json: |
+      {
+        "datafeed_id": "datafeed-{{ job_name_var }}",
+        "job_id": "{{ job_name_var }}",
+        "indices": [
+          "logs-*"
+        ],
+        "query": {
+          "bool": {
+            "must": [
+              {
+                "match_all": {}
+              }
+            ]
+          }
+        },
+        "runtime_mappings": {},
+        "aggregations": {
+          "buckets": {
+            "date_histogram": {
+              "field": "@timestamp",
+              "fixed_interval": "900000ms"
+            },
+            "aggregations": {
+              "@timestamp": {
+                "max": {
+                  "field": "@timestamp"
+                }
+              }
+            }
+          }
+        }
+      }
+
+- name: Enable logs_ui_categories ML module
+  ignore_errors: true
+  uri:
+    url: "{{ kb_url }}/api/ml/modules/setup/logs_ui_categories"
+    method: POST
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: '{"indexPatternName": "logs-*"}'
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 3
+  delay: 10
+  when:
+    - kibana_url is defined
+
+- block:
+  - name: Delete ML job and Data Feed
+    ignore_errors: true
+    uri:
+      url: "{{ item }}"
+      method: DELETE
+      validate_certs: false
+      user: "{{ elasticsearch_username }}"
+      password: "{{ elasticsearch_password }}"
+      force_basic_auth: true
+      headers:
+        Content-Type: application/json
+        kbn-xsrf: true
+    register: _result_es
+    until: _result_es.status == 200
+    retries: 3
+    delay: 10
+    loop:
+      - "{{ es_url }}/_ml/anomaly_detectors/{{ job_name }}"
+      - "{{ es_url }}/_ml/datafeeds/datafeed-{{ job_name }}"
+
+  - name: Create ML job
+    ignore_errors: true
+    uri:
+      url: "{{ es_url }}/_ml/anomaly_detectors/{{ job_name }}"
+      method: PUT
+      validate_certs: false
+      user: "{{ elasticsearch_username }}"
+      password: "{{ elasticsearch_password }}"
+      force_basic_auth: true
+      headers:
+        Content-Type: application/json
+        kbn-xsrf: true
+      body_format: json
+      body: "{{ create_job_json }}"
+    register: _result_es
+    until: _result_es.status == 200
+    retries: 3
+    delay: 10
+
+  - name: Create Data Feed
+    ignore_errors: true
+    uri:
+      url: "{{ es_url }}/_ml/datafeeds/datafeed-{{ job_name }}"
+      method: PUT
+      validate_certs: false
+      user: "{{ elasticsearch_username }}"
+      password: "{{ elasticsearch_password }}"
+      force_basic_auth: true
+      headers:
+        Content-Type: application/json
+        kbn-xsrf: true
+      body_format: json
+      body: "{{ create_datafeed_json }}"
+    register: _result_es
+    until: _result_es.status == 200
+    retries: 3
+    delay: 10
+  when:
+    - elasticsearch_url is defined

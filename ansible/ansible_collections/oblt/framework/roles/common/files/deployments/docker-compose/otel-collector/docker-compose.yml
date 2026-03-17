@@ -1,0 +1,17 @@
+---
+version: "2.4"
+networks:
+    default:
+        name: integration-testing
+services:
+
+   otel-collector:
+       image: otel/opentelemetry-collector-contrib-dev:latest
+       command:
+           - /otelcol
+           - --config=/otel-collector.yml
+       ports:
+           - "4317:4317"
+       volumes:
+           - ./otel-collector.yml:/otel-collector.yml
+           - ./:/tmp

@@ -1,0 +1,4 @@
+The {{ include "opbeans.fullname" . }} is deployed.
+The service {{ include "opbeans.fullname" . }} is deployed at port {{ .Values.opbeans.opbeans.port }}.
+The database {{ .Values.opbeans.db.name }} is deployed in the service {{ .Values.opbeans.db.host }} at port {{ .Values.opbeans.db.port }}.
+The Redis is deployed in the service {{ .Values.redis.fullnameOverride }} at {{ .Values.opbeans.redis.url }}.

@@ -1,0 +1,100 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update update channels unstable
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  elasticStack:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      mergemethod: squash
+      title: '[updatecli] Update channels unstable'
+      description: 'Update channels Elastic Stack new versions.'
+      labels:
+        - "dependencies"
+        - "update-channels"
+        - "elasticStack"
+        - "automerge"
+        - "unstable"
+sources:
+  ChannelVersion:
+    name: 'Check unstable channel'
+    kind: shell
+    spec:
+      command: make stack-version-unstable
+      environments:
+        - name: PATH
+  ChannelBuild:
+    name: 'Check unstable channel'
+    kind: shell
+    spec:
+      command: make stack-build-unstable
+      environments:
+        - name: PATH
+  ChannelDate:
+    name: 'Check unstable channel'
+    kind: shell
+    spec:
+      command: make build-date-unstable
+      environments:
+        - name: PATH
+  currentBuild:
+    name: 'Check unstable current build'
+    kind: json
+    spec:
+      file: update_channels.json
+      value: update_channels.json
+      key: 'unstable.build'
+conditions:
+  is-downgrade-check:
+    name: Check if it is not a downgrade unstable channel
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: 'make is-downgrade-channel-unstable'
+      environments:
+        - name: PATH
+        - name: TO_VERSION
+          value: '{{ source "ChannelVersion" }}'
+  is-different-build:
+    name: Check if it is the same build unstable channel
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: 'test "${FROM_BUILD}" != "${TO_BUILD}"'
+      environments:
+        - name: PATH
+        - name: FROM_BUILD
+          value: '{{ source "currentBuild" }}'
+        - name: TO_BUILD
+          value: '{{ source "ChannelBuild" }}'
+targets:
+  updateChannelVersion:
+    name: 'Update unstable channel Version'
+    scmid: githubConfig
+    disablesourceinput: true
+    kind: shell
+    spec:
+      command: make -C .ci/update-versions update-channel-json
+      environments:
+        - name: PATH
+        - name: JSON_FILE
+          value: update_channels.json
+        - name: UPDATE_CHANNEL
+          value: 'unstable'
+        - name: UPDATE_CHANNEL_VERSION
+          value: '{{ source "ChannelVersion" }}'
+        - name: UPDATE_CHANNEL_BUILD
+          value: '{{ source "ChannelBuild" }}'
+        - name: UPDATE_CHANNEL_DATE
+          value: '{{ source "ChannelDate" }}'

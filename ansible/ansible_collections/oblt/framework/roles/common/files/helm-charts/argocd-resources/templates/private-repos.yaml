@@ -1,0 +1,32 @@
+---
+# TODO add oblt repo
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: oblt
+#   namespace: argocd
+#   labels:
+#     argocd.argoproj.io/secret-type: repository
+# stringData:
+#   url: https://elastic.github.io/observability-test-environments/helm-charts
+#   type: helm
+#   name: oblt
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: oblt-git
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: gcp-store
+  target:
+    name: oblt-git
+    creationPolicy: Owner
+  dataFrom:
+    - extract:
+        key: oblt-clusters-github-token-ro

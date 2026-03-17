@@ -1,0 +1,27 @@
+{{ if .Values.enabled -}}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane
+  namespace: argocd
+spec:
+  project: {{ .Values.projectName }}
+  source:
+    chart: crossplane
+    repoURL: https://charts.crossplane.io/stable
+    targetRevision: {{ .Chart.Version }}
+    helm:
+      releaseName: crossplane
+      valuesObject:
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: {{ .Values.namespace }}
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true
+{{- end }}

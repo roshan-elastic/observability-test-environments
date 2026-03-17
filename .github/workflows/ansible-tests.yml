@@ -1,0 +1,251 @@
+---
+## Workflow to run the Ansible Role tests.
+name: Ansible Roles
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'ansible/**'
+      - .github/workflows/ansible-tests.yml
+  push:
+    branches:
+      - "main"
+    paths:
+      - 'ansible/**'
+      - .github/workflows/ansible-tests.yml
+
+permissions:
+  pull-requests: read
+  contents: read
+  id-token: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit test common role
+        uses: ./.github/actions/make-target
+        env:
+          ROLE: 'common'
+        with:
+          target: "unit-test"
+          baseDir: "ansible"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+  filter:
+    runs-on: ubuntu-latest
+    needs: lint
+    outputs:
+      matrix: ${{ steps.filter-roles.outputs.matrix }}
+      count: ${{ steps.filter-roles.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: false
+          ref: ${{ github.sha || 'main' }}
+      - uses: ./.github/actions/no-forks
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: 'pip'
+          cache-dependency-path: .ci/requirements.txt
+      - run: pip install --no-compile -r .ci/requirements.txt
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@c65cd883420fd2eb864698a825fc4162dd94482c
+        with:
+          json: true
+          dir_names: true
+          files: |
+            ansible/ansible_collections/oblt/framework/roles/**
+      - name: Filter Roles with changes
+        id: filter-roles
+        shell: python
+        run: |
+          import json
+          import os
+          import sys
+
+          sys.path.insert(1, "./.ci/scripts")
+          import list_molecule_tests as lmt
+
+          roles_path = "ansible/ansible_collections/oblt/framework/roles"
+          tests = lmt.list_molecule_tests(f"./{roles_path}")
+          scenarios = lmt.get_matrix(tests)
+          changed_roles = []
+          changed_files = json.loads('${{ steps.changed-files.outputs.all_modified_files }}')
+
+          for scenario in scenarios:
+              role_path = f"{roles_path}/{scenario['role']}"
+              if any(role_path in s for s in changed_files):
+                  changed_roles.append(scenario)
+
+          with open(os.environ.get('GITHUB_OUTPUT'), "a") as f:
+              f.write(f"matrix={json.dumps(changed_roles)}\n")
+              f.write(f"count={len(changed_roles)}\n")
+      - run: |
+          echo "Roles to test: ${{ steps.filter-roles.outputs.matrix }}"
+
+  test:
+    if: ${{ needs.filter.outputs.count > 0 }}
+    runs-on: ubuntu-latest
+    needs:
+      - filter
+    strategy:
+      fail-fast: false
+      matrix:
+        item: "${{ fromJson(needs.filter.outputs.matrix) }}"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit test ${{ matrix.item.role }} - ${{ matrix.item.scenario }}
+        uses: ./.github/actions/make-target
+        env:
+          ROLE: ${{ matrix.item.role }}
+          SCENARIO: ${{ matrix.item.scenario }}
+        with:
+          target: "unit-test"
+          baseDir: "ansible"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+
+  test-creation-ess:
+    if: ${{ needs.filter.outputs.count > 0 }}
+    runs-on: ubuntu-latest
+    needs:
+      - filter
+    steps:
+      - uses: actions/checkout@v4
+      - name: ESS Creation test
+        uses: ./.github/actions/make-target
+        env:
+          ANSIBLE_COLLECTIONS_PATH: ".:${{ env.HOME }}/.ansible/collections:/usr/share/ansible/collections"
+        with:
+          target: "test-creation"
+          baseDir: "environments/users/robots/release-oblt"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+
+  test-creation-serverless:
+    if: ${{ needs.filter.outputs.count > 0 }}
+    runs-on: ubuntu-latest
+    needs:
+      - filter
+    steps:
+      - uses: actions/checkout@v4
+      - name: Serverless Creation Tests
+        uses: ./.github/actions/make-target
+        with:
+          target: "test-creation"
+          baseDir: "environments/users/robots/serverless-production-oblt"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+
+  test-templates:
+    if: ${{ needs.filter.outputs.count > 0 }}
+    runs-on: ubuntu-latest
+    needs:
+      - filter
+    env:
+      ANSIBLE_COLLECTIONS_PATH: "~/.ansible/collections:/usr/share/ansible/collections:."
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare-tool
+        with:
+          # NOTE: it requires to access private github repositories hence
+          #       EPHEMERAL_GH_TOKEN is not supported
+          token: ${{ secrets.OBLT_CLI_GITHUB_TOKEN }}
+          toolPath: tools/oblt-cli
+      - name: Authenticate to Google Cloud
+        uses: ./.github/actions/gcp-auth
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          accessTokenLifetime: 600s
+      - name: Install oblt-cli
+        env:
+          GOPRIVATE: github.com/elastic
+        run: go install "github.com/elastic/observability-test-environments/tools/oblt-cli@$(cat .ci/.version)"
+
+      - name: Test Autopilot Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/autopilot.yml.tmpl
+          PARAMETERS: '{"StackVersion":"8.14.0-SNAPSHOT"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test CCS Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/ccs.yml.tmpl
+          PARAMETERS: '{"StackVersion":"8.14.0-SNAPSHOT", "RemoteClusterName":"edge-oblt"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test ESS Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/ess.yml.tmpl
+          PARAMETERS: '{"StackVersion":"8.14.0-SNAPSHOT"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test Opbeans Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/opbeans.yml.tmpl
+          PARAMETERS: '{"StackVersion":"8.14.0-SNAPSHOT"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test Serverless Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/serverless.yml.tmpl
+          PARAMETERS: '{"Target": "qa"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test serverless-apm-soak Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/serverless-apm-soak.tmpl
+          PARAMETERS: '{"ApmScenario": "qa"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test serverless-mis Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/serverless-mis.yml.tmpl
+          PARAMETERS: '{"Target": "qa"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test serverless-gatekeeper Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/serverless-gatekeeper.yml.tmpl
+          PARAMETERS: '{"Target": "qa"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test stack-profiling Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/stack-profiling.yml.tmpl
+          PARAMETERS: '{"StackVersion":"8.14.0-SNAPSHOT"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template
+
+      - name: Test serverless-load-test Templates
+        env:
+          TEMPLATE_FILE: ${{ github.workspace }}/environments/users/serverless-load-test.yml.tmpl
+          PARAMETERS: '{"Target": "qa"}'
+          OUTPUT_FILE: ${{ github.workspace }}/cluster-config.yml
+        run: make -C ansible test-template

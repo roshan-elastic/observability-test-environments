@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmware
+  labels:
+    run: vmware
+  namespace: "{{ k8s_default_namespace }}"
+spec:
+  ports:
+    - port: 443
+      targetPort: 443
+      protocol: TCP
+  selector:
+    app: vmware
+  type: ClusterIP

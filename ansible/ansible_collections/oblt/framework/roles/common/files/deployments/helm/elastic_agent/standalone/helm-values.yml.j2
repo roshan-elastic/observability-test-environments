@@ -1,0 +1,94 @@
+# Default values for elastic-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/observability-ci/elastic-agent
+  # -- Tag for the Docker image.
+  tag: "{{ stack_version }}"
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - name: docker.elastic.co
+
+# -- Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: standalone
+
+standaloneInputs:
+  # -- Collect Kubernetes cluster metrics.
+  kubernetesClusterMetrics: true
+  # -- Collect Kubernetes nodes metrics.
+  kubernetesNodeMetrics: true
+  # -- Collect Nodes logs.
+  systemLogs: true
+  # -- Collect Nodes metrics.
+  systemMetrics: true
+  # -- Collect containers logs.
+  containerLogs: false
+  # -- Configure additional inputs.
+  extra:
+    - name: container-log
+      type: logfile
+      use_output: default
+      meta:
+        package:
+          name: log
+      data_stream:
+        namespace: default
+      streams:
+        - data_stream:
+            dataset: generic-pods
+          symlinks: true
+          paths:
+            - /var/log/containers/*${kubernetes.container.id}.log
+          processors:
+            - dissect:
+                tokenizer: "%{} %{} %{} %{message}"
+                field: "message"
+                target_prefix: ""
+                overwrite_keys: true
+            - decode_json_fields:
+                when:
+                  regexp:
+                    message: "^{.*"
+                fields:
+                  - message
+                target: "decoded"
+                overwrite_keys: true
+                add_error_key: true
+            - drop_fields:
+                when:
+                  regexp:
+                    kubernetes.container.name: "opbeans-.*"
+                fields:
+                  - decoded.service
+                  - decoded.event
+                  - decoded.url
+                  - decoded.error
+          fields_under_root: true
+
+# -- Elastic Common Schema versions.
+ecsVersion: 1.9.0
+
+# -- Elasticsearch settings.
+elasticsearch:
+  # -- URL of the Elasticsearch (e.g. https://elasticsearch:9200).
+  host: "https://{{ elasticsearch_url | urlsplit('hostname') }}:443"
+  # -- Elasticsearch username.
+  username: "{{ elasticsearch_username }}"
+  # -- Elasticsearch password.
+  password: "{{ elasticsearch_password }}"
+  apiToken: "{{ fleet_api_token }}"
+
+fullnameOverride: "{{ helm_chart.name }}"
+
+extraEnvs:
+  - name: DEPLOY_TIMESTAMP
+    value: "{{ deploy_timestamp }}"
+
+serviceAccount:
+  name: {{ helm_chart.name }}-{{ cluster_hash }}

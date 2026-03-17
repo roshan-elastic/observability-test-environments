@@ -1,0 +1,109 @@
+---
+# last update {{ .Date }}
+template_name: deploy-assets
+template_description: |
+  Deploy Assets template configure a oblt cluster that has a remote cluster configured for CCS and deploy a custom Kibana Docker image.
+  This image is based on the MVP from the repo https://github.com/jasonrhodes/kibana/tree/asset-manager-api-mvp
+  Parameters:
+    - ClusterName: Name for the new oblt cluster (edge-oblt-abpag-ccs, edge-oblt-etagt-ccs)(automatic).
+    - RemoteClusterName: Oblt cluster name to configure as remote cluster (release-oblt, dev-oblt, edge-oblt, ...).
+    - StackVersion: Elastic Stack version used for the new cluster.
+    - SlackChannel: SlackChannel name or Slack member ID to send the credentials of the cluster (#my-channel, @MIDNUM)(automatic)
+    - ElasticsearchDockerImage: Docker image to use for Elasticsearch. This version should be the same build of the remote cluster if the version is a SNAPSHOT (docker.elastic.co/staging/elasticsearch-cloud:8.0.0-beta1-d3622a20, docker.elastic.co/cloud-release/elasticsearch-cloud:8.0.0-SNAPSHOT)(Optional).
+    - KibanaDockerImage: Docker image to use for Kibana (docker.elastic.co/kibana/kibana:8.0.0-SNAPSHOT).
+    - GitOps: Whether GitOps is enabled (Optional).
+    - GitHubCommit: For GitOps, the Git commit that requested this cluster (Optional).
+    - GitHubIssue: For GitOps, the GitHub issue that requested this cluster (Optional).
+    - GitHubPullRequest: For GitOps, the GitHub Pul Request that requested this cluster (Optional).
+    - GitHubRepository: For GitOps, the GitHub Repository, ORG/REPO, that requested this cluster (Optional).
+    - GitHubCommentId: For GitOps, the GitHub comment Id that requested this cluster (Optional).
+  Usage:
+    oblt-cli cluster create custom \
+        --template deploy-assets \
+        --parameters '{"RemoteClusterName":"dev-oblt","StackVersion":"8.3.0-SNAPSHOT","ElasticsearchDockerImage":"docker.elastic.co/observability-ci/elasticsearch-cloud:8.3.0-SNAPSHOT","KibanaDockerImage":"docker.elastic.co/observability-ci/kibana-cloud:8.3.0-SNAPSHOT"}'
+
+    oblt-cli cluster create assets \
+        --template deploy-assets \
+        --parameters '{"RemoteClusterName":"dev-oblt","StackVersion":"8.3.0-SNAPSHOT","ElasticsearchDockerImage":"docker.elastic.co/observability-ci/elasticsearch-cloud:8.3.0-SNAPSHOT","KibanaDockerImage":"docker.elastic.co/observability-ci/kibana-cloud:8.3.0-SNAPSHOT"}'
+
+cluster_name: "{{ .ClusterName }}"
+slack_channel: "{{ .SlackChannel }}"
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+oblt_username: "{{ $username }}"
+
+create_users: true
+expire_date: '{{ now | mustDateModify "+720h" | date "2006-01-02" }}'
+
+stack:
+  version: "{{ .StackVersion }}"
+  mode: ess
+  template: elasticsearch
+  target: production
+  observability: true
+  ess:
+    elasticsearch:
+      ccs_remote_cluster: "{{ .RemoteClusterName }}"
+#{{- if .ElasticsearchDockerImage }}
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+    kibana:
+      further_details: false
+      extra_config: |
+        # APM
+        {% if '{{ .StackVersion }}' is version('7.16.0', '>=') %}
+        xpack.apm.indices.error: remote_cluster:apm-*,remote_cluster:logs-apm*,apm-*,logs-apm*
+        xpack.apm.indices.onboarding: remote_cluster:apm-*,apm-*
+        xpack.apm.indices.span: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        xpack.apm.indices.transaction: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        xpack.apm.indices.metric: remote_cluster:apm-*,remote_cluster:metrics-apm*,apm-*,metrics-apm*
+        xpack.apm.indices.sourcemap: remote_cluster:apm-*,apm-*
+        {% endif %}
+        {% if '{{ .StackVersion }}' is version('8.0.0', '>=') %}
+        xpack.uptime.index: remote_cluster:heartbeat-*,remote_cluster:synthetics-*,heartbeat-*,synthetics-*
+        {% endif %}
+        {% if '{{ .StackVersion }}' is version('8.1.0', '>=') %}
+        xpack.uptime.service.manifestUrl: https://manifest.synthetics.elastic-cloud.com/v1/manifest.json
+        xpack.uptime.service.tls.certificate: config/certs/node.crt
+        xpack.uptime.service.tls.key: config/certs/node.key
+        xpack.uptime.service.showExperimentalLocations: true
+        {% endif %}
+        {% if '{{ .StackVersion }}' is version('7.16.0', '<=') %}
+        apm_oss.errorIndices: remote_cluster:apm-*,remote_cluster:logs-apm*,apm-*,logs-apm*
+        apm_oss.onboardingIndices: remote_cluster:apm-*,apm-*
+        apm_oss.spanIndices: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        apm_oss.transactionIndices: remote_cluster:apm-*,remote_cluster:traces-apm*,apm-*,traces-apm*
+        apm_oss.metricsIndices: remote_cluster:apm-*,remote_cluster:metrics-apm-*,apm-*,metrics-apm*
+        apm_oss.sourcemapIndices: remote_cluster:apm-*,apm-*
+        {% endif %}
+        # Logs and Metrics - see https://elastic.github.io/observability-test-environments/tools/oblt-cli/local-kibana/#post-configuration
+        # Monitoring
+        monitoring.ui.logs.index: remote_cluster:filebeat-*,filebeat-*
+        # Monitoring with APM
+        # commented due to https://github.com/elastic/observability-test-environments/issues/2314
+        # elastic.apm.active: true
+        # elastic.apm.serverUrl: {{ "{{ observability_apm_url }}" }}
+        # elastic.apm.secretToken: {{ "{{ observability_apm_token }}" }}
+        # elastic.apm.centralConfig: false
+        # elastic.apm.breakdownMetrics: true
+        # elastic.apm.transactionSampleRate: 0.5
+        # elastic.apm.metricsInterval: '120s'
+        # elastic.apm.globalLabels.deploymentName: {{ .ClusterName }}
+        # elastic.apm.globalLabels.elasticStack: {{ .StackVersion }}
+        # {{- if .ElasticsearchDockerImage }}
+        # elastic.apm.globalLabels.image: {{ .ElasticsearchDockerImage }}
+        # {{- end }}
+        # elastic.apm.globalLabels.ccs_remote_cluster: {{ .RemoteClusterName }}
+        xpack.assetManager:
+            alphaEnabled: true
+            implicitCollection:
+              enabled: true
+              interval: 1m
+#{{- if .KibanaDockerImage }}
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}

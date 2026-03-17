@@ -1,0 +1,37 @@
+---
+# performs some scheduled admin actions
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: haproxy-loadgen
+  namespace: default
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  concurrencyPolicy: Replace
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          dnsPolicy: ClusterFirstWithHostNet
+          containers:
+          - name: haproxy-loadgen
+            image: docker.io/alpine:latest
+            command: ["/bin/sh"]
+            args:
+              - -c
+              - >
+                apk update \
+                  && apk add --no-cache curl bash \
+                  && bash -c "
+                  for i in {1..100}
+                  do
+                    curl -v -o /dev/null http://haproxy:80
+                    sleep 1
+                  done
+                  "
+            securityContext:
+              allowPrivilegeEscalation: false
+              runAsNonRoot: false
+          restartPolicy: OnFailure

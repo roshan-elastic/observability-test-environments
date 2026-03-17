@@ -1,0 +1,43 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+  tasks:
+    - name: Get Deployment info
+      no_log: true
+      include_role:
+        name: oblt.framework.stack_serverless
+        tasks_from: info.yml
+
+    - name: check Elasticsearch deployed
+      fail:
+        msg: "Error: Elasticsearch is not deployed"
+      when:
+        - (elasticsearch_url | length) == 0
+
+    - name: check Kibana deployed
+      fail:
+        msg: "Error: Kibana is not deployed"
+      when:
+        - (kibana_url | length) == 0
+
+    - name: check APM deployed
+      fail:
+        msg: "Error: APM is not deployed"
+      when:
+        - (apm_url | length) == 0
+
+    - name: check Fleet deployed
+      fail:
+        msg: "Error: Fleet is not deployed"
+      when:
+        - (fleet_url | length) == 0

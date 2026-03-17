@@ -1,0 +1,22 @@
+---
+# Description of what the recipe do.
+description: Basic test request
+# Path to the REST API call.
+api: "/"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: GET
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+# The payload to send to the REST API.
+# https://pkg.go.dev/text/template
+# https://masterminds.github.io/sprig/
+body: |
+  {
+    "field00": "{{ expandenv "interpolate $TEST_ENV_VAR" }}",
+    "field01": "{{ .TestValue }}"
+    "field00": "{{ env "TEST_ENV_VAR" }}",
+  }
+# The expected return code.
+return_code:
+  - 200

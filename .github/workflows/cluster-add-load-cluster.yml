@@ -1,0 +1,30 @@
+---
+name: Cluster Add load to serverless PRO cluster
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '*/30 * * * *'
+
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  add-opbeans:
+    concurrency:
+      group: opbeans-load
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add more Opbeans
+        uses: ./.github/actions/cluster-target
+        with:
+          target: "tasks-add-more-opbeans"
+          clusterConfigFile: "${{ github.workspace }}/environments/users/robots/serverless-production-oblt/config-cluster.yml"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

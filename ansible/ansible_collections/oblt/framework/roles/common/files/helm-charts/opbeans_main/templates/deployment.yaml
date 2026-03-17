@@ -1,0 +1,102 @@
+---
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "opbeans.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "opbeans.labels" . | nindent 4 }}
+    app: {{ include "opbeans.fullname" . }}
+    service: {{ include "opbeans.fullname" . }}
+    {{- if .Values.serviceGroup.member }}
+    service-group: {{ .Values.serviceGroup.name }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "opbeans.fullname" . }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.annotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if (eq .Values.apm.type "annotations") }}
+        co.elastic.apm/attach: {{ .Values.apm.annotationType }}
+      {{- end }}
+        co.elastic.monitor/type: tcp
+        co.elastic.monitor/name: {{ include "opbeans.fullname" . }}
+        co.elastic.monitor/hosts: ${data.host}:{{ .Values.opbeans.port }}
+        co.elastic.monitor/schedule: "@every 60s"
+        co.elastic.monitor/timeout: 15s
+        co.elastic.logs/enabled: "true"
+        co.elastic.logs/json.keys_under_root: "true"
+        co.elastic.logs/processors.add_fields.target: "service"
+        co.elastic.logs/processors.add_fields.fields.name: "{{ include "opbeans.fullname" . }}"
+      labels:
+        app: {{ include "opbeans.fullname" . }}
+        service: {{ include "opbeans.fullname" . }}
+        {{- if .Values.serviceGroup.member }}
+        service-group: {{ .Values.serviceGroup.name }}
+        {{- end }}
+    spec:
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "opbeans.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- if .Values.db.enabled }}
+      initContainers:
+        - name: wait-for-database
+          image: busybox
+          command: ['sh', '-c',
+            'until nc -vz {{ .Values.db.host }}:{{ .Values.db.port }}; do echo waiting for DataBase; sleep 5; done;'
+          ]
+      {{- end }}
+      containers:
+        - name: opbeans
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.command }}
+          command: {{- .Values.command | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.args }}
+          args: {{- .Values.args | toYaml | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "opbeans.fullname" . }}-config
+          {{- with .Values.extraEnvVars }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.opbeans.port }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+          {{- end }}
+      imagePullSecrets:
+      {{- with .Values.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.volumes }}
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
+      {{- end }}
+{{- end -}}

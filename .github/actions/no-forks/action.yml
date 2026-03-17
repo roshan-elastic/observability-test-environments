@@ -1,0 +1,14 @@
+---
+name: Check if we are running in a Fork
+description: Check if we are running in a Fork
+runs:
+  using: "composite"
+  steps:
+    - if: github.event.pull_request.head.repo.fork == true
+      name: Notify GitHub running on a fork
+      uses: actions/github-script@v7
+      with:
+        script: |
+          core.error('Workflow permissions error, This Workflow cannot run on Forks dues security reasons')
+          core.warning('In order to run this workflow you must create a feature branch in the main repo.')
+          core.setFailed('Workflow permissions error.');

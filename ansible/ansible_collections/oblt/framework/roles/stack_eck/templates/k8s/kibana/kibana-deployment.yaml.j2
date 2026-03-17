@@ -1,0 +1,239 @@
+---
+apiVersion: kibana.k8s.elastic.co/{{ eck_api_version }}
+kind: Kibana
+metadata:
+  name: {{ cluster_name }}
+spec:
+  version: {{ stack_version }}
+  count: 1
+{% if observability_enabled is defined and observability_enabled %}
+  monitoring:
+{% if observability_stack_metrics_enabled %}
+    metrics:
+      elasticsearchRefs:
+        - secretName: {{ stack_monitoring_secret }}
+{% endif %}
+{% if observability_stack_logs_enabled %}
+    logs:
+      elasticsearchRefs:
+        - secretName: {{ stack_monitoring_secret }}
+{% endif %}
+{% endif %}
+  config:
+    csp.strict: false
+    csp.warnLegacyBrowsers: true
+    # logging.quiet: true
+{% if stack_version is version('7.15.0', '>=') and stack_version is version('8.0.0', '<') %}
+    xpack.fleet.enabled: true
+{% endif %}
+{% if stack_version is version('8.5.0', '>=') %}
+    xpack.profiling.enabled: true
+    xpack.cloud.id: "fake_cloud_deploy"
+{% endif %}
+{% if stack_version is version('8.0.0', '>=') %}
+    telemetry.enabled: false
+    telemetry.banner: false
+    home.disableWelcomeScreen: true
+    xpack.security.authc.providers:
+        basic.basic1:
+          order: 1
+    xpack.fleet.agents.enabled: true
+    xpack.fleet.agents.elasticsearch.host: {{ elasticsearch_url }}
+    xpack.fleet.agents.tlsCheckDisabled: true
+{% if (package_registry_url | default('')) | length > 0 %}
+    xpack.fleet.registryUrl: "{{ package_registry_url | default('https://epr-staging.elastic.co', true)}}"
+{% endif %}
+    xpack.fleet.packages:
+        - name: system
+          version: latest
+        - name: elastic_agent
+          version: latest
+        - name: apm
+          version: latest
+        - name: fleet_server
+          version: latest
+        - name: log
+          version: latest
+        - name: network_traffic
+          version: latest
+        - name: endpoint
+          version: latest
+        - name: cloud_security_posture
+          version: latest
+    xpack.fleet.agentPolicies:
+        - name: Fleet Server policy
+          id: fleet-server-policy
+          is_default_fleet_server: true
+          is_managed: false
+          namespace: default
+          package_policies:
+              - name: fleet_server-1
+                id: default-fleet-server
+                package:
+                    name: fleet_server
+        - name: Fleet Server + APM policy
+          id: fleet-server-apm-policy
+          description: Fleet server policy with APM and System logs and metrics enabled
+          namespace: default
+          is_default_fleet_server: true
+          is_managed: false
+          monitoring_enabled:
+              - logs
+              - metrics
+          package_policies:
+              - name: system-1
+                id: default-system
+                package:
+                    name: system
+              - name: apm-1
+                id: default-apm
+                package:
+                    name: apm
+                inputs:
+                  - type: apm
+                    keep_enabled: true
+                    vars:
+                        - name: host
+                          value: 0.0.0.0:8200
+                          frozen: true
+                        - name: url
+                          value: {{ apm_url | default('http://apm.127.0.0.1.ip.es.io') }}
+                          frozen: true
+                        - name: secret_token
+                          value: {{ apm_secret_token }}
+                          frozen: true
+              - name: Fleet Server
+                package:
+                    name: fleet_server
+                inputs:
+                    - type: fleet-server
+                      keep_enabled: true
+                      vars:
+                          - name: host
+                            value: 0.0.0.0
+                            frozen: true
+                          - name: port
+                            value: 8220
+                            frozen: true
+        - name: Apm Agent policy
+          id: apm-agent-policy
+          description: Agent policy with APM and System logs and metrics enabled
+          is_managed: false
+          namespace: default
+          monitoring_enabled:
+              - logs
+              - metrics
+          package_policies:
+              - name: system-1
+                id: default-system
+                package:
+                    name: system
+              - name: apm-1
+                id: default-apm
+                package:
+                    name: apm
+                inputs:
+                  - type: apm
+                    keep_enabled: true
+                    vars:
+                        - name: host
+                          value: 0.0.0.0:8200
+                          frozen: true
+                        - name: url
+                          value: fleet.{{ load_balancer_ip }}.{{ k8s_domain }}
+                          frozen: true
+        - name: Default Agent policy
+          id: default-agent-policy
+          description: Agent policy with System logs and metrics enabled
+          is_managed: false
+          namespace: default
+          monitoring_enabled:
+              - logs
+              - metrics
+          package_policies:
+              - name: system-1
+                id: default-system
+                package:
+                    name: system
+{% else %}
+    kibana.disableWelcomeScreen: true
+    xpack.security.authc.providers: ['basic']
+{% endif %}
+{% if stack_version is version('7.16.2', '>=') and grab_cluster_info %}
+    xpack.banners:
+      placement: "top"
+      textContent: "{{ cluster_name }} [version info]({{ cluster_readme_url }})"
+      textColor: "#FFFFFF"
+      backgroundColor: "#A8BFDA"
+{% endif %}
+{% if stack_version is version('7.6.2', '>=') %}
+    xpack.encryptedSavedObjects.encryptionKey: +8v9e/XMV54RsPThrAfoOWMxOyh9ZZ1BCyTA0z8A97I=
+    xpack.security.encryptionKey: AdKUEsCmSj40lfIzuIhhdX2wdIiMRLHo
+{% if kibana_further_details %}
+    xpack.security.loginAssistanceMessage: "Further&#32;details&#32;[here](https://ela.st/{{ cluster_name }}-credentials)"
+{% endif %}
+{% endif %}
+
+{% if stack_version is version('7.7.0', '>=') %}
+    xpack.apm.serviceMapEnabled: true
+{% endif %}
+
+{% if stack_version is version('7.10.0', '>=') and observability_enabled and  observability_stack_apm_enabled %}
+    elastic.apm.active: true
+    elastic.apm.serverUrl: {{ observability_apm_url }}
+    elastic.apm.secretToken: {{ observability_apm_token }}
+    elastic.apm.centralConfig: false
+    elastic.apm.breakdownMetrics: true
+    elastic.apm.transactionSampleRate: 0.5
+    elastic.apm.metricsInterval: '120s'
+    elastic.apm.global_labels.deploymentName: {{ cluster_name }}
+    elastic.apm.global_labels.elasticStack: {{ stack_version | default('unknown') }}
+{% endif %}
+{% if stack_version is version('7.14.0', '>=') and stack_version is version('8.4.0', '<') %}
+    xpack.ruleRegistry.write.enabled: true
+    xpack.observability.unsafe.alertingExperience.enabled: true
+    xpack.observability.unsafe.cases.enabled: true
+{% endif %}
+{% if stack_version is version('8.15.0', '>=') %}
+    server.protocol: http2
+{% endif %}
+{% if kibana_extra_config is defined %}
+    {{ kibana_extra_config | indent(4) }}
+{% endif %}
+  elasticsearchRef:
+    name: {{ cluster_name }}
+  podTemplate:
+    spec:
+      imagePullSecrets:
+        - name: docker.elastic.co
+      containers:
+      - name: kibana
+        image: {{ eck_kb_image }}
+        imagePullPolicy: Always
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /login
+            port: 5601
+            scheme: HTTPS
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+        env:
+        - name: DEPLOY_TIMESTAMP
+          value: "{{ deploy_timestamp }}"
+        - name: ES_JAVA_OPTS
+          value: -Xms{{ eck_kb_mem }}g -Xmx{{ eck_kb_mem }}g
+        - name: ELASTIC_APM_ACTIVE
+          value: "true"
+        resources:
+          requests:
+            memory: {{ (eck_kb_mem | float) + 1 }}Gi
+            cpu: 0.05
+          limits:
+            memory: {{ (eck_kb_mem | float) + 1 }}Gi
+  http:
+    service:
+      spec:
+        type: ClusterIP

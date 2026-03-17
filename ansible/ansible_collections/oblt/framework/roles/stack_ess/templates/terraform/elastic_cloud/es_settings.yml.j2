@@ -1,0 +1,38 @@
+# timestamp {{ deploy_timestamp }}
+{% if elasticsearch_enabled %}
+{% if ess_saml_id != 'disabled' %}
+{% set _kibana_host = cluster_name + '.kb.' + (ess_region|replace('gcp-','')|replace('azure-','')) + '.' + ess_provider + '.' + 'elastic-cloud.com' %}
+xpack.security.authc.realms:
+  saml.cloud-saml:
+    order: 2
+    nameid_format: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+    attributes.principal: "nameid:persistent"
+    attributes.groups: "groups"
+    idp.metadata.path: "https://elastic.okta.com/app/{{ ess_saml_id }}/sso/saml/metadata"
+    idp.entity_id: "http://www.okta.com/{{ ess_saml_id }}"
+    sp.entity_id: "https://{{ _kibana_host }}"
+    sp.acs: "https://{{ _kibana_host }}/api/security/saml/callback"
+    sp.logout: "https://{{ _kibana_host }}/logout"
+{% endif -%}
+# Disable APM settings in Elasticsearch after ms-108
+{% if ess_stack_pack_version is version('8.5.0', '>=') and observability_enabled and ess_not_allow_settings and false %}
+xpack.monitoring.collection.interval: 30s
+xpack.monitoring.elasticsearch.collection.enabled: false
+# APM
+tracing.apm.enabled: true
+tracing.apm.agent.server_url: {{ observability_apm_url }}
+tracing.apm.agent.metrics_interval: 10s
+tracing.apm.agent.transaction_sample_rate: 0.75
+tracing.apm.agent.log_level: info
+tracing.apm.agent.global_labels.deploymentName: {{ cluster_name }}
+tracing.apm.agent.global_labels.elasticStack: {{ stack_version | default('unknown') }}
+{% if stack_version is version('8.13.0', '>=') %}
+tracing.apm.secret_token: {{ observability_apm_token }}
+{% else %}
+tracing.apm.agent.secret_token: {{ observability_apm_token }}
+{% endif -%}
+{% endif -%}
+{% endif -%}
+{% if es_extra_config is defined %}
+{{ es_extra_config }}
+{% endif -%}

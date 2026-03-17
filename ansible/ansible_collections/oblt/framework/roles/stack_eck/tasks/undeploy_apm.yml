@@ -1,0 +1,21 @@
+---
+- name: Check that the {{ k8s_dir }}/apm folder exists
+  stat:
+    path: "{{ k8s_dir }}/apm"
+  register: stat_result
+
+- name: Undeploy ECK APM
+  changed_when: false
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_default_namespace }}"
+    state: absent
+    src: "{{ item.yml }}"
+  loop:
+    - yml: "{{ k8s_dir }}/apm/apm-deployment.yaml"
+    - yml: "{{ k8s_dir }}/apm/apm-ingress.yaml"
+    - yml: "{{ k8s_dir }}/apm-secrets.yaml"
+  when:
+    - stat_result.stat.exists
+  tags:
+    - apm
+    - undeploy

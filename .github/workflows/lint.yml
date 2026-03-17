@@ -1,0 +1,21 @@
+---
+## Workflow to Lint the repository changes.
+name: Lint changes
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - "main"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: "${{ github.ref }}-lint"
+      cancel-in-progress: true
+    steps:
+      - uses: elastic/apm-pipeline-library/.github/actions/pre-commit@current

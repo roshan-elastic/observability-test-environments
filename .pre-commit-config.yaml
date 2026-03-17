@@ -1,0 +1,88 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-case-conflict
+        exclude: (^target/|^site/)
+      - id: check-executables-have-shebangs
+        exclude: (^target/|^site/)
+      - id: check-json
+        exclude: (^target/|launch.json)
+      - id: check-merge-conflict
+        exclude: (^target/|^site/)
+      - id: check-xml
+        exclude: (^target/|^site/)
+      - id: end-of-file-fixer
+        exclude: (^target/|^site/|^.ci/clusters.json|.*/dist/.*)
+      - id: mixed-line-ending
+        exclude: (^target/|^site/)
+      - id: trailing-whitespace
+        exclude: (^target/|^site/|.*/dist/.*)
+
+  - repo: https://github.com/detailyang/pre-commit-shell.git
+    rev: master
+    hooks:
+      - id: shell-lint
+        name: "Shellscript: lint"
+        stages: [commit]
+        types: [shell]
+        exclude: (^mvnw$|^target/)
+
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.25.0
+    hooks:
+      - id: yamllint
+        name: "Yaml: lint"
+        args: ["-c", ".ci/.yamlint.yml"]
+        stages: [commit]
+        types: [yaml]
+        exclude: (^.pre-commit-config.yaml$|^.ci/.yamlint.yml$|^target/|^ansible/ansible_collections/oblt/framework/roles/common/files/helm-charts/|^ansible/ansible_collections/oblt/framework/roles/common/files/deployments/k8s/eden-observe|^ansible/ansible_collections/oblt/framework/roles/common/files/deployments/k8s/eden-profiling/templates)
+
+  - repo: https://github.com/elastic/apm-pipeline-library
+    rev: current
+    hooks:
+      - id: check-bash-syntax
+      - id: check-unicode-non-breaking-spaces
+        exclude: (^docs/images/|^images|^site/)
+      - id: remove-unicode-non-breaking-spaces
+        exclude: (^docs/images/|^images|^site/)
+      - id: check-en-dashes
+        exclude: (^docs/images/|^images|^site/)
+      - id: remove-en-dashes
+        exclude: (^docs/images/|^images|^site/)
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.2
+    hooks:
+      - id: codespell
+        exclude: (^tools/.*/go.sum|^.*/package-lock.json|^site|^tools/.*/go.mod|^tools/project-api|.*/dist/.*)
+        args: ["--ignore-words=.ci/.codespell_ignore_words"]
+        stages: [commit]
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 5.0.4
+    hooks:
+      - id: flake8
+        args: ["--ignore=F401,H301,E203,SC200,SC100,W503", "--max-line-length=120"]
+        exclude: ^.*/(.venv|.git|__pycache__|.tox|.mypy_cache)
+        stages: [commit]
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.4
+    hooks:
+      - id: bandit
+        stages: [commit]
+        args: ["-c", ".ci/.bandit.yml"]
+
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.1.1
+    hooks:
+      - id: pydocstyle
+        stages: [commit]
+        exclude: ^.*/(.venv|.git|__pycache__|.tox|.mypy_cache|test_.*.py|.*_test.py|library/.*.py|lookup_plugins/.*.py|ansible_collections/oblt/framework/plugins/lookup/.*.py|ansible_collections/oblt/framework/plugins/modules/.*.py)
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        stages: [commit]

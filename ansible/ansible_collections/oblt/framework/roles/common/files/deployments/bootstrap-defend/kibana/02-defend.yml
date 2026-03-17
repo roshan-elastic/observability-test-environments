@@ -1,0 +1,41 @@
+---
+description: Create a defend package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "security-linux-policy",
+    "package": {
+      "name": "endpoint",
+      "version": "8.13.0"
+    },
+    "name": "endpoint-security-linux-policy",
+    "namespace": "default",
+    "description": "Configuration for Auditd integration",
+    "enabled": true,
+    "inputs": [
+        {
+            "enabled": true,
+            "streams": [],
+            "type": "ENDPOINT_INTEGRATION_CONFIG",
+            "config": {
+                "_config": {
+                    "value": {
+                        "type": "endpoint",
+                        "endpointConfig": {
+                            "preset": "EDRComplete"
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "force": false
+  }

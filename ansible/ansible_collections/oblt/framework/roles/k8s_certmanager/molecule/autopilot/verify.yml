@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Search for all running pods
+      k8s_info:
+        kind: Pod
+        namespace: "{{ k8s_default_namespace }}"
+        field_selectors:
+          - status.phase=Running
+      retries: 100
+      delay: 10
+      register: pod_list
+      until: (pod_list.resources | length) == 3

@@ -1,0 +1,15 @@
+---
+# define a configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "opbeans.fullname" . }}-initdb
+data:
+  01_initdb.sh: |
+    #!/usr/bin/env bash
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" -d "postgres"  <<EOSQL
+
+    CREATE DATABASE "{{ .Values.opbeans.db.name }}" WITH OWNER "{{ .Values.opbeans.db.username }}";
+
+    EOSQL

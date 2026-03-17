@@ -1,0 +1,35 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+    - role: oblt.framework.k8s_kind
+    - role: oblt.framework.k8s_helm
+  tasks:
+    - name: Deploy chart test
+      vars:
+        helm_chart:
+          chart: "stable/redis"
+          version: "10.3.5"
+          values_file: "{{ playbook_dir }}/helm-values.yaml"
+          name: "redis-test"
+          namespace: "{{ k8s_default_namespace }}"
+      include_role:
+        name: oblt.framework.k8s_helm
+        tasks_from: deploy_chart.yml
+    - name: Undeploy chart test
+      vars:
+        helm_chart:
+          name: "redis-test"
+          namespace: "{{ k8s_default_namespace }}"
+      include_role:
+        name: oblt.framework.k8s_helm
+        tasks_from: undeploy_chart.yml

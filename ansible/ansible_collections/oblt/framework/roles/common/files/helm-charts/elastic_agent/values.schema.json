@@ -1,0 +1,312 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "image": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Docker image of the Elastic Agent.",
+                    "default": "docker.elastic.co/beats/elastic-agent"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Tag for the Docker image.",
+                    "default": "7.16.2"
+                },
+                "pullSecrets": {
+                    "type": "array",
+                    "description": "List of secret names used to pull Docker images.",
+                    "default": [],
+                    "items": {}
+                },
+                "pullPolicy": {
+                    "type": "string",
+                    "description": "Pull Docker images policy [IfNotPresent, Always, Never].",
+                    "default": "IfNotPresent"
+                }
+            }
+        },
+        "commandArgs": {
+            "type": "array",
+            "description": "Command arguments to pass to the Elastic Agent.",
+            "default": [
+                "-e",
+                "-d",
+                "*"
+            ],
+            "items": {
+                "type": "string"
+            }
+        },
+        "mode": {
+            "type": "string",
+            "description": "Elastic Agent deployment type [deploymnent, daemonset, standalone]",
+            "default": "deployment"
+        },
+        "kubeSystemNamespace": {
+            "type": "string",
+            "description": "Kubernetes namespace where the kube-system pods are running.",
+            "default": "kube-system"
+        },
+        "metricsService": {
+            "type": "string",
+            "description": "Kubernetes service name for kube-state-metrics.",
+            "default": "kube-state-metrics:8080"
+        },
+        "standalonePackages": {
+            "type": "object",
+            "properties": {
+                "kubernetes": {
+                    "type": "string",
+                    "description": "Kubernetes package versions in used standalone mode.",
+                    "default": "1.17.2"
+                },
+                "log": {
+                    "type": "string",
+                    "description": "log package versions in used standalone mode.",
+                    "default": "1.0.0"
+                },
+                "system": {
+                    "type": "string",
+                    "description": "system package versions in used standalone mode.",
+                    "default": "1.11.0"
+                }
+            }
+        },
+        "standaloneInputs": {
+            "type": "object",
+            "properties": {
+                "kubernetesClusterMetrics": {
+                    "type": "boolean",
+                    "description": "Collect Kubernetes cluster metrics.",
+                    "default": true
+                },
+                "kubernetesNodeMetrics": {
+                    "type": "boolean",
+                    "description": "Collect Kubernetes nodes metrics.",
+                    "default": true
+                },
+                "systemLogs": {
+                    "type": "boolean",
+                    "description": "Collect Nodes logs.",
+                    "default": true
+                },
+                "systemMetrics": {
+                    "type": "boolean",
+                    "description": "Collect Nodes metrics.",
+                    "default": true
+                },
+                "containerLogs": {
+                    "type": "boolean",
+                    "description": "Collect containers logs.",
+                    "default": true
+                },
+                "extra": {
+                    "type": "array",
+                    "description": "Configure additional inputs.",
+                    "default": [],
+                    "items": {}
+                }
+            }
+        },
+        "ecsVersion": {
+            "type": "string",
+            "description": "Elastic Common Schema versions.",
+            "default": "1.9.0"
+        },
+        "fleet": {
+            "type": "object",
+            "properties": {
+                "force": {
+                    "type": "boolean",
+                    "description": "To ensure that enrollment occurs on every start of the container set `fleet.force` to true.",
+                    "default": true
+                },
+                "enroll": {
+                    "type": "boolean",
+                    "description": "set to `true` for enrollment into fleet-server. If not set, Elastic Agent is run in standalone mode.",
+                    "default": true
+                },
+                "insecure": {
+                    "type": "boolean",
+                    "description": "communicate with Fleet with either insecure HTTP or unverified HTTPS.",
+                    "default": false
+                }
+            }
+        },
+        "fleetServer": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "set to true enables bootstrapping of Fleet Server inside Elastic Agent (forces `fleet.enroll` enabled).",
+                    "default": false
+                },
+                "insecureHttp": {
+                    "type": "boolean",
+                    "description": "expose Fleet Server over HTTP (not recommended; insecure).",
+                    "default": false
+                },
+                "host": {
+                    "type": "string",
+                    "description": "binding host for Fleet Server HTTP (overrides the policy). By default this is 0.0.0.0.",
+                    "default": "0.0.0.0"
+                },
+                "port": {
+                    "type": "number",
+                    "description": "binding port for Fleet Server HTTP (overrides the policy).",
+                    "default": 8220
+                },
+                "serviceToken": {
+                    "type": "string",
+                    "description": "service token to use for communication with elasticsearch.",
+                    "default": ""
+                },
+                "policyId": {
+                    "type": "string",
+                    "description": "policy ID for Fleet Server to use for itself (\"Default Fleet Server policy\" used when undefined).",
+                    "default": ""
+                },
+                "secretName": {
+                    "type": "string",
+                    "description": "Kubernetes secret name to use for the Fleet server configuration. By default `ELACTIC_AGENT_NAME-fleet-server-creds`.",
+                    "default": ""
+                }
+            }
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "properties": {
+                "fsGroup": {
+                    "type": "number",
+                    "description": "",
+                    "default": 1000
+                },
+                "runAsUser": {
+                    "type": "number",
+                    "description": "",
+                    "default": 1000
+                }
+            }
+        },
+        "securityContext": {
+            "type": "object",
+            "properties": {
+                "runAsUser": {
+                    "type": "number",
+                    "description": "",
+                    "default": 0
+                }
+            }
+        },
+        "labels": {
+            "type": "object",
+            "properties": {
+                "app": {
+                    "type": "object",
+                    "properties": {
+                        "kubernetes": {
+                            "type": "object",
+                            "properties": {
+                                "io/app": {
+                                    "type": "string",
+                                    "description": "",
+                                    "default": "agent-ingest-management-nodescope"
+                                },
+                                "io/group": {
+                                    "type": "string",
+                                    "description": "",
+                                    "default": "ingest-management"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "",
+                            "default": "1Gi"
+                        }
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "number",
+                            "description": "",
+                            "default": 0.1
+                        },
+                        "memory": {
+                            "type": "string",
+                            "description": "",
+                            "default": "500Mi"
+                        }
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `elastic-agent`.",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `elastic-agent`.",
+            "default": ""
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a service account should be created",
+                    "default": true
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Annotations to add to the service account",
+                    "default": {}
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the service account to use. If not set and create is true, a name is generated using the fullname template",
+                    "default": ""
+                }
+            }
+        },
+        "nodeSelector": {
+            "type": "object",
+            "description": "",
+            "default": {}
+        },
+        "tolerations": {
+            "type": "array",
+            "description": "Configurable [tolerations](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).",
+            "default": [],
+            "items": {}
+        },
+        "affinity": {
+            "type": "object",
+            "description": "",
+            "default": {}
+        },
+        "extraEnvs": {
+            "type": "array",
+            "description": "Additional environment variables for pods.",
+            "default": [],
+            "items": {}
+        }
+    }
+}

@@ -1,0 +1,20 @@
+---
+description: Create an APM ApiKey
+api: "/api/apm/agent_keys"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+ignore_errors: true
+register: bootstrap_apm_apikey_result
+retries: 5
+delay: 30
+body: |
+  {
+    "name": "test",
+    "privileges":[
+      "event:write","config_agent:read"
+    ]
+  }

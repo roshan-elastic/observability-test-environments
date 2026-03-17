@@ -1,0 +1,61 @@
+# Description of what the recipe do.
+description: Basic test request
+# Path to the REST API call.
+api: "/_ilm/policy/logs"
+ignore_errors: true
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PUT
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+# The payload to send to the REST API.
+body: |
+  {
+      "policy": {
+          "phases": {
+              "cold": {
+                  "actions": {
+                      "allocate": {
+                          "number_of_replicas": 0
+                      },
+                      "set_priority": {
+                          "priority": 0
+                      }
+                  },
+                  "min_age": "90d"
+              },
+              "delete": {
+                  "actions": {
+                      "delete": {
+                          "delete_searchable_snapshot": true
+                      }
+                  },
+                  "min_age": "180d"
+              },
+              "hot": {
+                  "actions": {
+                      "rollover": {
+                          "max_age": "2d",
+                          "max_primary_shard_size": "50gb"
+                      }
+                  },
+                  "min_age": "0ms"
+              },
+              "warm": {
+                  "actions": {
+                      "forcemerge": {
+                          "max_num_segments": 1
+                      },
+                      "set_priority": {
+                          "priority": 50
+                      }
+                  },
+                  "min_age": "4d"
+              }
+          }
+      }
+  }
+# The expected return code.
+return_code:
+  - 200

@@ -1,0 +1,52 @@
+---
+- name: Load config - GKE autopilot
+  set_fact:
+    certmanager_enabled: "{{ k8s.certmanager | default(false) }}"
+    gke_cluster_name: "{{ k8s.cluster_name | default(k8s.shared) | default(cluster_name) }}"
+    gke_create_cluster: "{{ (k8s.shared | default('')) | length == 0 }}"
+    ingress_enabled: "{{ k8s.ingress | default(false) }}"
+    k8s_default_namespace: "{{ k8s.default_namespace | default('{{ cluster_name }}-default', true) }}"
+    k8s_region: "{{ k8s.region | default('us-central1', true) }}"
+    kube_system_namespace: "{{ k8s.kube_system_namespace | default('{{ cluster_name }}-kube-system', true) }}"
+    ingress_available: "{{ k8s.static_ip | default(false) | bool }}"
+    gcp_default_network: "{{ k8s.network | default('oblt-clusters-vpc') }}"
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'autopilot'
+
+- name: Load config - GKE standard
+  set_fact:
+    certmanager_enabled: "{{ k8s.certmanager | default(true) }}"
+    gke_cluster_name: "{{ k8s.cluster_name | default(k8s.shared) | default(cluster_name) }}"
+    gke_create_cluster: "{{ (k8s.shared | default('')) | length == 0 }}"
+    ingress_enabled: "{{ k8s.ingress| default(true) }}"
+    k8s_default_namespace: "{{ k8s.default_namespace | default('default', true) }}"
+    k8s_machine_type: "{{ k8s.machine_type | default('e2-standard-2', true) }}"
+    k8s_max_node_count: "{{ k8s.max_node_count | default('1', true) }}"
+    k8s_region: "{{ k8s.region | default('us-central1-c', true) }}"
+    kube_system_namespace: "{{ k8s.kube_system_namespace | default('kube-system', true) }}"
+    gcp_default_network: "{{ k8s.network | default('oblt-clusters-vpc') }}"
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'gcp'
+
+- name: Load config - GKE
+  set_fact:
+    certificate_issuer: "{{ k8s.certificate_issuer | default('letsencrypt-prod') }}"
+  when:
+    - k8s_enabled|bool
+    - (stack_target|default('production')) == 'production'
+
+- name: Load load_balancer_ip (Shared cluster)
+  set_fact:
+    load_balancer_ip: "{{ cluster_state.load_balancer_ip | default('no-configured', true) | trim }}"
+  when:
+    - k8s_enabled|bool
+    - not (gke_create_cluster|bool)
+
+- name: Load load_balancer_ip
+  set_fact:
+    load_balancer_ip: "{{ cluster_state.load_balancer_ip | default('') | trim }}"
+  when:
+    - k8s_enabled|bool
+    - gke_create_cluster|bool

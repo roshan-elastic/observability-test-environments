@@ -1,0 +1,33 @@
+name: Release Helm Charts
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "ansible/ansible_collections/oblt/framework/roles/common/files/helm-charts/**"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release Helm Charts
+        env:
+          OCI_REGISTRY_URL: ${{ secrets.DOCKER_REGISTRY }}
+          OCI_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          OCI_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          OCI_NAMESPACE: observability-ci/helm-charts
+          HELM_CHARTS_DIR: ansible/ansible_collections/oblt/framework/roles/common/files/helm-charts
+        run: |
+          helm registry login -u "${OCI_USERNAME}" -p "${OCI_PASSWORD}" "${OCI_REGISTRY_URL}"
+          # shellcheck disable=SC2044
+          for i in $(find "${HELM_CHARTS_DIR}" -type f -name 'Chart.yaml');
+          do
+            chart_dir=$(dirname "$i")
+            make -C "${chart_dir}" helm-package
+          done

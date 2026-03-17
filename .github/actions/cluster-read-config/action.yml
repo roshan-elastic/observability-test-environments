@@ -1,0 +1,61 @@
+---
+name: cluster-read-config
+description: Read the cluster configuration and set some environment variables and outputs.
+inputs:
+  filename:
+    description: 'The filename of the cluster configuration.'
+  clusterName:
+    description: 'The name of the cluster.'
+  validate:
+    description: 'True if the cluster configuration should be validated.'
+    default: 'true'
+outputs:
+  cluster_name:
+    description: 'The name of the cluster.'
+  template_name:
+    description: 'The name of the template.'
+  slack_channel:
+    description: 'The name of the slack channel.'
+  stack_version:
+    description: 'The version of the stack.'
+  stack_build:
+    description: 'The build of the stack.'
+  elasticsearch_image:
+    description: 'The image of elasticsearch.'
+  elasticsearch_version:
+    description: 'The version of elasticsearch.'
+  kibana_version:
+    description: 'The version of kibana.'
+  apm_version:
+    description: 'The version of apm.'
+  obl_username:
+    description: 'The username that created the cluster.'
+  remote_cluster:
+    description: 'The remote cluster configured for CCS.'
+  update_channel:
+    description: 'The update channel for the cluster.'
+  golden_cluster:
+    description: 'True if the cluster is a golden cluster.'
+  update_mode:
+    description: 'The way configured to update the cluster.'
+  expire_date:
+    description: 'The date the cluster will expire.'
+  grab_cluster_info:
+    description: 'True if the cluster info should be grabbed.'
+  gitops:
+    description: 'True if the cluster has gitops configuration.'
+  comment_id:
+    description: 'The comment id of the issue.'
+  commit:
+    description: 'The commit build.'
+  issue:
+    description: 'The issue number.'
+  pull_request:
+    description: 'The pull request number.'
+  repository:
+    description: 'The repository name of the issue.'
+  clusterConfigFile:
+    description: 'The cluster configuration file.'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

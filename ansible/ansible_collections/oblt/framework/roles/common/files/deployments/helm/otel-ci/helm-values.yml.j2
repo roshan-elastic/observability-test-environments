@@ -1,0 +1,471 @@
+{% set jenkins_host = 'jenkins.' + load_balancer_ip + '.' + k8s.domain -%}
+# Default values for otel_ci.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+opentelemetry-collector:
+  fullnameOverride: otel-collector-contrib
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    pullPolicy: Always
+    tag: "0.60.0"
+  mode: deployment
+  service:
+    type: ClusterIP
+  extraEnvs:
+    - name: ELASTIC_APM_SECRET_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: apm-creds
+          key: token
+    - name: ELASTIC_APM_SERVER_URL
+      valueFrom:
+        secretKeyRef:
+          name: apm-creds
+          key: url
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+      hostmetrics:
+        collection_interval: 1m
+        scrapers:
+          cpu:
+          load:
+          memory:
+    processors:
+      batch:
+    exporters:
+      otlp/elastic:
+        endpoint: "${ELASTIC_APM_SERVER_URL}"
+        headers:
+          Authorization: "Bearer ${ELASTIC_APM_SECRET_TOKEN}"
+      logging:
+        loglevel: debug
+    service:
+      extensions: [zpages, health_check]
+      pipelines:
+        metrics:
+          receivers: [otlp, hostmetrics]
+          exporters: [logging, otlp/elastic]
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [logging, otlp/elastic]
+        logs:
+          receivers: [otlp]
+          exporters: [logging, otlp/elastic]
+    extensions:
+      health_check:
+      zpages:
+
+jenkins:
+  controller:
+    componentName: "jenkins-controller"
+    image: "jenkins/jenkins"
+    resources:
+      requests:
+        cpu: 0.05
+        memory: "256Mi"
+      limits:
+        memory: "8096Mi"
+    tag: "{{ jenkins_version }}"
+    probes:
+      livenessProbe:
+        initialDelaySeconds: 240
+        timeoutSeconds: 5
+        failureThreshold: 12
+      readinessProbe:
+        initialDelaySeconds: 60
+        periodSeconds: 10
+    # Configuration plugins
+    overwritePlugins: true
+    overwritePluginsFromImage: true
+    # Jenkins.instance.pluginManager.plugins.stream().sorted().each{plugin ->
+    #   println ("    - ${plugin.getShortName()}:${plugin.getVersion()}")
+    # }
+    # See https://github.com/jenkinsci/plugin-installation-manager-tool/issues/318
+    installLatestPlugins: false
+    # See https://github.com/jenkinsci/plugin-installation-manager-tool/issues/339
+    installLatestSpecifiedPlugins: true
+    installPlugins:
+      # - ansicolor
+      # - artifact-manager-s3
+      # - aws-credentials
+      # - aws-global-configuration
+      # - configuration-as-code
+      # - docker-workflow
+      # - git
+      # - google-compute-engine
+      # - google-storage-plugin
+      # - hashicorp-vault-plugin
+      # - kubernetes
+      # - mask-passwords
+      # - matrix-auth
+      # - matrix-project
+      # - mock-security-realm
+      # - opentelemetry:2.9.2
+      # - pipeline-model-definition
+      # - pipeline-model-extensions
+      # - pipeline-utility-steps
+      # - role-strategy
+      # - slack
+      # - ssh-agent
+      # - ssh-slaves
+      # - sshd
+      # - timestamper
+      # - workflow-aggregator
+      # - workflow-multibranch
+      # - job-dsl
+      # - kubernetes-credentials-provider
+      - kubernetes-credentials-provider
+      - ace-editor:1.1
+      - ansicolor:1.0.2
+      - antisamy-markup-formatter:155.v795fb_8702324
+      - apache-httpcomponents-client-4-api:4.5.13-138.v4e7d9a_7b_a_e61
+      - artifact-manager-s3:670.v0558a_cb_c82c2
+      - authentication-tokens:1.4
+      - aws-credentials:191.vcb_f183ce58b_9
+      - aws-global-configuration:106.v106dc1d8d86e
+      - aws-java-sdk-ec2:1.12.287-357.vf82d85a_6eefd
+      - aws-java-sdk-minimal:1.12.287-357.vf82d85a_6eefd
+      - bootstrap5-api:5.2.1-3
+      - bouncycastle-api:2.26
+      - branch-api:2.1046.v0ca_37783ecc5
+      - caffeine-api:2.9.3-65.v6a_47d0f4d1fe
+      - checks-api:1.8.0
+      - cloudbees-folder:6.758.vfd75d09eea_a_1
+      - command-launcher:90.v669d7ccb_7c31
+      - commons-lang3-api:3.12.0-36.vd97de6465d5b_
+      - commons-text-api:1.10.0-27.vb_fa_3896786a_7
+      - configuration-as-code:1569.vb_72405b_80249
+      - credentials:1189.vf61b_a_5e2f62e
+      - credentials-binding:523.vd859a_4b_122e6
+      - display-url-api:2.3.6
+      - docker-commons:1.21
+      - docker-workflow:528.v7c193a_0b_e67c
+      - durable-task:501.ve5d4fc08b0be
+      - echarts-api:5.4.0-1
+      - font-awesome-api:6.2.0-3
+      - git:4.13.0
+      - git-client:3.13.0
+      - github:1.36.0
+      - github-api:1.303-400.v35c2d8258028
+      - github-branch-source:1696.v3a_7603564d04
+      - google-compute-engine:4.3.12
+      - google-metadata-plugin:0.4
+      - google-oauth-plugin:1.0.7
+      - google-storage-plugin:1.5.7
+      - hashicorp-vault-plugin:359.v2da_3b_45f17d5
+      - instance-identity:116.vf8f487400980
+      - ionicons-api:31.v4757b_6987003
+      - jackson2-api:2.13.4.20221013-295.v8e29ea_354141
+      - jakarta-activation-api:2.0.1-2
+      - jakarta-mail-api:2.0.1-2
+      - javax-activation-api:1.2.0-5
+      - javax-mail-api:1.6.2-8
+      - jaxb:2.3.7-1
+      - jdk-tool:63.v62d2fd4b_4793
+      - jjwt-api:0.11.5-77.v646c772fddb_0
+      - job-dsl:1.81
+      - jquery3-api:3.6.1-2
+      - jsch:0.1.55.61.va_e9ee26616e7
+      - junit:1156.vcf492e95a_a_b_0
+      - kubernetes:3734.v562b_b_a_627ea_c
+      - kubernetes-client-api:5.12.2-193.v26a_6078f65a_9
+      - kubernetes-credentials:0.9.0
+      - mailer:438.v02c7f0a_12fa_4
+      - mask-passwords:3.3
+      - matrix-auth:3.1.5
+      - matrix-project:785.v06b_7f47b_c631
+      - metrics:4.2.10-389.v93143621b_050
+      - mina-sshd-api-common:2.9.1-44.v476733c11f82
+      - mina-sshd-api-core:2.9.1-44.v476733c11f82
+      - mock-security-realm:1.6
+      - oauth-credentials:0.5
+      - okhttp-api:4.9.3-108.v0feda04578cf
+      - pipeline-build-step:2.18
+      - pipeline-graph-analysis:195.v5812d95a_a_2f9
+      - pipeline-graph-view:137.v1dc41d9c9758
+      - pipeline-groovy-lib:613.v9c41a_160233f
+      - pipeline-input-step:456.vd8a_957db_5b_e9
+      - pipeline-milestone-step:101.vd572fef9d926
+      - pipeline-model-api:2.2118.v31fd5b_9944b_5
+      - pipeline-model-definition:2.2118.v31fd5b_9944b_5
+      - pipeline-model-extensions:2.2118.v31fd5b_9944b_5
+      - pipeline-stage-step:296.v5f6908f017a_5
+      - pipeline-stage-tags-metadata:2.2118.v31fd5b_9944b_5
+      - pipeline-utility-steps:2.13.1
+      - plain-credentials:139.ved2b_9cf7587b
+      - plugin-util-api:2.18.0
+      - popper2-api:2.11.6-2
+      - role-strategy:562.v44e9a_e828d0e
+      - scm-api:621.vda_a_b_055e58f7
+      - script-security:1189.vb_a_b_7c8fd5fde
+      - slack:629.vf00ea_cb_40d53
+      - snakeyaml-api:1.32-86.ve3f030a_75631
+      - ssh-agent:295.v9ca_a_1c7cc3a_a_
+      - ssh-credentials:305.v8f4381501156
+      - ssh-slaves:2.854.v7fd446b_337c9
+      - sshd:3.249.v2dc2ea_416e33
+      - structs:324.va_f5d6774f3a_d
+      - timestamper:1.20
+      - token-macro:308.v4f2b_ed62b_b_16
+      - trilead-api:2.72.v2a_3236754f73
+      - variant:59.vf075fe829ccb
+      - workflow-aggregator:590.v6a_d052e5a_a_b_5
+      - workflow-api:1200.v8005c684b_a_c6
+      - workflow-basic-steps:994.vd57e3ca_46d24
+      - workflow-cps:3520.va_8fc49e2f96f
+      - workflow-durable-task-step:1210.va_1e5d77e122b
+      - workflow-job:1254.v3f64639b_11dd
+      - workflow-multibranch:716.vc692a_e52371b_
+      - workflow-scm-step:400.v6b_89a_1317c9a_
+      - workflow-step-api:639.v6eca_cd8c04a_a_
+      - workflow-support:839.v35e2736cfd5c
+      - opentelemetry:{{ ':' + opentelemetry_plugin_url | default('2.9.2') }}
+    javaOpts: >-
+      -Daws.region=us-east-2
+      -Djenkins.install.runSetupWizard=false
+      -Dhudson.model.UsageStatistics.disabled=true
+      -Dhudson.slaves.NodeProvisioner.initialDelay=0
+      -Dhudson.slaves.NodeProvisioner.MARGIN=100
+      -Dhudson.slaves.NodeProvisioner.MARGIN0=1.0
+      -Dhudson.model.LoadStatistics.decay=0.5
+      -Dhudson.model.LoadStatistics.clock=5000
+      -Dio.jenkins.plugins.artifact_manager_jclouds.s3.S3BlobStoreConfig.deleteArtifacts=true
+      -Dio.jenkins.plugins.artifact_manager_jclouds.s3.S3BlobStoreConfig.deleteStashes=true
+    additionalExistingSecrets:
+      - name: jenkins-secrets
+        keyName: password
+    JCasC:
+      enabled: true
+      defaultConfig: false
+      configScripts:
+        jcasc-config: |
+          jenkins:
+            numExecutors: 0
+            systemMessage: "Jenkins configured automatically by Jenkins Configuration as Code plugin\n\n"
+            agentProtocols:
+            - "JNLP4-connect"
+            - "Ping"
+            authorizationStrategy:
+              loggedInUsersCanDoAnything:
+                          allowAnonymousRead: false
+            securityRealm:
+              local:
+                allowsSignup: false
+                enableCaptcha: false
+                users:
+                - id: "admin"
+                  name: "Administrator"
+                  password: "${jenkins-secrets-password}"
+                  properties:
+                  - mailer:
+                      emailAddress: "kuisathaverat@gmail.com"
+            slaveAgentPort: 50000
+            clouds:
+            - kubernetes:
+                containerCap: 10
+                containerCapStr: "10"
+                jenkinsUrl: "http://otel-ci-jenkins:8080"
+                name: "kubernetes"
+                podRetention: "onFailure"
+                webSocket: true
+                templates:
+                - containers:
+                  - args: "9999999"
+                    command: "sleep"
+                    image: "ubuntu:20.04"
+                    livenessProbe:
+                      failureThreshold: 0
+                      initialDelaySeconds: 0
+                      periodSeconds: 0
+                      successThreshold: 0
+                      timeoutSeconds: 0
+                    name: "ubuntu-20"
+                    workingDir: "/home/jenkins/agent"
+                  id: "079597dc-582a-438d-9f3c-70e0d093d6c6"
+                  label: "ubuntu20 ubuntu linux k8s"
+                  name: "ubuntu20"
+                  yamlMergeStrategy: "override"
+                - containers:
+                  - alwaysPullImage: true
+                    args: "9999999"
+                    command: "sleep"
+                    image: "kuisathaverat/maven"
+                    livenessProbe:
+                      failureThreshold: 0
+                      initialDelaySeconds: 0
+                      periodSeconds: 0
+                      successThreshold: 0
+                      timeoutSeconds: 0
+                    name: "maven-cache"
+                    ttyEnabled: true
+                    workingDir: "/home/jenkins/agent"
+                  - alwaysPullImage: true
+                    args: "-H tcp://localhost:2375 -H unix:///var/lib/docker/docker.sock"
+                    command: "dockerd"
+                    envVars:
+                    - envVar:
+                        key: "DOCKER_TLS_CERTDIR"
+                    image: "docker:20.10.14-dind"
+                    livenessProbe:
+                      failureThreshold: 0
+                      initialDelaySeconds: 0
+                      periodSeconds: 0
+                      successThreshold: 0
+                      timeoutSeconds: 0
+                    name: "dind"
+                    ports:
+                    - containerPort: 2376
+                      hostPort: 2376
+                      name: "docker-api"
+                    privileged: true
+                    ttyEnabled: true
+                    workingDir: "/home/jenkins/agent"
+                  - alwaysPullImage: true
+                    args: "9999999"
+                    command: "sleep"
+                    image: "kuisathaverat/tools"
+                    livenessProbe:
+                      failureThreshold: 0
+                      initialDelaySeconds: 0
+                      periodSeconds: 0
+                      successThreshold: 0
+                      timeoutSeconds: 0
+                    name: "ansible"
+                    ttyEnabled: true
+                    workingDir: "/home/jenkins/agent"
+                  envVars:
+                  - envVar:
+                      key: "DOCKER_HOST"
+                      value: "tcp://localhost:2375"
+                  id: "f672bc79-2549-4b96-8ecd-63fc82506ad1"
+                  label: "maven"
+                  name: "maven"
+                  volumes:
+                  - emptyDirVolume:
+                      memory: false
+                      mountPath: "/var/lib/docker"
+                  yamlMergeStrategy: "override"
+        unclassified: |
+          unclassified:
+            gitscm:
+              globalConfigName: elasticmachine
+              globalConfigEmail: infra+build@elastic.co
+            location:
+              adminAddress: "observability-robots@elastic.co"
+              url: https://{{ jenkins_host }}/
+            globalLibraries:
+              libraries:
+              - defaultVersion: "main"
+                implicit: true
+                name: "apm"
+                retriever:
+                  modernSCM:
+                    scm:
+                      git:
+                        id: "72f11d9b-1e04-467b-9d9f-0df4ea5a9e98"
+                        credentialsId: "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-user-and-token"
+                        remote: "https://github.com/elastic/apm-pipeline-library.git"
+                        traits:
+                        - "gitBranchDiscovery"
+        jobs: |
+          jobs:
+            - file: "/usr/share/jenkins/ref/jobs/devops-world-2022-demo.dsl"
+            - file: "/usr/share/jenkins/ref/jobs/devops-world-2022-load-gen.dsl"
+        opentelemetry: |
+          unclassified:
+            openTelemetry:
+              authentication: "noAuthentication"
+              endpoint: "http://otel-collector-contrib.default.svc.cluster.local:4317"
+              exportOtelConfigurationAsEnvironmentVariables: false
+              exporterIntervalMillis: 60000
+              exporterTimeoutMillis: 30000
+              ignoredSteps: "dir,echo,fileExists,isUnix,pwd,properties,readFile,readYaml,writeFile"
+              observabilityBackends:
+              - elastic:
+                  displayKibanaDashboardLink: true
+                  elasticLogsBackend:
+                    elasticLogsBackendWithJenkinsVisualization:
+                      elasticsearchCredentialsId: "elasticsearch-logs-creds"
+                      elasticsearchUrl: {{ elasticsearch_url }}
+                  kibanaBaseUrl: {{ kibana_url }}
+              serviceName: "jenkins"
+              serviceNamespace: "jenkins"
+        slack: |
+          unclassified:
+            slackNotifier:
+              botUser: false
+              sendAsText: false
+              teamDomain: "elastic-s819326"
+              tokenCredentialId: "jenkins-slack-integration-token"
+    ingress:
+      enabled: true
+      apiVersion: networking.k8s.io/v1
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        nginx.ingress.kubernetes.io/proxy-body-size: 25m
+        ingress.kubernetes.io/ssl-redirect: "true"
+        kubernetes.io/ingress.class: nginx
+        kubernetes.io/tls-acme: "true"
+        nginx.ingress.kubernetes.io/auth-type: basic
+        nginx.ingress.kubernetes.io/auth-secret: elastic-basic-auth
+        nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+      hostName: {{ jenkins_host }}
+      tls:
+        - hosts:
+            - {{ jenkins_host }}
+          secretName: jenkins-tls
+  agent:
+    enabled: true
+    # https://github.com/jenkinsci/helm-charts/tree/main/charts/jenkins#change-max-connections-to-kubernetes-api
+    maxRequestsPerHostStr: "100"
+  persistence:
+    enabled: true
+    size: "80Gi"
+    volumes:
+      - name: jenkins-jobs
+        configMap:
+          name: jenkins-jobs
+    mounts:
+      - mountPath: /usr/share/jenkins/ref/jobs
+        name: jenkins-jobs
+  # kubernetes-credentials-provider-plugin
+  # https://jenkinsci.github.io/kubernetes-credentials-provider-plugin/
+  rbac:
+    create: true
+    readSecrets: true
+
+velero:
+  configuration:
+    provider: gcp
+    backupStorageLocation:
+      bucket: jenkins-otel
+  initContainers:
+    - name: velero-plugin-for-gcp
+      image: velero/velero-plugin-for-gcp:v1.2.0
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - mountPath: /target
+          name: plugins
+  schedules:
+    jenkins:
+      schedule: 0 0 * * *
+      template:
+        includedNamespaces:
+          - default
+        # labelSelector:
+        #   matchLabels:
+        #     app.kubernetes.io/instance: jenkins
+        includedResources:
+          - pv
+          - pvc
+        ttl: 120h0m0s
+  credentials:
+    secretContents:
+      cloud: |
+        {{ lookup('file', build_dir + '/gcp/credentials.json') }}

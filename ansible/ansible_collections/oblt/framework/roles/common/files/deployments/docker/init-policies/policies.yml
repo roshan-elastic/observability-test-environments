@@ -1,0 +1,5 @@
+---
+# test file
+kibana:
+  agent_policies: []
+  package_policies: []

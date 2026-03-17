@@ -1,0 +1,4 @@
+warn_list:
+  - role-name
+  - ignore-errors
+  - unnamed-task

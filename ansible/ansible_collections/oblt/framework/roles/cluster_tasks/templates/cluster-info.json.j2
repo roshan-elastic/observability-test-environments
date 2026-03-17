@@ -1,0 +1,13 @@
+{
+  {% if elasticsearch_type != 'serverless' %}
+  {% if elasticsearch_enabled and es_url is defined %}
+  "elasticsearch" : {{ _result_es.json | to_nice_json(indent=2) }},
+  {% endif %}
+  {% if kibana_enabled and kb_url is defined %}
+  "kibana" : {{ _result_kb.json | to_nice_json(indent=2) }},
+  {% endif %}
+  {% if apm_enabled and apm_url is defined %}
+  "apm" : {{ _result_apm.json | to_nice_json(indent=2) }}
+  {% endif %}
+  {% endif %}
+}

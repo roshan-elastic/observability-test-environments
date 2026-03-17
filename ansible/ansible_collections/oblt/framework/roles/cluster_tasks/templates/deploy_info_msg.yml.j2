@@ -1,0 +1,14 @@
+{% include './deploy_info_msg_basic.yml.j2' %}
+
+{% if elasticsearch_type == 'serverless' %}
+{% include './deploy_info_msg_serverless_01.yml.j2' %}
+{% include './deploy_info_msg_serverless_02.yml.j2' %}
+{% include './deploy_info_msg_serverless_03.yml.j2' %}
+{% include './deploy_info_msg_serverless_04.yml.j2' %}
+{% include './deploy_info_msg_serverless_05.yml.j2' %}
+{% endif %}
+{% if elasticsearch_type == 'ess' %}
+{% include './deploy_info_msg_ess.yml.j2' %}
+{% endif %}
+
+{% include './deploy_info_msg_commands.yml.j2' %}

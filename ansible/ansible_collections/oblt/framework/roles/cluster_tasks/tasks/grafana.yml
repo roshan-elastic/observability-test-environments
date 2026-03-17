@@ -1,0 +1,22 @@
+---
+- block:
+  - name: Deploy Grafana
+    vars:
+      apps:
+        helm:
+          - name: "grafana"
+            chart: "{{ helm_charts_dir }}/grafana-prometheus"
+            version: "0.1.0"
+            values_file: "{{ helm_charts_dir }}/grafana-prometheus/helm-values.yml.j2"
+            namespace: "{{ k8s_default_namespace }}"
+            build_deps: true
+            render_mode: false
+            output_dir: "{{ build_dir }}/k8s"
+            extra_args: "--wait --timeout 15m"
+    include_role:
+      name: oblt.framework.helm_apps
+  when:
+    - k8s_enabled | bool
+  tags:
+    - grafana
+    - deploy

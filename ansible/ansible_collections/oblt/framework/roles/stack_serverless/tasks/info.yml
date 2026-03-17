@@ -1,0 +1,107 @@
+---
+- name: Get deployment serverless
+  uri:
+    url: "{{ serverless_endpoint }}/api/v1/serverless/projects/{{ stack_template }}/{{ serverless_deployment_id }}"
+    method: GET
+    headers:
+      Authorization: "ApiKey {{ serverless_apikey }}"
+  register: _result
+  retries: 5
+  delay: 30
+  until:
+    - (_result.json.endpoints.elasticsearch | default('')) | length > 0
+    - (_result.json.endpoints.kibana | default('')) | length > 0
+
+- name: Get Elastic credentials
+  uri:
+    url: "{{ serverless_endpoint }}/api/v1/serverless/projects/{{ stack_template }}/{{ serverless_deployment_id }}/_reset-internal-credentials"
+    method: POST
+    headers:
+      Authorization: "ApiKey {{ serverless_apikey }}"
+  register: _result_reset_elastic
+  retries: 5
+  delay: 30
+  until:
+    - (_result_reset_elastic.json.username| default('')) | length > 0
+    - (_result_reset_elastic.json.password| default('')) | length > 0
+
+- name: Set serverless facts
+  set_fact:
+    elasticsearch_url: "{{ _result.json.endpoints.elasticsearch | default(None) }}"
+    kibana_url: "{{ _result.json.endpoints.kibana | default(None) }}"
+    apm_url: "{{ _result.json.endpoints.apm | default(None) }}"
+    fleet_url: "{{ _result.json.endpoints.fleet | default(None) }}"
+    elasticsearch_password: "{{ _result_reset_elastic.json.password | default(None) }}"
+    elasticsearch_username: "{{ _result_reset_elastic.json.username | default(None) }}"
+    kibana_password: "{{ _result_reset_elastic.json.password | default(None) }}"
+    kibana_username: "{{ _result_reset_elastic.json.username | default(None) }}"
+
+- name: Get Elasticsearch version
+  uri:
+    url: "{{ elasticsearch_url }}"
+    method: GET
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json; charset=utf-8
+      Accept: application/json
+  register: _result_es_info
+  retries: 20
+  delay: 30
+  until:
+    - (_result_es_info.json.name| default('')) | length > 0
+    - (_result_es_info.json.version.number| default('')) | length > 0
+  when:
+    - elasticsearch_url is defined
+    - elasticsearch_url | length > 0
+    - elasticsearch_username is defined
+    - elasticsearch_username | length > 0
+    - elasticsearch_password is defined
+    - elasticsearch_password | length > 0
+
+- name: Get Kibana version
+  uri:
+    url: "{{ kibana_url }}/api/status"
+    method: GET
+    user: "{{ kibana_username }}"
+    password: "{{ kibana_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json; charset=utf-8
+      Accept: application/json
+  register: _result_kb_info
+  retries: 20
+  delay: 30
+  until:
+    - (_result_kb_info.json.name| default('')) | length > 0
+    - (_result_kb_info.json.version.number| default('')) | length > 0
+  when:
+    - kibana_url is defined
+    - kibana_url | length > 0
+    - kibana_username is defined
+    - kibana_username | length > 0
+    - kibana_password is defined
+    - kibana_password | length > 0
+
+- name: Set Elasticsearch and Kibana version
+  set_fact:
+    elasticsearch_version: "{{ _result_es_info.json.version.number | default(default_stack_version) }}"
+    kibana_version: "{{ _result_kb_info.json.version.number | default(default_stack_version) }}"
+
+
+# FIXME remove when URL are returned by the serverless API
+- name: Get set APM URL
+  set_fact:
+    apm_url: "{{ elasticsearch_url | replace('.es.', '.apm.') }}"
+  when:
+    - (apm_url | length) == 0
+    - stack_template == 'observability'
+
+# FIXME remove when URL are returned by the serverless API
+- name: Get set Fleet URL
+  set_fact:
+    fleet_url: "{{ elasticsearch_url | replace('.es.', '.fleet.') }}"
+  when:
+    - (fleet_url | length) == 0
+    - stack_template == 'observability' or stack_template == 'security'

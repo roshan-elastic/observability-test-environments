@@ -1,0 +1,10 @@
+---
+description: Enable the APM anomaly detection jobs
+api: "/internal/apm/settings/anomaly-detection/jobs"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+body: '{ "environments": ["production"] }'
+return_code:
+  - 200

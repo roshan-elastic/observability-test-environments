@@ -1,0 +1,111 @@
+---
+## Workflow to build, test, and release the oblt-robot.
+name: oblt-robot
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: true to release oblt-robot
+        required: true
+        default: false
+        type: boolean
+  pull_request:
+    paths:
+      - 'tools/oblt-robot/**'
+      - .github/workflows/oblt-robot.yml
+  push:
+    branches:
+      - "main"
+      - 'dependabot/**'
+    paths:
+      - 'tools/oblt-robot/**'
+      - .github/workflows/oblt-robot.yml
+
+jobs:
+  lint:
+    name: Run linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/no-forks
+      - uses: ./.github/actions/prepare-tool
+        with:
+          token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          toolPath: tools/oblt-robot
+      - name: Lint
+        run: make -C tools/oblt-robot lint
+
+  build:
+    name: Run Build
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare-tool
+        with:
+          token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          toolPath: tools/oblt-robot
+      - name: build
+        run: make -C tools/oblt-robot build
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    needs: [lint, build]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare-tool
+        with:
+          token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          toolPath: tools/oblt-robot
+      - name: test
+        run: make -C tools/oblt-robot test
+      - uses: actions/upload-artifact@v3
+        if: success() || failure()        # run this step even if previous step failed
+        with:
+          name: test-results-oblt-robot
+          path: tools/oblt-robot/**/junit-report.xml
+
+  docker:
+    name: Run Duild Docker image
+    runs-on: ubuntu-latest
+    needs: [lint, build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare-tool
+        with:
+          token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          toolPath: tools/oblt-robot
+      - name: Build Docker image
+        run: make -C tools/oblt-robot build-docker
+      # IMPORTANT: the secrets below are managed through IASC (contact robots if you need further assistance)
+      - if: ${{ contains(github.ref, 'main') || inputs.release }}
+        name: Log in to the Elastic Container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          username: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          password: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        if: ${{ contains(github.ref, 'main') || inputs.release }}
+        run: make -C tools/oblt-robot push-docker
+
+  snapshot:
+    name: Run snapshot
+    runs-on: ubuntu-latest
+    needs: [lint, build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare-tool
+        with:
+          token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          toolPath: tools/oblt-robot
+      - run: make -C tools/oblt-robot snapshot

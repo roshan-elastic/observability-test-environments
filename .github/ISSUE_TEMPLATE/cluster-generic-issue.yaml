@@ -1,0 +1,44 @@
+name: Create Generic Cluster
+description: Configure your Generic cluster
+title: "[Generic Cluster]: "
+# NOTE: generic-cluster label is required by .github/workflows/cluster-generic-issue.yml
+labels: ["cluster", "generic-cluster"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please configure your [Observability cluster](https://ela.st/oblt-clusters)
+  - type: input
+    id: stack_version
+    attributes:
+      label: Stack Version
+      description: Elastic Stack version. (default -> latest release)
+      placeholder: ex. 8.10.0
+  - type: input
+    id: elasticsearch_image
+    attributes:
+      label: Elasticsearch Docker image
+      description: Elasticsearch Docker image. (Optional)
+      placeholder: ex. docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.10.0-046d305b
+  - type: input
+    id: kibana_image
+    attributes:
+      label: Kibana Docker image
+      description: Kibana Docker image. (Optional)
+      placeholder: ex. docker.elastic.co/observability-ci/kibana-cloud:8.10.0-046d305b
+  - type: input
+    id: elasticagent_image
+    attributes:
+      label: Elastic Agent Docker image
+      description: Elastic Agent Docker image. (Optional)
+      placeholder: ex. docker.elastic.co/observability-ci/elastic-agent-cloud:8.10.0-046d305b
+  - type: input
+    id: prefix
+    attributes:
+      label: Custom prefix (Optional)
+      description: Choose a prefix to be added to your cluster
+  - type: input
+    id: suffix
+    attributes:
+      label: Custom suffix (Optional)
+      description: Choose a suffix to be added to your cluster, otherwise a randomn will be used

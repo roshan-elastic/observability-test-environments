@@ -1,0 +1,95 @@
+---
+{{- if .Values.apm.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "opbeans.fullname" . }}-apm
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "opbeans.labels" . | nindent 4 }}
+    app: {{ include "opbeans.fullname" . }}
+    service: {{ include "opbeans.fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "opbeans.fullname" . }}-apm
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.annotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+        co.elastic.monitor/type: tcp
+        co.elastic.monitor/name: {{ include "opbeans.fullname" . }}
+        co.elastic.monitor/hosts: ${data.host}:{{ .Values.apm.service.port }}
+        co.elastic.monitor/schedule: "@every 60s"
+        co.elastic.monitor/timeout: 15s
+        co.elastic.logs/enabled: "true"
+        co.elastic.logs/json.keys_under_root: "true"
+        co.elastic.logs/processors.add_fields.target: "service"
+        co.elastic.logs/processors.add_fields.fields.name: "{{ include "opbeans.fullname" . }}"
+      labels:
+        app: {{ include "opbeans.fullname" . }}-apm
+        service: {{ include "opbeans.fullname" . }}-apm
+    spec:
+      {{- if (.Values.podSecurityContext).enabled }}
+      securityContext: {{- omit .Values.apm.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "opbeans.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: apm
+          image: "{{ .Values.apm.image.name }}:{{ .Values.apm.image.tag }}"
+          imagePullPolicy: "{{ .Values.apm.image.pullPolicy }}"
+          {{- if (.Values.apm.containerSecurityContext).enabled }}
+          securityContext: {{- omit .Values.apm.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          # args: [
+          #   "--strict.perms=false",
+          #   "-e",
+          #   "-E", "output.elasticsearch.hosts=${ELASTICSEARCH_HOST}",
+          #   "-E", "output.elasticsearch.username=${ELASTICSEARCH_USERNAME}",
+          #   "-E", "output.elasticsearch.password=${ELASTICSEARCH_PASSWORD}",
+          # ]
+          env:
+            - name: ELASTICSEARCH_HOST
+              value: {{ .Values.apm.elasticsearch.host }}
+            - name: ELASTICSEARCH_USERNAME
+              value: {{ .Values.apm.elasticsearch.username }}
+            - name: ELASTICSEARCH_PASSWORD
+              value: {{ .Values.apm.elasticsearch.password }}
+            - name: BEAT_STRICT_PERMS
+              value: "false"
+          {{- with .Values.apm.extraEnvVars }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.apm.service.port }}
+          {{- with .Values.apm.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: apm-server-config
+              mountPath: /usr/share/apm-server/apm-server.yml
+              readOnly: true
+              subPath: apm-server.yml
+      imagePullSecrets:
+      {{- with .Values.apm.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: apm-server-config
+          configMap:
+            name: {{ include "opbeans.fullname" . }}-apm-config
+            items:
+              - key: apm-server.yml
+                path: apm-server.yml
+{{- end -}}

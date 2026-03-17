@@ -1,0 +1,10 @@
+---
+description: Create a Fleet Policy
+api: "/api/fleet/setup"
+method: POST
+headers:
+  accept: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+body: ""

@@ -1,0 +1,34 @@
+name: Create CCS Cluster
+description: Configure your CCS cluster
+title: "[CCS Cluster]: "
+# NOTE: ccs-cluster label is required by .github/workflows/cluster-ccs-issue.yml
+labels: ["cluster", "ccs-cluster"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please configure your [Observability cluster](https://ela.st/oblt-clusters)
+  - type: dropdown
+    id: template
+    attributes:
+      label: Remote cluster
+      description: Choose a template cluster
+      multiple: false
+      options:
+        - dev-oblt
+        - edge-lite-oblt
+        - edge-oblt
+        - monitoring-oblt
+        - release-oblt
+    validations:
+      required: true
+  - type: input
+    id: prefix
+    attributes:
+      label: Custom prefix (Optional)
+      description: Choose a prefix to be added to your cluster
+  - type: input
+    id: suffix
+    attributes:
+      label: Custom suffix (Optional)
+      description: Choose a suffix to be added to your cluster, otherwise a randomn will be used

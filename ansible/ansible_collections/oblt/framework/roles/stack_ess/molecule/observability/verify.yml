@@ -1,0 +1,56 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config-01.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Set Cluster Id fact
+      set_fact:
+        cluster_01_name: "{{ cluster_name }}"
+    - name: Get Deployment info
+      no_log: true
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: get_deployment_info.yml
+
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config-02.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Get Deployment info
+      no_log: true
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: get_deployment_info.yml
+
+    - name: Show info
+      debug:
+        msg: |
+          settings.observability.logging.destination.deployment_id: {{ _deployment_info.json.settings.observability.logging.destination.deployment_id | default(None, True) }}
+
+    - name: check Observability config
+      vars:
+        match: "{{ _deployment_info.json.settings.observability.logging.destination.deployment_id | default(None, True) }}"
+      fail:
+        msg: "Error: Observability config is empty : '{{ match }}'"
+      when:
+        - (match | length) == 0

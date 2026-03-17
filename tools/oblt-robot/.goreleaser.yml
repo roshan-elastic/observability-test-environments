@@ -1,0 +1,25 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+project_name: oblt-robot
+before:
+  hooks:
+    - go mod tidy
+    - make build-docker
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+    ignore:
+      - goos: linux
+        goarch: 386
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+release:
+  # oblt-cli will do this
+  disable: true
+changelog:
+  # oblt-cli will do this
+  skip: true

@@ -1,0 +1,83 @@
+---
+name: Docker build and push APM synthtrace
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'ansible/ansible_collections/oblt/framework/roles/common/files/deployments/docker/apm-synthtrace/**'
+      - '.ci/update-versions/update_channels.json'
+  push:
+    branches:
+      - main
+    paths:
+      - 'ansible/ansible_collections/oblt/framework/roles/common/files/deployments/docker/apm-synthtrace/**'
+      - '.ci/update-versions/update_channels.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.ref }}-docker-synthtrace"
+
+jobs:
+  branches:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: "${{ github.workflow }}"
+      cancel-in-progress: true
+    outputs:
+      branches: ${{ steps.get-branches.outputs.branches }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/no-forks
+      - uses: actions/github-script@v7
+        id: get-branches
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const file = path.join('.', '.ci', 'update-versions', 'update_channels.json')
+            const data = fs.readFileSync(file, 'utf8')
+            const updateChannels = JSON.parse(data)
+
+            var branches =  new Set();
+            branches.add('main')
+            for (const [key, value] of Object.entries(updateChannels)) {
+              const version = updateChannels[key]['version']
+              const versionParts = version.split('.')
+              const branch = versionParts[0] + "." + versionParts[1]
+              console.log(version, '-', branch)
+              branches.add(branch)
+            }
+            core.setOutput('branches', Array.from(branches))
+  buildAndPush:
+    runs-on: ubuntu-latest
+    needs: branches
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.branches.outputs.branches) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # IMPORTANT: the secrets below are managed through IASC (contact robots if you need further assistance)
+      - name: Log in to the Elastic Container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          username: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          password: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+      - run: |
+          curl -fsSL "https://raw.githubusercontent.com/elastic/kibana/${BRANCH}/package.json" || (echo "Branch ${BRANCH} does not exist - skip" >> "${GITHUB_STEP_SUMMARY}" && touch .skip_branch)
+          if [ ! -f .skip_branch ]; then
+            TARGET_DIR=ansible/ansible_collections/oblt/framework/roles/common/files/deployments/docker/apm-synthtrace
+            if [ -n "${PR_NUMBER}" ]; then
+              export VERSION=PR${PR_NUMBER}
+            fi
+            make -C "${TARGET_DIR}" docker-build docker-push
+          fi
+        env:
+          BRANCH: ${{ matrix.branch }}
+          PR_NUMBER: ${{ github.event.number }}

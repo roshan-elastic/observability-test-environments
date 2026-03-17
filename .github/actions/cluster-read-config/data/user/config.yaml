@@ -1,0 +1,26 @@
+---
+cluster_name: "cluster-1"
+template_name: "template-1"
+slack_channel: "#slack-channel-1"
+oblt_username: "oblt-username-1"
+golden_cluster: "true"
+expire_date: "2023-01-01"
+stack:
+  mode: "ess"
+  version: "8.15.0"
+  update_channel: "beta"
+  update_mode: "recreate"
+  update_schedule: "daily"
+  ess:
+    ccs_remote_cluster: "test-cluster"
+    elasticsearch:
+      image: "docker.elastic.co/elasticsearch/elasticsearch:8.15.0-build"
+    kibana:
+      image: "docker.elastic.co/kibana/kibana:8.15.0-build"
+gitops:
+  enabled: true
+  comment_id: 123456789
+  commit: "commit-hash-1"
+  issue: "issue-1"
+  pull_request: "pull-request-1"
+  repository: "repository-1"

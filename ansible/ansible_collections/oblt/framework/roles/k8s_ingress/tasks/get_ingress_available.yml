@@ -1,0 +1,23 @@
+---
+- name: Get Ingress Controller info
+  k8s_info:
+    kind: Service
+    name: lb-ingress-nginx-controller
+    namespace: "{{ ingress_nginx_namespace }}"
+  register: ingress_nginx_controller_service
+  when:
+    - k8s_enabled|bool
+    - ingress_available|bool or ingress_enabled|bool
+  retries: 5
+  delay: 30
+  tags:
+    - ingress
+    - generate_config
+
+- name: Check ingress available
+  set_fact:
+    ingress_available: true
+  when:
+    - ingress_nginx_controller_service is defined
+    - ingress_nginx_controller_service.resources is defined
+    - ingress_nginx_controller_service.resources

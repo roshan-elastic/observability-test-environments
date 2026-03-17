@@ -1,0 +1,70 @@
+
+Elastic Stack (deployed at {{ deploy_timestamp }})
+
+{% if elasticsearch_type != 'serverless' %}
+{% if kibana_enabled and kb_url is defined %}
+[Open :fontawesome-solid-house:][kibana-url]{ .md-button }
+{% endif %}
+[Console :fontawesome-solid-gears:][console-url]{ .md-button }
+[Logs :fontawesome-solid-scroll:][logs-url]{ .md-button }
+[APM :material-chart-line:][apm-url]{ .md-button }
+[Metrics :material-chart-line:][metrics-url]{ .md-button }
+
+!!! Note
+
+    * ess: Elastic Cloud Deployment (Elastic Terraform provider)
+    * eck: Kubernetes Deployment with ECK
+
+{% if elasticsearch_enabled and es_url is defined %}
+### Elasticsearch:
+* type: {{ es_type }}
+* [{{ es_sha }}](https://github.com/elastic/elasticsearch/compare/{{ es_sha }}...{{ es_version }})
+<details>
+<summary>Click for more details</summary>
+
+```json
+{{ _result_es.json | to_nice_json(indent=2) }}
+```
+
+</details>
+{% endif %}
+
+{% if kibana_enabled and kb_url is defined %}
+### Kibana:
+* type: {{ kb_type }}
+* [{{ kb_sha }}](https://github.com/elastic/Kibana/compare/{{ kb_sha }}...{{ kb_version }})
+<details>
+<summary>Click for more details</summary>
+
+```json
+{{ _result_kb.json | to_nice_json(indent=2) }}
+```
+
+</details>
+{% endif %}
+
+{% if apm_enabled and apm_url is defined %}
+### APM:
+* type: {{ apm_type }}
+* [{{ apm_sha }}](https://github.com/elastic/apm-server/compare/{{ apm_sha }}...{{ apm_version }})
+<details>
+<summary>Click for more details</summary>
+
+```json
+{{ _result_apm.json | to_nice_json(indent=2) }}
+```
+
+</details>
+{% endif %}
+
+[kibana-url]: {{ kibana_url | default(None) }}
+[logs-url]: https://monitoring-oblt.kb.us-west2.gcp.elastic-cloud.com/app/logs/stream?logFilter=(language:kuery,query:%27%22service.name%22:%22{{ cluster_name }}%22%27)
+[metrics-url]: https://monitoring-oblt.kb.us-west2.gcp.elastic-cloud.com/app/monitoring
+[apm-url]: https://monitoring-oblt.kb.us-west2.gcp.elastic-cloud.com/app/apm/services?kuery=labels.deploymentName:%20%22{{ cluster_name }}%22
+{% if stack_target == 'production' %}
+[console-url]: https://admin.found.no/deployments?q=alias%3A{{ cluster_name }}
+{% endif %}
+{% if stack_target == 'staging' %}
+[console-url]: <https://admin.staging.foundit.no/deployments?q=alias%3A{{ cluster_name }}
+{% endif %}
+{% endif %}

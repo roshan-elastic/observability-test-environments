@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: synthetics-billing-audit
+grab_cluster_info: true
+configure_external_snapshots_repo: true
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ deployment_dir }}/bootstrap-saml"
+stack:
+  version: 8.13.0
+  mode: ess
+  template: observability
+  target: production
+  observability: true
+  #update_channel: release
+  #update_schedule: tuesday
+  ess:
+    saml_id: exkulllbzeZEPoaya1t7
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.13.0-005f2d5f
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.13.0-005f2d5f
+      mem: 8
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.13.0-005f2d5f
+      zones: 3
+      mem: 4
+    profiling:
+      image: docker.elastic.co/observability-ci/profiling-agent:8.13.0-005f2d5f
+updated_at: "2024-02-27T02:11:10Z"

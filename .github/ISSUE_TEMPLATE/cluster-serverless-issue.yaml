@@ -1,0 +1,46 @@
+name: Create Serverless Cluster
+description: Configure your Serverless cluster
+title: "[Serverless Cluster]: "
+# NOTE: serverless-cluster label is required by .github/workflows/cluster-serverless-issue.yml
+labels: ["cluster", "serverless-cluster"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please configure your [Serverless Environment](https://docs.elastic.dev/serverless/environments)
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Serverless environment
+      description: Choose a serverless environment
+      multiple: false
+      options:
+        - qa
+        - staging
+        - production
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Serverless project type
+      description: Choose a serverless project
+      multiple: false
+      options:
+        - observability
+        - security
+        - elasticsearch
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: prefix
+    attributes:
+      label: Custom prefix (Optional)
+      description: Choose a prefix to be added to your cluster
+  - type: input
+    id: suffix
+    attributes:
+      label: Custom suffix (Optional)
+      description: Choose a suffix to be added to your cluster, otherwise a randomn will be used

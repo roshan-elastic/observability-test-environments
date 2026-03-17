@@ -1,0 +1,100 @@
+---
+## Workflow to manage the weekly updates.
+name: Oblt Cluster update-channels weekly
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}"
+
+jobs:
+  find-clusters:
+    runs-on: ubuntu-latest
+    outputs:
+      clusters: ${{ steps.find-clusters.outputs.clusters }}
+      dayOfWeek: ${{ steps.day-of-week.outputs.dayOfWeek }}
+      isEmpty: ${{ steps.find-clusters.outputs.isEmpty }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: false
+          ref: ${{ github.sha || 'main' }}
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+      - name: "Day of the week"
+        uses: actions/github-script@v7
+        id: day-of-week
+        with:
+          script: |
+            const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'long'}).format(new Date()).toLowerCase();
+            core.setOutput('dayOfWeek', dayName);
+      - name: "Search for clusters with update_schedule ${{ steps.day-of-week.outputs.dayOfWeek }}"
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        env:
+          DAY_OF_WEEK: ${{ steps.day-of-week.outputs.dayOfWeek }}
+        with:
+          command: 'cluster list --filter "stack.update_schedule=${DAY_OF_WEEK}" --output-file ${PWD}/updates.json || true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set clusters output
+        id: find-clusters
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const clustersFilePath = path.join(process.env.GITHUB_WORKSPACE, 'updates.json');
+            clusters = {items:[]};
+            isEmpty = true;
+            if (fs.existsSync(clustersFilePath)) {
+              const data = fs.readFileSync(clustersFilePath, 'utf8');
+              clusters = JSON.parse(data);
+              isEmpty = clusters.items.length == 0;
+              console.log(`Found ${clusters.items.length} clusters with update_schedule ${{ steps.day-of-week.outputs.dayOfWeek }}`);
+            } else {
+              console.log(`No clusters found with update_schedule ${{ steps.day-of-week.outputs.dayOfWeek }}`);
+            }
+            core.setOutput('isEmpty', isEmpty);
+            core.setOutput('clusters', JSON.stringify(clusters));
+            console.log(clusters);
+
+  process-updates:
+    runs-on: ubuntu-latest
+    needs: find-clusters
+    if: ${{ needs.find-clusters.outputs.isEmpty == 'false' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: ${{ fromJson(needs.find-clusters.outputs.clusters).items }}
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: false
+          ref: ${{ github.sha || 'main' }}
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+      - name: "Setup updatecli"
+        uses: "updatecli/updatecli-action@v2.65.0"
+        with:
+          version: "v0.75.0"
+      - name: Oblt Cluster update weekly
+        run: |
+          STACK_MODE=$(yq -r '.stack.mode' "${CLUSTER_CONFIG}"||echo "ess")
+          WARNING="::warning title=Failed to update::The cluster ${cluster_name} failed to update."
+          make -C .ci/update-versions "update-elastic-stack-${STACK_MODE}" || echo "${WARNING}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          CLUSTER_CONFIG: ${{ matrix.cluster.clusterConfigPath }}
+          CLUSTER_NAME: ${{ matrix.cluster.clusterName }}

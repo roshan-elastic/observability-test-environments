@@ -1,0 +1,93 @@
+---
+name: cluster-update
+description: update a cluster.
+inputs:
+  workloadIdentityProvider:
+    description: 'The workload identity provider id.'
+    required: true
+  serviceAccount:
+    description: 'The service account email.'
+    required: true
+  accessTokenLifetime:
+    description: 'The access token lifetime.'
+    required: false
+    default: 3600s
+  dockerUsername:
+    description: 'The docker username.'
+    required: true
+  dockerPassword:
+    description: 'The docker password.'
+    required: true
+  dockerRegistry:
+    description: 'The docker registry.'
+    required: true
+  clusterConfigFile:
+    description: 'The cluster configuration file.'
+    required: true
+  buildDir:
+    description: 'The build directory.'
+    default: ${{ github.workspace }}/build
+  slack-bot-token:
+    description: 'The Slack bot token.'
+    required: true
+
+outputs:
+  slackChannel:
+    description: 'The slack channel to post to.'
+    value: ${{ steps.run-task.outputs.slack_channel }}
+  clusterName:
+    description: 'The cluster name.'
+    value: ${{ steps.run-task.outputs.cluster_name }}
+  thread-timestamp:
+    description: 'The thread timestamp.'
+    value: ${{ steps.run-task.outputs.thread-timestamp }}
+  goldenCluster:
+    description: 'The golden cluster.'
+    value: ${{ steps.run-task.outputs.golden_cluster }}
+  buildDir:
+    description: 'The build directory.'
+    value: ${{ inputs.buildDir }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Read Update Mode
+      uses: ./.github/actions/cluster-read-config
+      id: update-mode
+      with:
+        filename: ${{ inputs.clusterConfigFile }}
+
+    - name: Update Cluster
+      uses: ./.github/actions/cluster-target
+      id: run-task
+      with:
+        target: '${{ steps.update-mode.outputs.update_mode }}-cluster'
+        workloadIdentityProvider: ${{ inputs.workloadIdentityProvider }}
+        serviceAccount: ${{ inputs.serviceAccount }}
+        dockerUsername: ${{ inputs.dockerUsername }}
+        dockerPassword: ${{ inputs.dockerPassword }}
+        dockerRegistry: ${{ inputs.dockerRegistry }}
+        clusterConfigFile: ${{ inputs.clusterConfigFile }}
+        buildDir: ${{ inputs.buildDir }}
+        slack-bot-token: ${{ inputs.slack-bot-token }}
+
+    - name: Success message
+      uses: ./.github/actions/success-update-notification
+      if: ${{ success() }}
+      with:
+        slack-bot-token: ${{ inputs.slack-bot-token }}
+        slackChannel: ${{ steps.run-task.outputs.slackChannel }}
+        thread-timestamp: ${{ steps.run-task.outputs.thread-timestamp || '' }}
+        buildDir: ${{ inputs.buildDir }}
+        gitOps: ${{ steps.run-task.outputs.gitops }}
+        issue: ${{ steps.run-task.outputs.issue }}
+        clusterName: ${{ steps.run-task.outputs.clusterName }}
+
+    - name: Update Notification
+      if: steps.run-task.outputs.goldenCluster == 'true'
+      uses: elastic/oblt-actions/slack/send@v1
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        channel-id: '#observablt-robots'
+        message: "Cluster ${{ steps.run-task.outputs.clusterName }} updated to <https://artifacts-api.elastic.co/v1/search/${{ steps.run-task.outputs.stackBuild }}|${{ steps.run-task.outputs.stackBuild }}>"
+        thread-timestamp: ${{ steps.run-task.outputs.thread-timestamp || '' }}

@@ -1,0 +1,3 @@
+---
+- name: Destroy k8s cluster
+  import_tasks: destroy_cluster.yml

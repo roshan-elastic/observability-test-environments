@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section stack_ess Elasticsearch Service (ESS) configuration
+## @param ess_tf_dir The directory where the Terraform files are located.
+ess_tf_dir: "{{ build_dir }}/terraform/elastic_cloud"
+## @param ess_stack_version The version of the stack to deploy.
+ess_stack_version: "{{ default_stack_version }}"
+## @param ess_ccs_enabled True to enable Cross Cluster Search (CCS).
+ess_ccs_enabled: "{{ ess_ccs_remote_cluster | length > 1 }}"
+## @param ess_ccs_remote_cluster_name_vault The name of the secret in Google Cloud Secret Manager that contains the remote cluster name.
+ess_ccs_remote_cluster_name_vault: "oblt-clusters_{{ ess_ccs_remote_cluster }}_cluster-state"
+## @param ess_ccs_remote_cluster_id The ID of the remote cluster.
+ess_ccs_remote_cluster_id: "{{ (lookup('oblt.framework.gcp_secret_manager', key=ess_ccs_remote_cluster_name_vault, on_error='warn')|safe|from_yaml).ess_deployment_id | default(None,true) }}"
+## @param ess_not_allow_settings True to disable some settings not allowed in staging.
+ess_not_allow_settings: true
+## @param ess_credentials The credentials to access the Elastic Cloud service.
+ess_credentials: "{{ lookup('oblt.framework.gcp_secret_manager', key=secret_ess_user)|safe()|from_yaml }}"
+## @param ess_api_key The API key to access the Elastic Cloud service
+ess_api_key: "{{ ess_credentials.apiKey | mandatory }}"
+## @param ess_org_id The organization ID to access the Elastic Cloud service.
+ess_org_id: "{{ ess_credentials.organizationID | default(None,true) }}"
+## @param ess_custom_settings True to enable custom settings.
+ess_custom_settings: true
+## @param ess_gcs_credentials The name of the secret in Google Cloud Secret Manager that contains the credentials to access the Google Cloud Storage service.
+ess_gcs_credentials: "oblt-clusters_gcs-credentials"

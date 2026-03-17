@@ -1,0 +1,59 @@
+opbeans:
+  apm:
+    enabled: {{ (opbeans_apm_enabled | default(true)) | bool }}
+  fullnameOverride: "{{ helm_chart.name }}"
+  ingress:
+    enabled: false
+    tls: {{ certmanager_available }}
+    certificateIssuer: "letsencrypt-prod"
+    host: "{{ helm_chart.name }}.{{ load_balancer_ip | default('not-defined') }}.{{ k8s_domain }}"
+  loadgen:
+    enabled: true
+    schedule: "{{ opbeans_loaggen_schedule | default('*/2 * * * *') }}"
+    api:
+      enabled: true
+      urls: "{{ helm_chart.name }}:http://{{ helm_chart.name }}:3000"
+      runLength: "{{ helm_chart.name }}:{{ opbeans_loaggen_run_length | default('120') }}"
+      requestMinute: "{{ helm_chart.name }}:{{ opbeans_loaggen_rpms | default('1000') }}"
+    frontend:
+      enabled: false
+      url: "http://{{ helm_chart.name }}:3000"
+    molotov:
+      enabled: false
+      url: "http://{{ helm_chart.name }}:3000"
+      duration: 120
+      tolerance: 75
+  extraEnvVars:
+    - name: ELASTIC_APM_ENVIRONMENT
+      value: "opbeans"
+    - name: ELASTIC_APM_SERVICE_NAME
+      value: '{{ helm_chart.name }}'
+    # FIXME the Opbean-java does not supported to change the service name for the frontend
+    - name: ELASTIC_APM_JS_SERVICE_NAME
+      value: '{{ helm_chart.name }}-frontend'
+    - name: DATABASE_DRIVER
+      value: "org.postgresql.Driver"
+    - name: "DATABASE_DIALECT"
+      value: "POSTGRESQL"
+    - name: DATABASE_URL
+      value: "jdbc:postgresql://$(PGHOST):$(PGPORT)/$(PGDATABASE)?user=$(PGUSER)&password=$(PGPASSWORD)"
+  annotations:
+    deployed-at: "{{ deploy_timestamp | replace(':','')| replace(' ','_') }}"
+  serviceAccount:
+    name: {{ helm_chart.name }}-{{ cluster_hash }}
+  db:
+    enabled: true
+    host: {{ helm_chart.name }}-db
+    name: {{ helm_chart.name }}
+    port: 5432
+    type: postgresql
+    username: elastic
+    password: none
+postgresql:
+  fullnameOverride: "{{ helm_chart.name }}-db"
+  auth:
+    username: "elastic"
+    existingSecret: "{{ helm_chart.name }}-db-creds"
+  primary:
+    initdb:
+      scriptsConfigMap: {{ helm_chart.name }}-initdb

@@ -1,0 +1,19 @@
+---
+#{% set stack_license = (lookup('oblt.framework.gcp_secret_manager', key='elastic-stack-license-dev')|default({})|safe()|from_json|to_json) %}
+# Description of what the recipe do.
+description: Push licence to ESS
+# Path to the REST API call.
+api: "/api/v1/deployments/{{ ess_deployment_id }}/elasticsearch/main-elasticsearch/proxy/_license"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PUT
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  X-Management-Request: true
+# The payload to send to the REST API.
+body: |-
+  {{ stack_license }}
+ignore_errors: true
+# The expected return code.
+return_code:
+  - 200

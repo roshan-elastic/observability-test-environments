@@ -1,0 +1,9 @@
+---
+- name: Undeploy '{{ feature.name }}'
+  vars:
+    vm_name: "{{ role_parameters.feature_siem_linux_name | default(feature_siem_linux_name) }}"
+    vm_gcp_user: "{{ role_parameters.feature_siem_linux_user | default(feature_siem_linux_user) }}"
+    vm_gcp_name: "{{ vm_name }}"
+  include_role:
+    name: oblt.framework.vm_gcp
+    tasks_from: undeploy.yml

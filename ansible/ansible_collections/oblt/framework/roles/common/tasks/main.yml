@@ -1,0 +1,222 @@
+---
+- name: create build dir
+  file:
+    path: "{{ build_dir }}"
+    state: directory
+    mode: 0755
+  tags:
+    - generate-config
+    - molecule-idempotence-notest
+
+- name: Copy files to the build dir
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Observability configuration
+  vars:
+    observability_state: "{{ lookup('oblt.framework.gcp_secret_manager', key=observability_secret, on_error='warn')|safe()|from_yaml }}"
+  set_fact:
+    observability_apm_token: "{{ (observability_state.apm_token | default(observability_apm.token)) | default(None) }}"
+    observability_apm_url: "{{ (observability_state.apm_url | default(observability_apm.url)) | default(None) }}"
+    observability_deployment_id: "{{ (observability_state.ess_deployment_id | default(observability_es.cluster.id)) | default(None) }}"
+    observability_es_password: "{{ (observability_state.elasticsearch_password | default(observability_es.password)) | default(None) }}"
+    observability_es_url: "{{ (observability_state.elasticsearch_url | default(observability_es.url)) | default(None) }}"
+    observability_es_username: "{{ (observability_state.elasticsearch_username | default(observability_es.username)) | default(None) }}"
+    observability_configured: "{{ observability_state.cluster_created | default(false) | bool }}"
+  when:
+    - stack is defined
+    - stack.observability | default(false) | bool
+
+# NOTE: config_extra is interpolated on any access to sibling variables so all the variables must be defined.
+- name: Load config  defaults
+  set_fact:
+    apm_enabled: false
+    apm_instrumentation: false
+    apm_type: null
+    beats_enabled: "{{ beats.enabled | default(false) }}"
+    certificate_issuer: "{{ k8s.certificate_issuer | default('letsencrypt-staging') }}"
+    certmanager_available: "{{ certmanager_available | default(certmanager.enabled) | default(false) }}"
+    certmanager_enabled: false
+    cluster_created: false
+    configure_external_snapshots_repo: "{{ configure_external_snapshots_repo | default(false) }}"
+    create_ilm: "{{ create_ilm | default(false) }}"
+    create_users: "{{ create_users | default(false) }}"
+    elasticsearch_enabled: false
+    elasticsearch_type: null
+    fleet_enabled: false
+    fleet_type: null
+    golden_cluster: "{{ golden_cluster | default(false) }}"
+    grab_cluster_info: "{{ grab_cluster_info | default(false) }}"
+    ingress_available: "{{ ingress_available | default(k8s.ingress) | default(false) | bool }}"
+    ingress_enabled: false
+    k8s_default_namespace: "{{ None }}"
+    k8s_enabled: false
+    k8s_project: "elastic-observability"
+    k8s_provider: "{{ None }}"
+    k8s_region: "{{ None }}"
+    k8s_domain: "{{ None }}"
+    kibana_apm_enabled: false
+    kibana_enabled: false
+    kibana_type: null
+    kube_system_namespace: "{{ None }}"
+    opbeans_enabled: "{{ opbeans.enabled | default(false) }}"
+    stack_target: "{{ stack.target | default('production') }}"
+    update_synthetics: "{{ update_synthetics | default(false) }}"
+    stack_mode: "none"
+    load_balancer_ip: "{{ None }}"
+    profiling_enable: false
+    stack_version: "{{ default_stack_version }}"
+    stack_template: "{{ None }}"
+    profiling_url: "{{ None }}"
+    profiling_token: "{{ None }}"
+    gke_cluster_name: "{{ None }}"
+    gcp_project: "{{ lookup('env', 'GCP_PROJECT') | default('elastic-observability', true) }}"
+    gcp_zone: "{{ lookup('env', 'GCP_ZONE') | default('us-central1-c', true) }}"
+    gcp_account: "{{ lookup('env', 'GCP_ACCOUNT') | default('oblt-clusters@elastic-observability.iam.gserviceaccount.com', true) }}"
+    observability_configured: "{{  observability_configured | default(false) }}"
+    ephemeral_cluster: "{{ ephemeral_cluster | default(false) }}"
+
+- name: Load Key pair
+  include_tasks: private_key.yml
+
+- name: Load config - Stack
+  set_fact:
+    observability_enabled: "{{ ( ( stack.observability | default(false) ) and observability_configured ) | default(false) | bool }}"
+    stack_mode: "{{ stack.mode | default('ess') }}"
+    stack_package_registry: "{{ stack.package_registry | default(None) }}"
+    stack_target: "{{ stack.target | default('production') }}"
+    stack_template: "{{ stack.template | default('ccs') }}"
+    stack_version: "{{ lookup('env','ELASTIC_STACK_VERSION') | default(stack.version, true) | default(default_stack_version, true) }}"
+    serverless_enabled: "{{ stack.mode == 'serverless' | default(false) | bool }}"
+  when:
+    - stack is defined
+
+- name: Load config - k8s
+  set_fact:
+    ingress_available: "{{ ingress_available | default(k8s.ingress) | default(false) | bool }}"
+    k8s_domain: "{{ k8s.domain | default('ip.es.io') }}"
+    # TODO think to remove k8s.enabled
+    k8s_enabled: "{{ k8s.enabled | default((k8s.provider | default('')) | length>0) | default(false) | bool }}"
+    k8s_project: "{{ k8s.project | default('elastic-observability') }}"
+    k8s_provider: "{{ k8s.provider | default('autopilot') }}"
+    static_ip: "{{ k8s.static_ip | default(false) }}"
+  when:
+    - k8s is defined
+
+- name: Configure k8s GCP
+  include_tasks: config_k8s_gcp.yml
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'autopilot' or k8s_provider == 'gcp'
+
+- name: Configure k8s Kind
+  include_tasks: config_k8s_kind.yml
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'
+
+- name: Configure Serverless
+  include_tasks: config_stack_serverless.yml
+  when:
+    - stack is defined
+    - stack_mode == 'serverless'
+
+- name: Configure ESS
+  include_tasks: config_stack_ess.yml
+  when:
+    - stack is defined
+    - stack_mode == 'ess'
+
+- name: Configure ECK
+  include_tasks: config_stack_eck.yml
+  when:
+    - stack is defined
+    - stack_mode == 'eck'
+
+- name: Load state from Vault (Creation)
+  vars:
+    default_x509_cert: "{{ lookup('oblt.framework.gcp_secret_manager', key=default_x509_cert_secret)|safe()|from_yaml }}"
+  set_fact:
+    apm_token: ""
+    apm_apikey: ""
+    apm_url: "{{ None }}"
+    cluster_created: false
+    elasticsearch_apikey: ""
+    elasticsearch_password: ""
+    elasticsearch_url: "{{ None }}"
+    elasticsearch_username: ""
+    ess_cloud_id: ""
+    ess_deployment_id: ""
+    fleet_api_token: ""
+    fleet_enroll_token: ""
+    fleet_policy_id: ""
+    fleet_server_policy_id: ""
+    fleet_server_token: ""
+    fleet_url: "{{ None }}"
+    ingress_password: "{{ password_plaintext }}"
+    ingress_username: "admin"
+    kibana_password: ""
+    kibana_url: "{{ None }}"
+    kibana_username: ""
+    serverless_deployment_id: "{{ None }}"
+    default_x509_cert_key: "{{ default_x509_cert.key | default(None) }}"
+    default_x509_cert_cert: "{{ default_x509_cert.cert | default(None) }}"
+  when:
+    - cluster_state.cluster_created is not defined
+
+- name: Load state from Vault (Update)
+  vars:
+    gcsm_cluster_state: "{{ cluster_state | from_yaml }}"
+  set_fact:
+    apm_token: "{{ gcsm_cluster_state.apm_token | default(None) }}"
+    apm_apikey: "{{ gcsm_cluster_state.apm_apikey | default(None) }}"
+    apm_url: "{{ gcsm_cluster_state.apm_url | default(None) }}"
+    certmanager_available: "{{ gcsm_cluster_state.certmanager_available | default(certmanager_available) | default(false) }}"
+    cluster_created: "{{ gcsm_cluster_state.cluster_created | default(false) }}"
+    elasticsearch_apikey: "{{ gcsm_cluster_state.elasticsearch_apikey | default(None) }}"
+    elasticsearch_password: "{{ gcsm_cluster_state.elasticsearch_password | default(None) }}"
+    elasticsearch_url: "{{ gcsm_cluster_state.elasticsearch_url | default(None) }}"
+    elasticsearch_username: "{{ gcsm_cluster_state.elasticsearch_username | default(None) }}"
+    ess_cloud_id: "{{ gcsm_cluster_state.ess_cloud_id | default(None) }}"
+    ess_deployment_id: "{{ gcsm_cluster_state.ess_deployment_id | default(None) }}"
+    fleet_api_token: "{{ gcsm_cluster_state.fleet_api_token | default(None) }}"
+    fleet_enroll_token: "{{ gcsm_cluster_state.fleet_enroll_token | default(None) }}"
+    fleet_policy_id: "{{ gcsm_cluster_state.fleet_policy_id | default(None) }}"
+    fleet_server_policy_id: "{{ gcsm_cluster_state.fleet_server_policy_id | default(None) }}"
+    fleet_server_token: "{{ gcsm_cluster_state.fleet_server_token | default(None) }}"
+    fleet_url: "{{ gcsm_cluster_state.fleet_url | default(None) }}"
+    ingress_available: "{{ gcsm_cluster_state.ingress_available | default(ingress_available) | default(false) | bool }}"
+    ingress_password: "{{ gcsm_cluster_state.ingress_password | default(password_plaintext) }}"
+    ingress_username: "{{ gcsm_cluster_state.ingress_username | default('admin') }}"
+    kibana_password: "{{ gcsm_cluster_state.kibana_password | default(None) }}"
+    kibana_url: "{{ gcsm_cluster_state.kibana_url | default(None) }}"
+    kibana_username: "{{ gcsm_cluster_state.kibana_username | default(None) }}"
+    serverless_deployment_id: "{{ gcsm_cluster_state.serverless_deployment_id | default(None) }}"
+    profiling_url: "{{ gcsm_cluster_state.profiling_url | default(None) }}"
+    profiling_token: "{{ gcsm_cluster_state.profiling_token | default(None) }}"
+  when:
+    - cluster_state.cluster_created is defined
+
+- name: Configure External
+  include_tasks: config_stack_external.yml
+  when:
+    - stack is defined
+    - stack_mode == 'external'
+
+- name: Show cluster_created value
+  debug:
+    msg:
+      cluster_name: "{{ cluster_name }}"
+      cluster_created: "{{ cluster_created }}"
+      k8s_enabled: "{{ k8s_enabled }}"
+      stack_mode: "{{ stack_mode }}"
+      stack_version: "{{ stack_version }}"
+      observability_enabled: "{{ observability_enabled }}"
+      elasticsearch_enabled: "{{ elasticsearch_enabled }}"
+      kibana_enabled: "{{ kibana_enabled }}"
+      apm_enabled: "{{ apm_enabled }}"
+      fleet_enabled: "{{ fleet_enabled }}"

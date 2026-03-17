@@ -1,0 +1,12 @@
+---
+- name: Undeploy Opbeans
+  vars:
+    apps:
+      helm: |
+        {{ opbeans_helm_charts | to_json }}
+  include_role:
+    name: oblt.framework.helm_apps
+    tasks_from: undeploy.yml
+  tags:
+    - opbeans
+    - undeploy

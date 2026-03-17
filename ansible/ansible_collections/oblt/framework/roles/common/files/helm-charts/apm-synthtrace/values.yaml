@@ -1,0 +1,102 @@
+---
+## @section cronjob Cronjob settings
+cronjob:
+  ## @param cronjob.enabled Specifies whether a cronjob should be created
+  enabled: true
+  ## @param cronjob.schedule Cronjob schedule
+  schedule: "*/5 * * * *"
+  ## @param cronjob.parallelism Number of jobs to run in parallel
+  parallelism: 1
+  ## @param cronjob.completions Number of completions per job.
+  completions: 1
+  ## @param cronjob.concurrencyPolicy Specifies how to treat concurrent executions of a job
+  concurrencyPolicy: "Forbid"
+  ## @param cronjob.args Additional command line arguments to pass to the synthtrace command
+  args: --from=now-10m --to=now --assume-package-version=latest
+
+## @section deployment Deployment settings
+deployment:
+  ## @param deployment.enabled Specifies whether a deployment should be created
+  enabled: false
+  ## @param deployment.replicas Number of replicas
+  replicas: 1
+  ## @param deployment.args Additional command line arguments to pass to the synthtrace command
+  args: --live  --assume-package-version=latest
+
+## @section image Image settings
+image:
+  ## @param image.repository Image repository
+  repository: docker.elastic.co/observability-ci/apm-synthtrace
+  ## @param image.pullPolicy Image pull policy
+  pullPolicy: IfNotPresent
+  ## @param image.tag Image tag
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "1.0.1"
+
+## @section imagePullSecrets Docker secrets used to pull the Docker images.
+imagePullSecrets:
+  ## @param imagePullSecrets[0].name Name of the Docker secret.
+  - name: docker.elastic.co
+## @param nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.
+nameOverride: ""
+## @param fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.
+fullnameOverride: ""
+
+## @param podAnnotations Additional annotations to add to the kubernetes deployment.
+podAnnotations: {}
+
+## @section serviceAccount Kubernetes Service Account settings
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a service account should be created
+  ## @param serviceAccount.annotations Annotations to add to the service account
+  ## @param serviceAccount.name The name of the service account to use.
+  ## If not set and create is true, a name is generated using the fullname template
+  create: true
+  annotations: {}
+  name: ""
+
+## Configure Pods Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @section podSecurityContext Enabled pods' Security Context
+## @skip podSecurityContext
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 0
+
+## Configure Container Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param securityContext Enabled containers' Security Context
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+## @section resources requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+## @param resources.limits.memory The memory limit for the Opbean
+## @param resources.requests.memory The requested memory for the Opbean
+## @param resources.requests.cpu The requested cpu for the Opbean
+resources:
+  limits:
+    memory: 2Gi
+  requests:
+    cpu: 200m
+    memory: 1Gi
+
+## @param scenarios List of scenarios to run see https://github.com/elastic/kibana/tree/main/packages/kbn-apm-synthtrace/src/scenarios
+scenarios:
+  - simple_logs.ts
+  - simple_trace.ts
+
+## @section elasticsearch Elasticsearch settings.
+elasticsearch:
+  ## @param elasticsearch.host [string] URL of the Elasticsearch (e.g. elasticsearch:9200).
+  host: "elasticsearch:9200"
+  ## @param elasticsearch.username [string] Elasticsearch username.
+  username: "elastic"
+  ## @param elasticsearch.password [string] Elasticsearch password.
+  password: "changeme"

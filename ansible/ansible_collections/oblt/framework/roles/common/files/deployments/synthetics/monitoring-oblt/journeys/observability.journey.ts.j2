@@ -1,0 +1,80 @@
+import { journey, step, monitor, expect } from '@elastic/synthetics';
+
+journey('Observability UI {{ synthetics_monitor_id }}', ({ page, params }) => {
+  // Only relevant for the push command to create
+  // monitors in Kibana
+  monitor.use({
+    id: params.projectId,
+    schedule: 10,
+  });
+  step('Kibana', async () => {
+    await page.goto(params.url + '/login?next=%2Fapp%2Fhome#/', {timeout:120000});
+    await page.waitForSelector('button:has-text("Log in with Elasticsearch")');
+    await page.click('button:has-text("Log in with Elasticsearch")');
+    await page.fill('input[name="username"]', params.username);
+    await page.fill('input[name="password"]', params.password);
+    await page.click('button:has-text("Log in")');
+    await page.waitForSelector('text=Welcome home', {timeout:120000});
+  });
+  step('Observability', async () => {
+    await page.goto(params.url + '/app/observability/overview', {timeout:120000});
+    await page.waitForSelector('text=Observability');
+    await page.click('text=Observability');
+    await page.waitForSelector('text=Observability');
+  });
+  step('Logs Stream', async () => {
+    await page.click('text=Stream');
+    await page.fill('[aria-label="Start typing to search and filter the Infra logs page"]', 'event.dataset: generic-pods');
+    await page.waitForSelector('[data-test-subj="LogEntryColumnContent"]:has-text("generic-pods")');
+  });
+  step('Metrics Inventory', async () => {
+    await page.click('text=Inventory');
+    await page.click('button:has-text("Hosts")');
+    await page.click('button:has-text("Kubernetes Pods")');
+    await page.fill('[placeholder="Search for infrastructure data… (e.g. host.name:host-1)"]', 'kubernetes.pod.name: opbeans-go*');
+    await page.press('[placeholder="Search for infrastructure data… (e.g. host.name:host-1)"]', 'Enter');
+    await page.waitForSelector('[data-test-subj="nodeName"]:has-text("opbeans-go")');
+  });
+  step('Metrics Explorer', async () => {
+    await page.click('text=Metrics Explorer');
+    await page.waitForSelector('[placeholder="Search for infrastructure data… (e.g. host.name:host-1)"]');
+    await page.click('[placeholder="Search for infrastructure data… (e.g. host.name:host-1)"]');
+    await page.fill('[placeholder="Search for infrastructure data… (e.g. host.name:host-1)"]', 'kubernetes.pod.name: opbeans-go*');
+    await page.press('[placeholder="Search for infrastructure data… (e.g. host.name:host-1)"]', 'Enter');
+    await page.click('[aria-label="Open list of options"]');
+    await page.fill('[aria-label="choose a metric to plot"]', 'kubernetes.pod.cpu.usage.node.pct');
+    await page.press('[aria-label="choose a metric to plot"]', 'Enter');
+    await page.waitForSelector('canvas[role="presentation"]');
+    await page.isVisible('canvas[role="presentation"]');
+  });
+  step('Monitors', async () => {
+    await page.click('text=Monitors');
+    await page.waitForSelector('[placeholder="Search by monitor ID, name, URL, port or tags"]');
+    await page.fill('[placeholder="Search by monitor ID, name, URL, port or tags"]', 'kibana');
+    await page.press('[placeholder="Search by monitor ID, name, URL, port or tags"]', 'Enter');
+    await page.isVisible('text=Kibana_Health');
+  });
+  step('User Experience', async () => {
+    await page.click('text=Dashboard');
+    await page.waitForSelector('[title="Location"]');
+    await page.click('[title="Location"]');
+    await page.click('text=US');
+    await page.click('[title="Location"]');
+  });
+  step('APM', async () => {
+    await page.goto(params.url + '/app/apm', {timeout:120000})
+    await page.waitForSelector('text=Services');
+    await page.click('text=Services');
+    if(page.url().startsWith(params.url + '/app/apm/service-groups')){
+      await page.click('text=All services');
+    }
+    await page.waitForTimeout(5000);
+    await page.fill('[placeholder="Search transactions, errors and metrics (E.g. transaction.duration.us > 300000 AND http.response.status_code >= 400)"]', 'service.name : opbeans-go');
+    await page.press('[placeholder="Search transactions, errors and metrics (E.g. transaction.duration.us > 300000 AND http.response.status_code >= 400)"]', 'Enter');
+
+    await page.waitForTimeout(5000);
+
+    await page.waitForSelector('img[alt="go"]');
+    await page.isVisible('img[alt="go"]');
+  });
+});

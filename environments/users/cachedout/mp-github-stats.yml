@@ -1,0 +1,31 @@
+cluster_name: mp-github-stats
+slack_channel: "@UF6SS22GY"
+oblt_username: "cachedout"
+expire_date: '2024-12-31'
+oblt_managed: false
+
+stack:
+  version: 8.11.0
+  mode: ess
+  template: observability
+  target: production
+  observability: false
+  ess:
+    region: gcp-europe-west9
+    provider: gcp
+    autoscale: false
+    elasticsearch:
+      enabled: true
+      mem: 8
+      zones: 2
+    kibana:
+      enabled: true
+      mem: 4
+      zones: 1
+    integrations:
+      enabled: true
+      mem: 2
+      zones: 1
+
+ess_custom_settings: false
+ess_ccs_enabled: false

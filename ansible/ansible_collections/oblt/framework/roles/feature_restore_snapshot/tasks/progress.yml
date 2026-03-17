@@ -1,0 +1,41 @@
+---
+- name: "Wait {{ delay }} seconds for some progress"
+  vars:
+    delay: "{{ role_parameters.progress_delay | default(300) }}"
+  wait_for:
+    timeout: "{{ delay }}"
+
+- name: Get Progress
+  uri:
+    method: GET
+    url: "{{ elasticsearch_url }}/_recovery?active_only"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result_get_progress
+  until: _result_get_progress.status == 200
+  retries: 3
+  delay: 10
+
+- name: Set Progress Facts
+  vars:
+    query: "[*].{index: key, shards: value.shards[?type == `SNAPSHOT`].{id: id, bytes_percent: index.size.percent, files_percent: index.files.percent}} | [?length(shards) > `0`]"
+  set_fact:
+    pending_indices: "{{ _result_get_progress.json | dict2items | community.general.json_query(query) }}"
+    retry_count: "{{ 0 if retry_count is undefined else retry_count|int + 1 }}"
+
+- block:
+    - name: Check Pending Indices
+      fail:
+        msg: "{{ pending_indices }}"
+      when: "pending_indices | length != 0"
+  rescue:
+    - name: "Iteration {{ retry_count }} of {{ max_retry_count }}"
+      vars:
+        max_retry_count: "{{ role_parameters.progress_iterations | default(1000) }}"
+      fail:
+        msg: "Ended after {{ max_retry_count }} iterations"
+      when: "retry_count|int == max_retry_count"
+
+    - name: Show Progress
+      include_tasks: progress.yml

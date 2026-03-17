@@ -1,0 +1,13 @@
+---
+description: Get the {{ integrations_name }} Integration package
+api: "/api/fleet/epm/packages/{{ integrations_name }}"
+method: GET
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+register: integration_package_result
+body: ""
+return_code:
+  - 409
+  - 200

@@ -1,0 +1,40 @@
+{
+  "applications": [
+    {
+      "application": "kibana-.kibana",
+      "privileges": [
+        "feature_discover.all",
+        "feature_dashboard.all",
+        "feature_canvas.all",
+        "feature_ml.all",
+        "feature_maps.all",
+        "feature_graph.all",
+        "feature_visualize.all",
+        "feature_logs.all",
+        "feature_infrastructure.all",
+        "feature_apm.all",
+        "feature_uptime.all",
+        "feature_siem.all",
+        "feature_dev_tools.all",
+        "feature_advancedSettings.all",
+        "feature_indexPatterns.all",
+        "feature_savedObjectsManagement.all",
+        "feature_stackAlerts.all",
+        "feature_fleet.all",
+        "feature_actions.all"
+      ],
+      "resources": [
+        "*"
+      ]
+    }
+  ],
+  "transient_metadata": {
+    "enabled": true
+  },
+  "run_as": [],
+  "cluster": [],
+  "indices": [],
+  "metadata": {
+    "version": 1
+  }
+}

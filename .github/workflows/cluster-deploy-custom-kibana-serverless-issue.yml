@@ -1,0 +1,149 @@
+---
+name: Oblt Cluster deploy custom Kibana Serverless(issue)
+
+on:
+  issues:
+    types:
+      - edited
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+
+# Avoid running if there is already an on-going action running for the same
+# GitHub issue
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.issue.number }}"
+
+env:
+  JOB_LOGS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
+jobs:
+  # Read GitHub issue form, generate the required outputs to be consumed later on and
+  # validate whether the given ref refers to an external pull request
+  # since it's not supported for security reasons.
+  prepare_context:
+    if: contains(github.event.issue.labels.*.name, 'deploy-custom-kibana-serverless')
+    runs-on: ubuntu-latest
+    outputs:
+      continue: ${{ steps.block-pr-external-contributor.outputs.continue }}
+      kibana-image: ${{ steps.issue-parser.outputs.issueparser_kibana_image }}
+      kibana-pullrequest: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+
+      # Use https://github.com/stefanbuck/github-issue-parser/releases/tag/v3.0.1
+      - name: Parse GitHub issue form
+        uses: stefanbuck/github-issue-parser@c1a559d78bfb8dd05216dab9ffd2b91082ff5324
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/cluster-deploy-custom-kibana-serverless-issue.yaml
+
+      - name: Debug GitHub issue form (fetch content)
+        uses: actions/github-script@v7
+        env:
+          ISSUE_CONTENT: ${{ steps.issue-parser.outputs.jsonString }}
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const issueFilePath = path.join(process.env.GITHUB_WORKSPACE, 'issue.json')
+            const issue = fs.writeFileSync(issueFilePath, process.env.ISSUE_CONTENT)
+            core.info(`Wrote issue to ${issueFilePath}`)
+            core.debug(issue)
+
+      - name: No Docker image
+        if: steps.issue-parser.outputs.issueparser_kibana_image == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `💔 The Kibana Docker image was not set.
+            The Kibana Docker image pattern is 'docker.elastic.co/kibana-ci/kibana-serverless:pr-PR_NUMBER-SHA'
+            where PR_NUMBER is the number of PR,
+            and SHA are the 12 first characters of the commit SHA.
+            This image is build by the Kibana CI you have to wait for the GitHub Check 'Build Project Image' to be successful.`
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
+            core.setFailed('No Docker image provided in the GitHub issue form')
+
+      - id: is_elastic_pr_author
+        uses: elastic/apm-pipeline-library/.github/actions/is-pr-author-member-elastic-org@current
+        with:
+          pull-request: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+          repository: "elastic/kibana"
+          token: ${{ secrets.IS_MEMBER_GITHUB_TOKEN }}
+
+      - name: Block - PR owned by external contributor
+        id: block-pr-external-contributor
+        uses: actions/github-script@v7
+        env:
+          IS_PR: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+          IS_ELASTIC_PR_AUTHOR: ${{ steps.is_elastic_pr_author.outputs.result }}
+        with:
+          script: |
+            if (process.env.IS_PR != 'true') {
+              core.setOutput('continue', 'true');
+            } else {
+              core.setOutput('continue', process.env.IS_ELASTIC_PR_AUTHOR);
+            }
+
+      - name: Notify - PR owned by external contributor
+        if: contains(steps.block-pr-external-contributor.outputs.continue, 'false')
+        uses: peter-evans/close-issue@276d7966e389d888f011539a86c8920025ea0626
+        with:
+          comment: 🚫 This automation cannot deploy PRs from external contributors. [${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}](${{ github.server_url }}/elastic/kibana/pull/${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}) ([logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))
+
+  deploy_custom_kibana:
+    needs: prepare_context
+    runs-on: ubuntu-latest
+    if: contains(needs.prepare_context.outputs.continue, 'true')
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+
+      - name: Deploy in serverless ☁️
+        uses: elastic/oblt-actions/oblt-cli/cluster-create-custom@v1
+        with:
+          template: serverless
+          cluster-name-prefix: "issue"
+          cluster-name-suffix: "pr${{ needs.prepare_context.outputs.kibana-pullrequest }}"
+          parameters: '{"KibanaDockerImage":"${{ needs.prepare_context.outputs.kibana-image }}","EphemeralCluster": true}'
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          gitops: true
+          slack-channel: "#observablt-bots"
+          username: "deploykibana"
+
+      - name: Notify - deploy on-going 🔜
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔜 I am deploying your Kibana Serverless in the Observability cluster ([logs](${{ env.JOB_LOGS }}))'
+            })
+
+      - name: Notify - failure 💔
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            var message = '💔 Something went wrong with the deployment ([logs](${{ env.JOB_LOGS }}))'
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })

@@ -1,0 +1,177 @@
+---
+name: Oblt Cluster restore snapshot (issue)
+
+on:
+  issues:
+    types:
+      - edited
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+# Avoid running if there is already an on-going action running for the same
+# GitHub issue
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.issue.number }}"
+
+env:
+  JOB_LOGS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
+jobs:
+  # Read GitHub issue form, generate the required outputs to be consumed later on
+  prepare_context:
+    if: contains(github.event.issue.labels.*.name, 'cluster-restore-snapshot') && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    outputs:
+      target_cluster: ${{ steps.issue-parser.outputs.issueparser_target_cluster }}
+      source_cluster: ${{ steps.issue-parser.outputs.issueparser_source_cluster }}
+      snapshot_name: ${{ steps.issue-parser.outputs.issueparser_snapshot_name }}
+      feature_states: ${{ steps.issue-parser.outputs.issueparser_feature_states }}
+      include_global_state: ${{ steps.issue-context.outputs.include_global_state }}
+      indices: ${{ steps.issue-context.outputs.indices }}
+      ignore_unavailable: ${{ steps.issue-context.outputs.ignore_unavailable }}
+      index_settings: ${{ steps.issue-context.outputs.index_settings }}
+      wait_for_completion: ${{ steps.issue-context.outputs.wait_for_completion }}
+      dry_run: ${{ steps.issue-context.outputs.dry_run }}
+      oblt_user: ${{ steps.issue-parser.outputs.issueparser_oblt_user || 'restoresnapshot' }}
+      slack: ${{ steps.issue-parser.outputs.issueparser_slack || '#observablt-bots' }}
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+
+      - name: Parse GitHub issue form
+        uses: stefanbuck/github-issue-parser@v3
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/cluster-restore-snapshot-issue.yaml
+
+      - name: Set issue context
+        uses: actions/github-script@v7
+        id: issue-context
+        env:
+          INDICES: "${{ steps.issue-parser.outputs.issueparser_indices }}"
+          INDEX_SETTINGS: "${{ steps.issue-parser.outputs.issueparser_index_settings }}"
+        with:
+          script: |
+            const unwrap_text_area = function (s) {
+              return s.replace(/^\s*```\w*\s*(.*?)\s*```\s*$/s, "$1")
+            }
+            core.setOutput("indices", unwrap_text_area(process.env.INDICES))
+            core.setOutput("index_settings", unwrap_text_area(process.env.INDEX_SETTINGS))
+            core.setOutput("include_global_state", "${{ steps.issue-parser.outputs.issueparser_include_global_state }}" != "")
+            core.setOutput("ignore_unavailable", "${{ steps.issue-parser.outputs.issueparser_ignore_unavailable }}" != "")
+            core.setOutput("wait_for_completion", "${{ steps.issue-parser.outputs.issueparser_wait_for_completion }}" != "")
+            core.setOutput("dry_run", "${{ steps.issue-parser.outputs.issueparser_dry_run }}" != "")
+
+      - name: Debug GitHub issue form (fetch content)
+        uses: actions/github-script@v7
+        env:
+          ISSUE_CONTENT: ${{ steps.issue-parser.outputs.jsonString }}
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const issteFilePath = path.join(process.env.GITHUB_WORKSPACE, 'issue.json')
+            const issue = fs.writeFileSync(issteFilePath, process.env.ISSUE_CONTENT)
+            core.info(`Wrote issue to ${issteFilePath}`)
+            core.debug(issue)
+
+  cluster_restore_snapshot:
+    needs: prepare_context
+    runs-on:
+      group: observability-test
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+
+      - name: Notify - prepare ⌛
+        if: needs.prepare_context.outputs.dry_run == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            var message = '⌛ Preparing the dry run ([logs](${{ env.JOB_LOGS }})).'
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })
+
+      - name: Notify - prepare ⌛
+        if: needs.prepare_context.outputs.dry_run == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            var message = '⌛ Preparing the restore ([logs](${{ env.JOB_LOGS }})).'
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })
+
+      - name: Set CLUSTER_CONFIG_FILE
+        env:
+          CLUSTER_NAME: ${{ needs.prepare_context.outputs.target_cluster }}
+        run: echo "CLUSTER_CONFIG_FILE=$(.ci/scripts/find_cluster_config_by_name.py "${CLUSTER_NAME}" ./environments false)" >> "${GITHUB_ENV}"
+
+      - name: Restore snapshot
+        uses: ./.github/actions/make-target
+        env:
+          SOURCE_REPOSITORY: "external_gcs_repository_${{ needs.prepare_context.outputs.source_cluster }}"
+          SNAPSHOT_NAME: "${{ needs.prepare_context.outputs.snapshot_name }}"
+          INCLUDE_GLOBAL_STATE: "${{ needs.prepare_context.outputs.include_global_state }}"
+          FEATURE_STATES: "${{ needs.prepare_context.outputs.feature_states }}"
+          INDICES: "${{ needs.prepare_context.outputs.indices }}"
+          IGNORE_UNAVAILABLE: "${{ needs.prepare_context.outputs.ignore_unavailable }}"
+          INDEX_SETTINGS: "${{ needs.prepare_context.outputs.index_settings }}"
+          WAIT_FOR_COMPLETION: "${{ needs.prepare_context.outputs.wait_for_completion }}"
+          DRY_RUN: "${{ needs.prepare_context.outputs.dry_run }}"
+        with:
+          target: "restore-snapshot"
+          baseDir: "ansible"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Notify - failure 💔
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            var message = '💔 Something went wrong ([logs](${{ env.JOB_LOGS }})).'
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })
+
+      - name: Notify - completed 🚧
+        if: ${{ success() && needs.prepare_context.outputs.dry_run == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            var message = '🚧 Dry run completed ([logs](${{ env.JOB_LOGS }})).'
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })
+
+      - name: Notify - started 🏃
+        if: ${{ success() && needs.prepare_context.outputs.dry_run == 'false' && needs.prepare_context.outputs.wait_for_completion == 'false' }}
+        uses: peter-evans/close-issue@v3
+        with:
+          comment: |
+            🏃 Snapshot is being restored ([logs](${{ env.JOB_LOGS }})), check https://${{ needs.prepare_context.outputs.target_cluster }}.kb.us-west2.gcp.elastic-cloud.com/app/management/data/snapshot_restore/restore_status for its completion.
+
+      - name: Notify - success ✅
+        if: ${{ success() && needs.prepare_context.outputs.dry_run == 'false' && needs.prepare_context.outputs.wait_for_completion == 'true' }}
+        uses: peter-evans/close-issue@v3
+        with:
+          comment: |
+            ✅ Snapshot restored successfully ([logs](${{ env.JOB_LOGS }})).

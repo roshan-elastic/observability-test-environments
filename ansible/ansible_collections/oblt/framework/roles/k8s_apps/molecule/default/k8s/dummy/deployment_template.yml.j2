@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: hello-node-template
+  name: hello-node-template
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-node-template
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: hello-node-template
+    spec:
+      containers:
+      - image: k8s.gcr.io/echoserver:{{ app_config.version }}
+        name: echoserver-{{ template_value | default("foo", true) }}
+        resources: {}
+status: {}

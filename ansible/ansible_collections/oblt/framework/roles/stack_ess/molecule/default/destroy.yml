@@ -1,0 +1,27 @@
+---
+- name: Custom Destroy
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Import role
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: destroy_cluster.yml
+        apply:
+          ignore_errors: true
+    - name: Import role
+      include_role:
+        name: oblt.framework.common
+        tasks_from: delete_secrets.yml
+        apply:
+          ignore_errors: true

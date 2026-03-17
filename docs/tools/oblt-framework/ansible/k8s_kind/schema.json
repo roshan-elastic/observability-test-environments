@@ -1,0 +1,21 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "kindest_node_version": {
+            "type": "string",
+            "description": "Version of the Kind nodes to use",
+            "default": "\"\""
+        },
+        "cluster_context": {
+            "type": "string",
+            "description": "The context name of the cluster to use.",
+            "default": "kind-{{ cluster_name }}"
+        },
+        "kind_config_file": {
+            "type": "string",
+            "description": "The path to the Kind configuration file",
+            "default": "{{ build_dir }}/kind/config_single_node.yml"
+        }
+    }
+}

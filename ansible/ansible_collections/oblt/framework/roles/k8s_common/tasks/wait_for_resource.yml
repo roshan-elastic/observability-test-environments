@@ -1,0 +1,31 @@
+---
+- name: Wait for resource {{ k8s_resource }} initialized
+  changed_when: false
+  vars:
+    k8s_resource: "pod -A"
+    k8s_namespace: "{{ k8s_default_namespace }}"
+    wait_retries: 12
+  command: |
+    kubectl get -n "{{ k8s_namespace }}" {{ k8s_resource }} -o json
+  register: wait_for_resource
+  until: wait_for_resource.stdout | from_json | json_query('items[]')
+  retries: "{{ wait_retries | int }}"
+  delay: 10
+  tags:
+    - wait
+    - k8s
+
+# TODO change to use wait https://kubernetes.io/docs/reference/kubectl/generated/kubectl_wait/
+- name: Wait for resource {{ k8s_resource }} Ready
+  changed_when: false
+  vars:
+    k8s_resource: "pod -A"
+    k8s_namespace: "{{ k8s_default_namespace }}"
+    condition: "--for=condition=Ready"
+    timeout: 60s
+  command: |
+    kubectl wait -n "{{ k8s_namespace }}" {{ k8s_resource }} --timeout={{ timeout }} {{ condition }}
+  register: wait_for_resource
+  tags:
+    - wait
+    - k8s

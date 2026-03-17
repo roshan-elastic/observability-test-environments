@@ -1,0 +1,16 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "feature_integrations_name": {
+            "type": "string",
+            "description": "Name of the integration",
+            "default": "\"\""
+        },
+        "feature_integrations_helm_chart_version": {
+            "type": "string",
+            "description": "Integrations Helm chart version",
+            "default": "\"\""
+        }
+    }
+}

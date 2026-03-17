@@ -1,0 +1,15 @@
+---
+- block:
+    - name: Import role k8s apps
+      include_role:
+        name: "oblt.framework.k8s_apps"
+      when:
+        - apps.k8s is defined | default(false)
+
+    - name: Import role Helm apps
+      include_role:
+        name: "oblt.framework.helm_apps"
+      when:
+        - apps.helm is defined | default(false)
+  when:
+    - k8s_enabled|bool

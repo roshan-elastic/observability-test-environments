@@ -1,0 +1,113 @@
+name: Restore Snapshot
+description: Restore a snapshot on your cluster.
+title: "[Restore Snapshot]: "
+# NOTE: cluster-restore-snapshot label is required by .github/workflows/cluster-restore-snapshot-issue.yml
+labels: ["cluster", "cluster-restore-snapshot"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Here you configure the snapshot restoring on an existing OBTC ESS cluster.
+
+        Submitting this issue triggers a workflow that does the following steps:
+          1. close all indices of the target cluster that would be restored
+          2. delete all the data streams of the target that would be restored
+          3. run the restore
+  - type: input
+    id: target_cluster
+    attributes:
+      label: Destination Cluster
+      description: Name the cluster which you want to restore the snapshot onto.
+    validations:
+      required: true
+  - type: dropdown
+    id: source_cluster
+    attributes:
+      label: Source cluster
+      description: Choose the cluster which you want to restore the snapshot of.
+      multiple: false
+      options:
+        - edge-oblt
+        - edge-sec
+        - dev-oblt
+        - release-oblt
+        - release-sec
+        - monitoring-oblt
+    validations:
+      required: true
+  - type: input
+    id: snapshot_name
+    attributes:
+      label: Snapshot name
+      description: Write the name of snapshot you want to restore. Leave it empty if you want the latest.
+  - type: checkboxes
+    id: include_global_state
+    attributes:
+      label: Include global state
+      options:
+        - label: Restore the cluster state.
+  - type: checkboxes
+    id: feature_states
+    attributes:
+      label: Feature states
+      description: Do not select any if you want the default, which is "all" if global state above is selected or "none" if it's deselected. If you don't want to restore any state independently from the global state above, select only "none".
+      options:
+        - label: async_search
+        - label: fleet
+        - label: geoip
+        - label: kibana
+        - label: machine_learning
+        - label: security
+        - label: tasks
+        - label: transform
+        - label: none
+  - type: textarea
+    id: indices
+    attributes:
+      label: Indices
+      description: Comma-separated list of indices and data streams to restore. Leave it empty if you want to restore all the indices and data streams.
+      placeholder: one, two, three
+  - type: checkboxes
+    id: ignore_unavailable
+    attributes:
+      label: Ignore unavailable
+      options:
+        - label: Ignore any index or data stream in indices that’s missing from the snapshot.
+  - type: textarea
+    id: index_settings
+    attributes:
+      label: Index settings
+      description: Index settings to add or change in restored indices, including backing indices.
+      render: json
+      placeholder: |
+        {
+          "auto_expand_replicas": false,
+          "index.number_of_replicas": 0
+        }
+  - type: checkboxes
+    id: wait_for_completion
+    attributes:
+      label: Wait for completion
+      description: "NOTE: GitHub workflows are limited to 6 hours whereas restoring a snapshot may take quite longer. If the workflow reaches its limit it will be terminated but the restore will continue."
+      options:
+        - label: |
+            Wait for the snapshot restore completion and track the progress in the workflow log.
+  - type: checkboxes
+    id: dry_run
+    attributes:
+      label: Dry run
+      options:
+        - label: |
+            Do not really close any index, delete any data stream or start the restore. Just go through the steps without modifying anything on the target cluster.
+  - type: input
+    id: oblt_user
+    attributes:
+      label: Oblt-cli user (Optional)
+      description: User to configure oblt-cli, this will put the deployment in the user folder.
+      value: 'restoresnapshot'
+  - type: input
+    id: slack
+    attributes:
+      label: Slack channel (Optional)
+      description: Choose a slack member ID (starting with "@") or channel (starting with "#").
+      value: '#observablt-bots'

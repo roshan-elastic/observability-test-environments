@@ -1,0 +1,24 @@
+---
+- name: Deploy Certificate Manager
+  vars:
+    helm_chart:
+      name: "cert-manager"
+      chart: "{{ helm_charts_dir }}/certmanager"
+      version: "0.1.0"
+      values_file: "{{ helm_deployment_dir }}/certmanager/helm-values.yaml.j2"
+      build_deps: true
+      extra_args: "--wait --timeout 10m"
+      namespace: "{{ k8s_default_namespace }}"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: deploy_chart.yml
+  tags:
+    - certmanager
+    - deploy
+
+- name: Set certmanager Available
+  set_fact:
+    certmanager_available: true
+  tags:
+    - certmanager
+    - deploy

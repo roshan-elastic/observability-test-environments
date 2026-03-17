@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: profiling-agent-bm
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+create_users: false
+grab_cluster_info: true
+golden_cluster: true
+stack:
+  version: 8.15.0
+  mode: ess
+  template: observability
+  target: production
+  observability: true
+  update_channel: release
+  update_schedule: tuesday
+  ess:
+    saml_id: exkwzvghgusByksrp1t7
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-474303bf
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-474303bf
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-474303bf
+    profiling:
+      image: docker.elastic.co/observability-ci/profiling-agent:8.15.0-474303bf
+updated_at: "2024-08-06T02:17:27Z"

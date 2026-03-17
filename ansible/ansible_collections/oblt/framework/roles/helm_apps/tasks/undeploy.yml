@@ -1,0 +1,20 @@
+---
+- block:
+  - name: Import tasks
+    import_tasks: copy_files.yml
+
+  - name: "Undeploy {{ item.name }}"
+    vars:
+      helm_chart:
+        name: "{{ item.name }}"
+        namespace: "{{ item.namespace | default(k8s_default_namespace, true) }}"
+    include_role:
+      name: oblt.framework.k8s_helm
+      tasks_from: undeploy_chart.yml
+    tags:
+      - helm_apps
+      - undeploy
+    loop: "{{ helm_apps }}"
+  when:
+    - k8s_enabled|bool
+    - helm_apps

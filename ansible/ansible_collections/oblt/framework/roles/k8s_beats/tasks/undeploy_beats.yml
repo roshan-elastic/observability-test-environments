@@ -1,0 +1,11 @@
+---
+- name: Undeploy Beats
+  changed_when: false
+  command: |
+    kubectl delete -R -f "{{ k8s_dir }}/beats"
+  tags:
+    - beats
+    - deploy
+
+- name: Include tasks from undeploy_apache_haproxy.yml
+  include_tasks: undeploy_apache_haproxy.yml

@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: release-sec
+golden_cluster: true
+slack_channel: "#observablt-bots"
+create_users: true
+grab_cluster_info: true
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ deployment_dir }}/bootstrap-defend"
+features:
+  - name: siem_linux
+    feature_siem_linux_elastic_agent_version: "{{ stack_version }}"
+    feature_siem_linux_name: "siem-linux-{{ cluster_name }}"
+    feature_siem_linux_machine_type: "e2-medium"
+  - name: siem_linux
+    feature_siem_linux_elastic_agent_version: "{{ stack_version }}"
+    feature_siem_linux_name: "siem-linux-{{ cluster_name }}-bis"
+    feature_siem_linux_machine_type: "e2-medium"
+configure_external_snapshots_repo: true
+stack:
+  ess:
+    saml_id: exkypx2i4d3RtvNKE1t7
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-3d204fe6
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-3d204fe6
+      zones: 3
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-3d204fe6
+    profiling:
+      image: docker.elastic.co/observability-ci/profiling-agent:8.15.0-3d204fe6
+  observability: true
+  mode: ess
+  template: security
+  target: production
+  version: 8.15.0
+  update_channel: release
+  update_schedule: daily
+updated_at: "2024-08-08T00:44:16Z"

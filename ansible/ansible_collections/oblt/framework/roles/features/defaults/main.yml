@@ -1,0 +1,6 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param features [array] List of features to install
+## @skip features
+features: []

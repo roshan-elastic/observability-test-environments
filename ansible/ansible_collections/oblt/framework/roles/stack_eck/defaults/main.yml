@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param eck_version [string] The version of the Elastic Cloud on Kubernetes
+eck_version: 2.13.0
+## @param eck_api_version [string] The API version of the Elastic Cloud on Kubernetes API
+eck_api_version: "v1"
+## @param eck_domain [string] The domain used for URLs
+eck_domain: "{{ load_balancer_ip }}.{{ k8s_domain }}"
+## @param elasticsearch_host [string] The external URL for Elasticsearch
+elasticsearch_host: "elasticsearch.{{ eck_domain }}"
+## @param elasticsearch_host_int [string] The internal URL for Elasticsearch
+elasticsearch_host_int: "{{ cluster_name }}-es-http"
+## @param elasticsearch_port_int The internal port for Elasticsearch
+elasticsearch_port_int: 9200
+## @param kibana_host [string] The external URL for Kibana
+kibana_host: "kibana.{{ eck_domain }}"
+## @param kibana_host_int [string] The internal URL for Kibana
+kibana_host_int: "{{ cluster_name }}-kb-http"
+## @param kibana_port_int The internal port for Kibana
+kibana_port_int: 5601
+## @param apm_host [string] The external URL for APM
+apm_host: "apm.{{ eck_domain }}"
+## @param apm_host_int [string] The internal URL for APM
+apm_host_int: "{{ cluster_name }}-apm-http"
+## @param apm_port_int The internal port for APM
+apm_port_int: 8200
+## @param fleet_host [string] The external URL for Fleet
+fleet_host: "fleet.{{ eck_domain }}"
+## @param fleet_host_int [string] The internal URL for Fleet
+fleet_host_int: "{{ cluster_name }}-agent-http"
+## @param fleet_port_int The internal port for Fleet
+fleet_port_int: 8220
+## @param apm_secret_token [string] The secret token for APM
+apm_secret_token: "{{ password_plaintext | default(apm_token) }}"
+## @param stack_monitoring_secret [string] The k8s secret name for the stack monitoring
+stack_monitoring_secret: "monitoring-metrics-es-ref"

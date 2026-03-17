@@ -1,0 +1,116 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "beats": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable Beats services",
+                    "default": false
+                },
+                "auditbeat": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable Auditbeat service",
+                            "default": true
+                        },
+                        "image": {
+                            "type": "string",
+                            "description": "Auditbeat image",
+                            "default": "\"\""
+                        }
+                    }
+                },
+                "filebeat": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable Filebeat service",
+                            "default": true
+                        },
+                        "image": {
+                            "type": "string",
+                            "description": "Filebeat image",
+                            "default": "\"\""
+                        }
+                    }
+                },
+                "heartbeat": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable Heartbeat service",
+                            "default": true
+                        },
+                        "image": {
+                            "type": "string",
+                            "description": "Heartbeat image",
+                            "default": "\"\""
+                        }
+                    }
+                },
+                "metricbeat": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable Metricbeat service",
+                            "default": true
+                        },
+                        "image": {
+                            "type": "string",
+                            "description": "Metricbeat image",
+                            "default": "\"\""
+                        }
+                    }
+                },
+                "packetbeat": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable Packetbeat service",
+                            "default": false
+                        },
+                        "image": {
+                            "type": "string",
+                            "description": "Packetbeat image",
+                            "default": "\"\""
+                        }
+                    }
+                }
+            }
+        },
+        "beats_enabled": {
+            "type": "string",
+            "description": "Enable Beats services",
+            "default": "\"\""
+        },
+        "apache_version": {
+            "type": "string",
+            "description": "Apache version to deploy",
+            "default": "\"\""
+        },
+        "apache_enabled": {
+            "type": "string",
+            "description": "Enable Apache service",
+            "default": "\"\""
+        },
+        "haproxy_version": {
+            "type": "string",
+            "description": "HAProxy version to deploy",
+            "default": "\"\""
+        },
+        "haproxy_enabled": {
+            "type": "string",
+            "description": "Enable HAProxy service",
+            "default": "\"\""
+        }
+    }
+}

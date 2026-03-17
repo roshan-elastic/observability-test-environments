@@ -1,0 +1,58 @@
+apm_perf_image: docker.elastic.co/observability-ci/apm-perf:latest-1695914783-e98c86d
+apm_scenario: qa
+apps:
+    helm:
+        - chart: prometheus-community/kube-state-metrics
+          name: kube-state-metrics
+          namespace: '{{ k8s_default_namespace }}'
+          version: '{{ kube_state_metrics_version }}'
+        - chart: '{{ helm_charts_dir }}/elastic_agent'
+          name: elastic-agent-standalone
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/elastic_agent/standalone/helm-values.yml.j2'
+          version: 0.1.0
+        - chart: open-telemetry/opentelemetry-demo
+          extra_args: --create-namespace
+          name: opentelemetry-demo
+          namespace: '{{ cluster_name }}-opentelemetry-demo'
+          values_file: '{{ helm_deployment_dir }}/opentelemetry-demo/helm-values.yml.j2'
+          version: 0.22.3
+        - chart: '{{ helm_charts_dir }}/apm-synthtrace'
+          name: apm-synthtrace-all
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/apm-synthtrace/helm-values-all.yml.j2'
+          version: 0.1.0
+    k8s:
+        - name: apm-soak
+          src: '{{ k8s_deployment_dir }}/apm-soak'
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+    - '{{ deployment_dir }}/bootstrap-serverless'
+    - '{{ deployment_dir }}/bootstrap-slo'
+cluster_name: serverless-production-oblt
+golden_cluster: true
+k8s:
+    default_namespace: default
+    kube_system_namespace: kube-system
+    machine_type: e2-highcpu-4
+    max_node_count: 20
+    provider: gcp
+oblt_username: robots
+opbeans:
+    enabled: true
+slack_channel: '#observablt-bots'
+stack:
+    mode: serverless
+    target: production
+    template: observability
+synthetics_monitors_folders:
+    - folder: '{{ synthetics_deployments_dir }}/generic'
+      id: monitors
+      locale: en-US
+      params:
+        APM_URL: '{{ apm_url | default('''') }}'
+        ELASTICSEARCH_URL: '{{ elasticsearch_url | default('''') }}'
+        KIBANA_PASSWORD: '{{ elasticsearch_password | default('''') }}'
+        KIBANA_URL: '{{ kibana_url | default('''')}}'
+        KIBANA_USERNAME: '{{ elasticsearch_username | default('''') }}'
+      timezone: America/Los_Angeles

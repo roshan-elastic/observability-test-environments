@@ -1,0 +1,23 @@
+---
+description: Create a Docker package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "fleet-agent-{{ integrations_name }}-policy",
+    "package": {
+      "name": "docker",
+      "version": "{{ integration_package_docker_result.json.item.version }}"
+    },
+    "name": "docker-{{ integrations_name }}",
+    "id": "docker-{{ integrations_name }}",
+    "description": "Docker Integration configured for testing purposes.",
+    "namespace": "default"
+  }

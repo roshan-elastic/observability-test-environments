@@ -1,0 +1,43 @@
+---
+# Description of what the recipe does.
+description: Configure Default indices in the security solution to use CCS
+# Path to the REST API call.
+api: "/api/kibana/settings"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: POST
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+  elastic-api-version: 1
+  kbn-version: "{{ stack_version }}"
+# The payload to send to the REST API.
+body: |
+  {
+    "changes": {
+      "securitySolution:defaultIndex": [
+        "apm-*-transaction*",
+        "auditbeat-*",
+        "endgame-*",
+        "filebeat-*",
+        "logs-*",
+        "packetbeat-*",
+        "traces-apm*",
+        "winlogbeat-*",
+        "-*elastic-cloud-logs-*",
+        "logging-*:service-proxy-requests-*",
+        "logging-*:apm-*-transaction*",
+        "logging-*:auditbeat-*",
+        "logging-*:endgame-*",
+        "logging-*:filebeat-*",
+        "logging-*:logs-*",
+        "logging-*:packetbeat-*",
+        "logging-*:traces-apm*",
+        "logging-*:winlogbeat-*",
+        "logging-*:-*elastic-cloud-logs-*"
+      ]
+    }
+  }
+# The expected return code.
+return_code:
+  - 200

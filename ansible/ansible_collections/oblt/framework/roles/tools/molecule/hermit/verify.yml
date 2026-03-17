@@ -1,0 +1,21 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+    bin_dir: "{{ build_dir }}/bin"
+  tasks:
+    - name: Check state files created
+      failed_when:
+        - not state_files.stat.exists
+      stat:
+        path: "{{ bin_dir }}/{{ item }}"
+      with_items:
+        - gcloud_installed
+        - helm_installed
+        - kubectl_installed
+        - kind_installed
+        - terraform_installed
+      register: state_files

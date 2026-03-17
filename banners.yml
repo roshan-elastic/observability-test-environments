@@ -1,0 +1,8 @@
+- msg: |
+    7.5.11 was released https://elastic.github.io/observability-test-environments/tools/oblt-cli/update/
+    oblt-cli update --github-token "$(gh auth token)"
+    HOMEBREW_GITHUB_API_TOKEN=$(gh auth token) brew upgrade oblt-cli
+  level: INFO
+- msg: |
+    Quickstart guide with Serverless and oblt clusters https://ela.st/oblt-serverless
+  level: INFO

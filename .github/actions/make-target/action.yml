@@ -1,0 +1,58 @@
+---
+name: make-target
+description: Action to run a Make target with an authenticated environment in GCP and Vault.
+inputs:
+  workloadIdentityProvider:
+    description: 'The workload identity provider id.'
+    required: true
+  serviceAccount:
+    description: 'The service account email.'
+    required: true
+  accessTokenLifetime:
+    description: 'The access token lifetime.'
+    required: false
+    default: 3600s
+  dockerUsername:
+    description: 'The docker username.'
+    default: 'none'
+  dockerPassword:
+    description: 'The docker password.'
+    default: 'none'
+  dockerRegistry:
+    description: 'The docker registry.'
+    default: 'none'
+  target:
+    description: 'This is the make target to run.'
+    required: true
+  baseDir:
+    description: 'The base directory to run the target.'
+    required: false
+    default: 'ansible'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version-file: .python-version
+        cache: 'pip'
+        cache-dependency-path: ansible/requirements.txt
+    - name: Install Ansible requirements
+      shell: bash
+      run: pip install --no-compile -r ansible/requirements.txt
+    - name: Authenticate to Google Cloud
+      uses: ./.github/actions/gcp-auth
+      with:
+        workloadIdentityProvider: ${{ inputs.workloadIdentityProvider }}
+        serviceAccount: ${{ inputs.serviceAccount }}
+        accessTokenLifetime: ${{ inputs.accessTokenLifetime }}
+    - name: Run the task ${{ inputs.task }}
+      run: make -C "${BASE_DIR}" "${TARGET}"
+      shell: bash
+      env:
+        BASE_DIR: ${{ inputs.baseDir }}
+        TARGET: ${{ inputs.target }}
+        DOCKER_USERNAME: ${{ inputs.dockerUsername }}
+        DOCKER_PASSWORD: ${{ inputs.dockerPassword }}
+        DOCKER_REGISTRY: ${{ inputs.dockerRegistry }}
+        ANSIBLE_COLLECTIONS_PATH: "~/.ansible/collections:/usr/share/ansible/collections:."

@@ -1,0 +1,55 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+  hostmetrics:
+    collection_interval: 1m
+    scrapers:
+      cpu:
+      load:
+      memory:
+processors:
+  batch:
+  memory_limiter:
+    # Memory Ballast size should be max 1/3 to 1/2 of memory.
+    ballast_size_mib: 683
+    # 80% of maximum memory up to 4G
+    limit_mib: 3000
+    # 25% of limit up to 4G
+    spike_limit_mib: 1000
+    check_interval: 5s
+exporters:
+  otlp/elastic:
+    endpoint: "${ELASTIC_APM_SERVER_URL}"
+    headers:
+      Authorization: "Bearer ${ELASTIC_APM_SECRET_TOKEN}"
+  logging:
+    loglevel: warn
+service:
+  extensions: [zpages, health_check]
+  pipelines:
+    metrics:
+      receivers: [otlp, hostmetrics]
+      exporters: [logging, otlp/elastic]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging, otlp/elastic]
+    logs:
+      receivers: [otlp]
+      exporters: [logging, otlp/elastic]
+extensions:
+  health_check:
+  zpages:
+
+extraEnvs:
+  - name: ELASTIC_APM_SECRET_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: apm-creds
+        key: token
+  - name: ELASTIC_APM_SERVER_URL
+    valueFrom:
+      secretKeyRef:
+        name: apm-creds
+        key: url

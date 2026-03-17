@@ -1,0 +1,31 @@
+---
+- name: Deploying Helm Chart
+  debug:
+    msg: |
+      ---------------------
+      {{ item | to_nice_yaml }}
+- name: Deploying Helm Chart
+  block:
+  - name: "Deploy {{ item.name }}"
+    vars:
+      helm_chart:
+        chart: "{{ item.chart }}"
+        version: "{{ item.version }}"
+        values_file: "{{ item.values_file | default(None, true) }}"
+        name: "{{ item.name }}"
+        namespace: "{{ item.namespace | default(k8s_default_namespace, true) }}"
+        extra_args: "{{ item.extra_args | default(None, true) }}"
+        force_update: "{{ item.force_update | default(None, true) }}"
+        enabled: "{{ item.enabled | default(true) }}"
+        build_deps: "{{ item.build_deps | default(false) }}"
+        render_mode: "{{ item.render_mode | default(false) }}"
+        output_dir: "{{ item.output_dir | default(None, true) }}"
+        test: "{{ item.test | default(false) }}"
+    include_role:
+      name: oblt.framework.k8s_helm
+      tasks_from: deploy_chart.yml
+  when:
+    - item.enabled | default(true)
+  tags:
+    - helm_apps
+    - deploy

@@ -1,0 +1,140 @@
+{
+	"type": "modal",
+	"clear_on_close": true,
+	"title": {
+		"type": "plain_text",
+		"text": "{{ .Title }}",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hey!\n\nPlease configure your Serverless cluster."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "input",
+			"block_id": "create-serverless-cluster-from-target",
+			"element": {
+				"type": "static_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select the environment",
+					"emoji": true
+				},
+				"options": [
+					{{$first := true}}
+					{{ range $label := .Environments }}
+					{{if $first}}
+						{{$first = false}}
+					{{else}}
+					,
+					{{end}}
+					{
+						"text": {
+								"type": "plain_text",
+								"text": "{{ $label }}",
+								"emoji": true
+						},
+						"value": "{{ $label }}"
+					}
+					{{ end }}
+				],
+				"action_id": "select-from-target"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "From environment",
+				"emoji": true
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "create-serverless-cluster-from-project",
+			"element": {
+				"type": "static_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select the project",
+					"emoji": true
+				},
+				"options": [
+					{{$first := true}}
+					{{ range $label := .Projects }}
+					{{if $first}}
+						{{$first = false}}
+					{{else}}
+					,
+					{{end}}
+					{
+						"text": {
+								"type": "plain_text",
+								"text": "{{ $label }}",
+								"emoji": true
+						},
+						"value": "{{ $label }}"
+					}
+					{{ end }}
+				],
+				"action_id": "select-from-project"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "From project type",
+				"emoji": true
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "create-serverless-cluster-name-prefix",
+			"element": {
+				"type": "plain_text_input",
+				"action_id": "cluster-name-prefix",
+				"placeholder": {
+					"type" : "plain_text",
+					"text" : "Custom prefix to declare cluster purpose or origin"
+				}
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Custom Prefix",
+				"emoji": true
+			},
+			"optional": true
+		},
+		{
+			"type": "input",
+			"block_id": "create-serverless-cluster-name-suffix",
+			"element": {
+				"type": "plain_text_input",
+				"action_id": "cluster-name-suffix",
+				"placeholder": {
+					"type" : "plain_text",
+					"text" : "Custom suffix. This parameter ensures that the name of the cluster is unique use, it with caution."
+				},
+				"initial_value": "slack"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Custom Suffix",
+				"emoji": true
+			},
+			"optional": false
+		}
+	]
+}

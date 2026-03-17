@@ -1,0 +1,299 @@
+suite: test opbeans deployment
+templates:
+  - deployment.yaml
+release:
+  name: foo
+  namespace: bar
+tests:
+  - it: should render defaults
+    asserts:
+      - isKind:
+          of: Deployment
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: foo-opbeans
+      - equal:
+          path: metadata.labels.app
+          value: foo-opbeans
+      - equal:
+          path: metadata.namespace
+          value: bar
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.selector.matchLabels.app
+          value: foo-opbeans
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: foo-opbeans
+      - equal:
+          path: spec.template.metadata.labels.service
+          value: foo-opbeans
+      - equal:
+          path: spec.template.metadata.labels.service-group
+          value: opbeans
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: foo-opbeans
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: opbeans
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.elastic.co/observability-ci/it_opbeans-frontend_nginx:latest
+      - equal:
+          path: spec.template.spec.containers[0].envFrom[0].secretRef.name
+          value: foo-opbeans-config
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 3000
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 0.1
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 256Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 512Mi
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: docker.elastic.co
+  - it: should render values
+    set:
+      image:
+        name: foo
+        tag: bar
+        pullPolicy: baz
+      imagePullSecrets:
+        - name: docker.foo.co
+      serviceGroup:
+        name: "opbeans-foo"
+        member: true
+      opbeans:
+        port: 3001
+      serviceAccount:
+        create: true
+        name: "fooaccount"
+      resources:
+          limits:
+            memory: 2Mi
+          requests:
+            cpu: 1
+            memory: 1Mi
+      annotations:
+        foo: bar
+      apm:
+        type: annotations
+        annotationType: baz
+    asserts:
+      - isKind:
+          of: Deployment
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.metadata.labels.service-group
+          value: opbeans-foo
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: fooaccount
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: opbeans
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: foo:bar
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: baz
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 3001
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 1Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 2Mi
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: baz
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: docker.foo.co
+      - equal:
+          path: metadata.annotations.foo
+          value: bar
+      - equal:
+          path: spec.template.metadata.annotations.foo
+          value: bar
+      - equal:
+          path: spec.template.metadata.annotations["co.elastic.traces/agent"]
+          value: baz
+  - it: should overwrite the chart name
+    set:
+      nameOverride: bar
+    asserts:
+      - isKind:
+          of: Deployment
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: foo-bar
+      - equal:
+          path: metadata.labels.app
+          value: foo-bar
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.selector.matchLabels.app
+          value: foo-bar
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: foo-bar
+      - equal:
+          path: spec.template.metadata.labels.service
+          value: foo-bar
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: foo-bar
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: opbeans
+      - equal:
+          path: spec.template.spec.containers[0].envFrom[0].secretRef.name
+          value: foo-bar-config
+  - it: should overwrite the full name
+    set:
+      fullnameOverride: bar
+    asserts:
+      - isKind:
+          of: Deployment
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: bar
+      - equal:
+          path: metadata.labels.app
+          value: bar
+      - equal:
+          path: spec.selector.matchLabels.app
+          value: bar
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: bar
+      - equal:
+          path: spec.template.metadata.labels.service
+          value: bar
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: bar
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: opbeans
+      - equal:
+          path: spec.template.spec.containers[0].envFrom[0].secretRef.name
+          value: bar-config
+  - it: is not group member
+    set:
+      serviceGroup.member: false
+    asserts:
+      - isKind:
+          of: Deployment
+      - hasDocuments:
+          count: 1
+      - isNull:
+          path: metadata.labels.service-group
+      - isNull:
+          path: spec.template.metadata.labels.service-group
+
+  - it: should have a pod securityContext
+    set:
+      podSecurityContext:
+        enabled: true
+        foo: foo
+    asserts:
+      - exists:
+          path: spec.template.spec.securityContext
+
+  - it: should have a container securityContext
+    set:
+      containerSecurityContext:
+        enabled: true
+        foo: foo
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should have a initContainer
+    set:
+      db:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-database
+
+  - it: should have a command
+    set:
+      command:
+        - "foo"
+      args:
+        - "bar"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: foo
+      - equal:
+          path: spec.template.spec.containers[0].args[0]
+          value: bar
+
+  - it: should have extra env vars
+    set:
+      extraEnvVars:
+        - name: foo
+          value: bar
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: foo
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: bar
+
+  - it: should have volumes
+    set:
+      volumes:
+        - name: foo
+          emptyDir: {}
+      volumeMounts:
+        - name: foo
+          mountPath: /foo
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: foo
+      - equal:
+          path: spec.template.spec.volumes[0].emptyDir
+          value: {}
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: foo
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /foo

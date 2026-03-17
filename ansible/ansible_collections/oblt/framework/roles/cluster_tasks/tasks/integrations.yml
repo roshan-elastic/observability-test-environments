@@ -1,0 +1,33 @@
+---
+# - name: Deploy integrations
+#   vars:
+#     apps:
+#       k8s:
+#         - name: Apache2
+#           src: "{{ k8s_deployment_dir }}/integrations/apache2"
+#         - name: 1password
+#           src: "{{ k8s_deployment_dir }}/integrations/1password"
+#         - name: VMware-vSphere
+#           src: "{{ k8s_deployment_dir }}/integrations/vmware-vsphere"
+#         # - name: ActiveMQ
+#         #   src: "{{ k8s_deployment_dir }}/integrations/activemq"
+#   include_role:
+#     name: oblt.framework.k8s_apps
+#   tags:
+#     - integrations
+#     - deploy
+# TODO check if it is still used
+- name: Deploy integrations
+  vars:
+    apps:
+      helm:
+        - name: microsoft-sql-server
+          values_file: "{{ helm_deployment_dir }}/integrations/helm-values.yaml.j2"
+          chart: "{{ helm_charts_dir }}/integrations"
+          version: 0.1.0
+          namespace: default
+  include_role:
+    name: oblt.framework.helm_apps
+  tags:
+    - integrations
+    - deploy

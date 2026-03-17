@@ -1,0 +1,13 @@
+---
+- name: Get Deploy info
+  changed_when: false
+  uri:
+    url: "{{ ess_endpoint }}/api/v1/deployments/{{ ess_deployment_id }}"
+    method: GET
+    validate_certs: false
+    headers:
+      Authorization: "ApiKey {{ ess_api_key }}"
+  register: _deployment_info
+  until: _deployment_info.status == 200
+  retries: 3
+  delay: 10

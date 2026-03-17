@@ -1,0 +1,42 @@
+---
+name: Docker build and push integrations dind
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'ansible/ansible_collections/oblt/framework/roles/common/files/deployments/docker/integrations/dind/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'ansible/ansible_collections/oblt/framework/roles/common/files/deployments/docker/integrations/dind/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.ref }}-docker-dind"
+
+jobs:
+  buildAndPush:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # IMPORTANT: the secrets below are managed through IASC (contact robots if you need further assistance)
+      - name: Log in to the Elastic Container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          username: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          password: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+      - run: |
+          TARGET_DIR=ansible/ansible_collections/oblt/framework/roles/common/files/deployments/docker/integrations/dind
+          if [ -n "${PR_NUMBER}" ]; then
+          export VERSION=PR${PR_NUMBER}
+          fi
+          make -C "${TARGET_DIR}" docker-build docker-push
+        env:
+          PR_NUMBER: ${{ github.event.number }}

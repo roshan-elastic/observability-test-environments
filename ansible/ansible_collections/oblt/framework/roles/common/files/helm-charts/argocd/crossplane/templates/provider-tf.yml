@@ -1,0 +1,21 @@
+---
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: ControllerConfig
+metadata:
+  name: terraform
+  labels:
+    app: crossplane-provider-terraform
+spec:
+  args:
+    - -d
+    - --poll=5m
+    - --timeout=20m
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-terraform
+spec:
+  package: xpkg.upbound.io/upbound/provider-terraform:v0.12.0
+  controllerConfigRef:
+    name: terraform

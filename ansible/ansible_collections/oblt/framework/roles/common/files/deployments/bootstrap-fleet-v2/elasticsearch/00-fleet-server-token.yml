@@ -1,0 +1,11 @@
+---
+description: Create a Fleet Server Token
+api: "/_security/service/elastic/fleet-server/credential/token"
+method: POST
+register: fleet_server_token_result
+headers:
+  accept: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+body: ""

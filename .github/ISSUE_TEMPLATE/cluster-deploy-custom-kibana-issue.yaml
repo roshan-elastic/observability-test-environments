@@ -1,0 +1,65 @@
+name: Deploy Custom Kibana
+description: Configure your CCS cluster using a custom Kibana.
+title: "[Deploy Kibana]: "
+# NOTE: deploy-custom-kibana label is required by .github/workflows/cluster-deploy-custom-kibana-issue.yml
+labels: ["cluster", "deploy-custom-kibana"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please configure your [Observability cluster](https://ela.st/oblt-clusters)
+  - type: dropdown
+    id: template
+    attributes:
+      label: From cluster
+      description: Choose a template cluster
+      multiple: false
+      options:
+        - dev-oblt
+        - edge-lite-oblt
+        - edge-oblt
+        - edge-sec
+        - monitoring-oblt
+        - release-oblt
+        - release-sec
+        - serverless-qa
+    validations:
+      required: true
+  - type: dropdown
+    id: oblt_template
+    attributes:
+      label: Configuration template
+      description: Choose a configuration template
+      multiple: false
+      options:
+        - deploy-kibana
+        - ess
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: kibana_branch
+    attributes:
+      label: Kibana branch
+      description: Branch/Tag/pr/commit to use to build the Docker image. (e.g PR/10000 or 8.7)
+      placeholder: ex. PR/10000
+    validations:
+      required: true
+  - type: input
+    id: prefix
+    attributes:
+      label: Custom prefix (Optional)
+      description: Choose a prefix to be added to your cluster
+      placeholder: ex. my-github-user
+  - type: input
+    id: oblt_user
+    attributes:
+      label: Oblt-cli user (Optional)
+      description: User to configure oblt-cli, this will put the deployment in the user folder.
+      value: deploykibana
+  - type: input
+    id: slack
+    attributes:
+      label: Slack channel (Optional)
+      description: Choose a slack member ID (starting with "@") or channel (starting with "#").
+      value: '#observablt-bots'

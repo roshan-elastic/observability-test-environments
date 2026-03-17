@@ -1,0 +1,23 @@
+---
+description: Create a Elastic Agent Policy
+api: "/api/fleet/agent_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+register: fleet_agent_policy_result
+body: |
+  {
+    "name": "{{ integrations_name }} Policy",
+    "id": "fleet-agent-{{ integrations_name }}-policy",
+    "description": "Policy to configure {{ integrations_name }} integration.",
+    "namespace": "default",
+    "monitoring_enabled": [
+      "logs",
+      "metrics"
+    ]
+  }
+return_code:
+  - 409
+  - 200

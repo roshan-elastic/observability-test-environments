@@ -1,0 +1,73 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newsletter
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: newsletter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: newsletter
+  template:
+    metadata:
+      labels:
+        app: newsletter
+      annotations:
+        co.elastic.monitor/type: tcp
+        co.elastic.monitor/name: newsletter-{{ .Values.username }}
+        co.elastic.monitor/hosts: ${data.host}:8080
+        co.elastic.monitor/schedule: "@every 10s"
+        co.elastic.monitor/timeout: 1s
+    spec:
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: newsletter
+        image: docker.elastic.co/{{ .Values.docker_namespace }}/{{ .Chart.Name }}-newsletter:{{ .Values.es_version }}-{{ .Values.build_num }}
+        imagePullPolicy: Always
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 60
+          timeoutSeconds: 1
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: 1000Mi
+          requests:
+            cpu: 0.05
+            memory: 300Mi
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-apm-creds
+              key: APM_URL
+        - name: APM_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-apm-creds
+              key: APM_SECRET_TOKEN
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=newsletter-otel,service.version=1.1,deployment.environment=prod"
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        - name: OTEL_LOGS_EXPORTER
+          value: "otlp"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: newsletter
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: newsletter
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: newsletter

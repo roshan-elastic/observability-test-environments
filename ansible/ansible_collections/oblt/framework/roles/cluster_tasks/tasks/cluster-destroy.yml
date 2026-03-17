@@ -1,0 +1,23 @@
+---
+- block:
+    - name: Include tasks from tasks-prepare-gcp.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: prepare-gcp.yml
+  ignore_errors: true
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'gcp' or k8s_provider == 'autopilot'
+
+- name: Import role kind
+  include_role:
+    name: oblt.framework.k8s_kind
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'
+
+- vars:
+    destroy_cluster: true
+  include_role:
+    name: oblt.framework.cluster_tasks
+    tasks_from: destroy-cluster.yml

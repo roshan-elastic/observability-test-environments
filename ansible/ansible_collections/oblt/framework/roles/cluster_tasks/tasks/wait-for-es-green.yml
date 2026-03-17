@@ -1,0 +1,19 @@
+- name: Wait for Elasticsearch green
+  ignore_errors: true
+  vars:
+    url: "{{ elasticsearch_url }}"
+  uri:
+    url: "{{ url }}/_cluster/health?pretty"
+    method: GET
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+  register: _result_kb
+  until: _result_kb.status == 200 and _result_kb.json.status == "green"
+# TODO pass es_wait_retries when it is used, hardcoded for the moment to 12h
+  retries: "{{ es_wait_retries | default(720, true) }}"
+  delay: 60

@@ -1,0 +1,71 @@
+---
+# yaml-language-server: $schema=../../docs/cluster-config-schema.json
+# last update {{ .Date }}
+template_name: serverless-gatekeeper
+template_description: |
+  Gatekeeper for APM managed services.
+
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+#{{- $target := "qa" }}
+#{{- if .Target }}
+#{{ $target = .Target }}
+#{{- end }}
+
+slack_channel: "{{ .SlackChannel }}"
+oblt_username: "{{ $username }}"
+#{{- if .EphemeralCluster }}
+ephemeral_cluster: "{{ .EphemeralCluster }}"
+#{{- end }}
+grab_cluster_info: false
+create_ilm: false
+create_users: false
+cluster_name: "{{ .ClusterName }}"
+
+expire_date: '{{ now | mustDateModify "+24h" | date "2006-01-02" }}'
+
+k8s:
+  enabled: true
+  provider: autopilot
+  shared: autopilot-apm-managed-gatekeeper
+
+stack:
+  mode: "serverless"
+  template: "observability"
+  target: "{{ $target }}"
+  serverless:
+#{{- if .ServerlessRegion }}
+    region: "{{ .ServerlessRegion }}"
+#{{- end }}
+#{{- if .ServerlessCluster }}
+    cluster: "{{ .ServerlessCluster }}"
+#{{- end }}
+
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ `{{ deployment_dir }}` }}/bootstrap-serverless"
+
+#{{- if .GitOps }}
+gitops:
+  enabled: "{{ .GitOps }}"
+#{{- if .GitHubCommit }}
+  commit: "{{ .GitHubCommit }}"
+#{{- end }}
+#{{- if .GitHubIssue }}
+  issue: "{{ .GitHubIssue }}"
+#{{- end }}
+#{{- if .GitHubPullRequest }}
+  pull_request: "{{ .GitHubPullRequest }}"
+#{{- end }}
+#{{- if .GitHubRepository }}
+  repository: "{{ .GitHubRepository }}"
+#{{- end }}
+#{{- if .GitHubCommentId }}
+  comment_id: "{{ .GitHubCommentId }}"
+#{{- end }}
+#{{- end }}

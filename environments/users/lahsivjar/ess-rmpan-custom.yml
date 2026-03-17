@@ -1,0 +1,49 @@
+# last update 2022-12-08T09:17:30
+template_name: ess
+template_description: |
+  Elastic Cloud (ESS) template configure a oblt cluster that runs on ESS dev region on production.
+  Parameters:
+    - ClusterName: Name for the new oblt cluster (automatic).
+    - StackVersion: Elastic Stack version used for the new cluster.
+    - SlackChannel: SlackChannel name or Slack member ID to send the credentials of the cluster (#my-channel, @MIDNUM)(automatic)
+    - ElasticsearchDockerImage: Docker image to use for Elasticsearch. This version should be the same build of the remote cluster if the version is an SNAPSHOT(Optional).
+    - KibanaDockerImage: Docker image to use for Kibana. This version should be the same build of the remote cluster if the version is an SNAPSHOT(Optional).
+    - ElasticAgentDockerImage: Docker image to use for Elastic Agent. This version should be the same build of the remote cluster if the version is an SNAPSHOT(Optional).
+  Usage:
+    oblt-cli cluster create custom --template ess --parameters '{"StackVersion": "7.15.0", "ElasticsearchDockerImage": "docker.elastic.co/cloud-ci/elasticsearch-cloud:7.15.0-edd09abf"}' --dry-run
+    oblt-cli cluster create custom --template ess --parameters '{"StackVersion": "7.15.0", "KibanaDockerImage": "docker.elastic.co/cloud-ci/kibana-cloud:7.15.0-edd09abf"}' --dry-run
+    oblt-cli cluster create custom --template ess --parameters '{"StackVersion": "7.15.0", "ElasticAgentDockerImage": "docker.elastic.co/cloud-ci/elastic-agent-cloud:7.15.0-edd09abf"}' --dry-run
+cluster_name: "ess-rmpan-custom"
+slack_channel: "@U03A31412NP"
+oblt_username: "lahsivjar"
+create_users: true
+grab_cluster_info: false
+slack_send: true
+configure_external_snapshots_repo_ro: true
+# Route observability data (metrics & logs) to a dedicated cluster
+observability_secret: "{{ secret_root_gcsm }}_ess-ooeog-custom_cluster-state"
+#  observability_deployment_id: 02b134a32bf30cb9ff272dfa41f8921c
+stack:
+  version: 8.15.0
+  mode: ess
+  template: observability
+  target: production
+  observability: true
+  update_channel: release
+  update_schedule: tuesday
+  ess:
+    autoscale: false
+    saml_id: exko8zsq5uzvdNAup1t7
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-474303bf
+      mem: 16
+      zones: 2
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-474303bf
+      mem: 2
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-474303bf
+      mem: 8
+    profiling:
+      image: docker.elastic.co/observability-ci/profiling-agent:8.15.0-474303bf
+updated_at: "2024-08-06T02:17:24Z"

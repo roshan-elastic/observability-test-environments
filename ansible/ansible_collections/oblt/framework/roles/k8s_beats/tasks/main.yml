@@ -1,0 +1,28 @@
+---
+- name: Copy Beats files
+  include_tasks: copy_files.yml
+
+- name: "Deploy kube-state-metrics"
+  vars:
+    helm_chart:
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ kube_state_metrics_version }}"
+      name: "kube-state-metrics"
+      namespace: "{{ kube_system_namespace }}"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: deploy_chart.yml
+  tags:
+    - kube-state-metrics
+    - deploy
+
+- name: Deploy Beats
+  include_tasks: deploy_beats.yml
+
+- name: Deploy Apache and HAProxy
+  include_tasks: deploy_apache_haproxy.yml
+  when: apache_enabled or haproxy_enabled
+  tags:
+    - apache
+    - haproxy
+    - deploy

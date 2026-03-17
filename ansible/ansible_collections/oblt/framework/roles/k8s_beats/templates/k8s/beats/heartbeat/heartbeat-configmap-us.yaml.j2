@@ -1,0 +1,96 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: heartbeat-config-us
+  namespace: default
+  labels:
+    k8s-app: heartbeat
+data:
+  heartbeat.yml: |-
+{% if stack_version is version('7.10.0', '>=') %}
+    queue.disk:
+      max_size: 1GB
+{% endif %}
+    heartbeat.config.monitors:
+      path: "${path.config}/monitors.d/*.yml"
+      reload.enabled: false
+      reload.period: 5s
+    heartbeat.monitors:
+    - type: tcp
+      name: tcp-ext-ES
+      schedule: '@every 60s'
+      hosts: ['${ELASTICSEARCH_HOST}']
+      ports: ["443"]
+    - type: tcp
+      name: tcp-ext-KIBANA
+      schedule: '@every 60s'
+      hosts: ['${KIBANA_HOST}']
+      ports: ["443"]
+    - type: icmp
+      name: ICMP-Opbeans-Frontend
+      schedule: '@every 60s'
+      hosts: ["opbeans-frontend"]
+    - type: http
+      name: HTTP-Opbeans-Frontend
+      schedule: '@every 30s'
+      urls: ["http://opbeans-frontend:3000/dashboard"]
+      check.response.status: 200
+    - type: http
+      name: HTTP-NOWHERE
+      schedule: '@every 60s'
+      urls: ["http://nowhere.example.com"]
+      check.response.status: 200
+{% if stack_version is version('7.12.0', '>=') %}
+    - type: browser
+      id: my-monitor
+      name: My Monitor
+      schedule: "@every 1m"
+      source:
+        inline:
+          script: |-
+            step("load homepage", async () => {
+                await page.goto('https://www.elastic.co');
+            });
+            step("hover over products menu", async () => {
+                await page.hover('css=[data-nav-item=products]');
+            });
+{% endif %}
+    heartbeat.scheduler:
+      limit: 10
+    processors:
+    - add_cloud_metadata: ~
+    - add_observer_metadata:
+        netinfo.enabled: false
+        cache.ttl: 5m
+        geo:
+          name: nyc-heartbeat
+          location: 40.7128, -74.0060
+          continent_name: North America
+          country_iso_code: US
+          region_name: New York
+          region_iso_code: NY
+          city_name: New York
+    output.elasticsearch:
+      hosts: ['${ELASTICSEARCH_HOST}']
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
+      index: "heartbeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+      ssl.enabled: true
+      ssl.verification_mode: none
+    monitoring.enabled: true
+    setup.kibana.host: ${KIBANA_HOST}
+    setup.kibana.username: ${KIBANA_USERNAME}
+    setup.kibana.password: ${KIBANA_PASSWORD}
+    setup.template.overwrite: true
+{% if stack_version is version('7.12.0', '>=') %}
+    setup.template.name: "heartbeat"
+    setup.template.pattern: "heartbeat-*"
+    setup.template.settings.index.routing.allocation.include._tier_preference: data_hot
+{% endif %}
+    instrumentation:
+      enabled: true
+      environment: production
+      hosts:
+        - "${ELASTIC_APM_SERVER_URL}"
+      secret_token: ${ELASTIC_APM_SECRET_TOKEN}

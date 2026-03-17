@@ -1,0 +1,38 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Hey there 👋 I'm oblt-robot. I'm here to help you with Oblt Clusters, CI and some automation!\n"
+			}
+		},
+		{{ if .IsAdmin }}
+		{{ if .Success }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "<@{{ .User }}>, your GitHub project is going to be enrolled in the CI! The automation will do the rest and create all the required Pull Requests"
+			}
+		}
+		{{ else }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Something went wrong when running the automation, please contact your Observability Productivity team"
+			}
+		}
+		{{ end }}
+		{{ else }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "I'm sorry <@{{ .User }}>, please grant admin access to the `obltmachine` GitHub user in your GitHub project."
+			}
+		}
+		{{ end }}
+	]
+}

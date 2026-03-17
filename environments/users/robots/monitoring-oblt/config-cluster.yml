@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: "monitoring-oblt"
+create_users: true
+grab_cluster_info: true
+configure_external_snapshots_repo: true
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+k8s:
+  enabled: true
+  provider: autopilot
+  shared: "autopilot-oblt"
+stack:
+  enabled: true
+  mode: ess
+  template: observability
+  version: 8.15.0-SNAPSHOT
+  observability: false
+  update_channel: development
+  update_schedule: tuesday
+  ess:
+    saml_id: exkq4aa49aHN8wQZK1t7
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-ae40415c
+      max_mem: 320
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-ae40415c
+      mem: 8
+      extra_config: |
+        xpack.ruleRegistry.write.enabled: true
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-ae40415c
+      zones: 3
+      mem: 4
+    profiling:
+      enabled: true
+      image: docker.elastic.co/observability-ci/profiling-agent:8.15.0-ae40415c
+release_cluster_state: "{{ (lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_release-oblt_cluster-state') | default({})) }}"
+dev_cluster_state: "{{ (lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_dev-oblt_cluster-state') | default({})) }}"
+edge_cluster_state: "{{ (lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_edge-oblt_cluster-state') | default({})) }}"
+edge_lite_cluster_state: "{{ (lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_edge-lite-oblt_cluster-state') | default({})) }}"
+synthetics_monitors_folders:
+  - id: release-oblt
+    folder: "{{ synthetics_deployments_dir }}/{{ cluster_name }}"
+    locale: "en-US"
+    timezone: "America/Los_Angeles"
+    params:
+      ELASTICSEARCH_URL: "{{ release_cluster_state.elasticsearch_url | default('') }}"
+      APM_URL: "{{ release_cluster_state.apm_url | default('') }}"
+      KIBANA_URL: "{{ release_cluster_state.kibana_url | default('')}}"
+      KIBANA_USERNAME: "{{ release_cluster_state.elasticsearch_username | default('') }}"
+      KIBANA_PASSWORD: "{{ release_cluster_state.elasticsearch_password | default('') }}"
+  - id: dev-oblt
+    folder: "{{ synthetics_deployments_dir }}/{{ cluster_name }}"
+    locale: "en-US"
+    timezone: "America/Los_Angeles"
+    params:
+      ELASTICSEARCH_URL: "{{ dev_cluster_state.elasticsearch_url | default('') }}"
+      APM_URL: "{{ dev_cluster_state.apm_url | default('') }}"
+      KIBANA_URL: "{{ dev_cluster_state.kibana_url | default('')}}"
+      KIBANA_USERNAME: "{{ dev_cluster_state.elasticsearch_username | default('') }}"
+      KIBANA_PASSWORD: "{{ dev_cluster_state.elasticsearch_password | default('') }}"
+  - id: edge-oblt
+    folder: "{{ synthetics_deployments_dir }}/{{ cluster_name }}"
+    locale: "en-US"
+    timezone: "America/Los_Angeles"
+    params:
+      ELASTICSEARCH_URL: "{{ edge_cluster_state.elasticsearch_url | default('') }}"
+      APM_URL: "{{ edge_cluster_state.apm_url | default('') }}"
+      KIBANA_URL: "{{ edge_cluster_state.kibana_url | default('')}}"
+      KIBANA_USERNAME: "{{ edge_cluster_state.elasticsearch_username | default('') }}"
+      KIBANA_PASSWORD: "{{ edge_cluster_state.elasticsearch_password | default('') }}"
+  - id: edge-lite-oblt
+    folder: "{{ synthetics_deployments_dir }}/{{ cluster_name }}"
+    locale: "en-US"
+    timezone: "America/Los_Angeles"
+    params:
+      ELASTICSEARCH_URL: "{{ edge_lite_cluster_state.elasticsearch_url | default('') }}"
+      APM_URL: "{{ edge_lite_cluster_state.apm_url | default('') }}"
+      KIBANA_URL: "{{ edge_lite_cluster_state.kibana_url | default('')}}"
+      KIBANA_USERNAME: "{{ edge_lite_cluster_state.elasticsearch_username | default('') }}"
+      KIBANA_PASSWORD: "{{ edge_lite_cluster_state.elasticsearch_password | default('') }}"
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ deployment_dir }}/bootstrap-ilm"
+  - "{{ deployment_dir }}/bootstrap-license"
+  - '{{ deployment_dir }}/bootstrap-fleet-v2'
+  - "{{ deployment_dir }}/bootstrap-monitoring-oblt"
+profiling_agent_deploy: false
+updated_at: "2024-08-06T02:17:24Z"

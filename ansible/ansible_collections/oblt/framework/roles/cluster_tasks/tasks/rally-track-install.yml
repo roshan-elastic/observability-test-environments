@@ -1,0 +1,39 @@
+---
+- name: Create Rally config folder
+  file:
+    path: "{{ build_dir }}/.rally"
+    state: directory
+    mode: '0755'
+
+- name: Create rally.ini file from template
+  template:
+    src: "rally.ini.j2"
+    dest: "{{ build_dir }}/.rally/rally.ini"
+    mode: '0644'
+
+- name: Configure
+  set_fact:
+    esrally_from_sources: "{{ lookup('env', 'ESRALLY_FROM_SOURCES') | default(false, true) | bool }}"
+
+- name: Install esrally
+  changed_when: false
+  shell: |
+    # TODO preserve ~/.rally
+    set -e
+    python3 -m pip install --upgrade hatch hatchling pip wheel
+    python3 -m pip install esrally
+  when:
+    - (esrally_from_sources | bool | default(false)) == false
+
+
+- name: Install Esrally from sources
+  changed_when: false
+  args:
+    chdir: "{{ build_dir }}"
+  shell: |
+    python3 -m pip install --upgrade hatch hatchling pip wheel
+    git clone https://github.com/elastic/rally.git
+    python3 -m pip install ./rally
+  when:
+    - esrally_from_sources is defined
+    - esrally_from_sources | bool

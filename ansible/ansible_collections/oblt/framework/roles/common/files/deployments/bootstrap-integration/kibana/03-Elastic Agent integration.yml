@@ -1,0 +1,44 @@
+---
+description: Create a {{ integrations_name }} package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "fleet-agent-{{ integrations_name }}-policy",
+    "package": {
+      "name": "{{ integrations_name }}",
+      "version": "{{ integration_package_result.json.item.version }}"
+    },
+    "name": "{{ integrations_name }}",
+    "id": "{{ integrations_name }}",
+    "description": "{{ integrations_name }} Integration configured for testing purposes.",
+    "namespace": "default"
+    {% filter indent(width=6) %}
+    {% if integrations_name == 'activemq' %}
+    ,"inputs": {% include './activemq-inputs.json' %}
+    {% endif %}
+    {% if integrations_name == 'akamai' %}
+    ,"inputs": {% include './akamai-inputs.json' %}
+    {% endif %}
+    {% if integrations_name == 'apache_spark' %}
+    ,"inputs": {% include './apache_spark-inputs.json' %}
+    {% endif %}
+    {% if integrations_name == 'apache' %}
+    ,"inputs": {% include './apache-inputs.json' %}
+    {% endif %}
+    {% if integrations_name == 'mysql' %}
+    ,"inputs": {% include './mysql-inputs.json' %}
+    {% endif %}
+    {% if integrations_name == 'microsoft_sqlserver' %}
+    ,"inputs": {% include './microsoft_sqlserver-inputs.json' %}
+    {% endif %}
+    {% endfilter %}
+
+  }

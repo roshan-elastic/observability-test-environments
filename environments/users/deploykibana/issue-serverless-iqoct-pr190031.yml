@@ -1,0 +1,72 @@
+---
+template_name: serverless
+template_description: |
+  Serverless template configure a oblt cluster that runs on Elastic Stack serverless on the QA environment.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#serverless)
+slack_channel: "#observablt-bots"
+oblt_username: "deploykibana"
+ephemeral_cluster: "true"
+grab_cluster_info: true
+create_ilm: false
+create_users: false
+cluster_name: "issue-serverless-iqoct-pr190031"
+expire_date: '2024-08-10'
+k8s:
+  provider: gcp
+  shared: "serverless-k8s"
+  ingress: false
+  certmanager: false
+  default_namespace: "issue-serverless-iqoct-pr190031-default"
+  kube_system_namespace: "issue-serverless-iqoct-pr190031-kube-system"
+stack:
+  mode: "serverless"
+  template: "observability"
+  target: "qa"
+  update_mode: "recreate"
+  serverless:
+    kibana:
+      image: "docker.elastic.co/kibana-ci/kibana-serverless:pr-190031-6e62589fe59c"
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ deployment_dir }}/bootstrap-serverless"
+kube_metrics_deploy_name: k8s-int-issue-serverless-iqoct-pr190031
+apps:
+    helm:
+    - name: ksm-issue-serverless-iqoct-pr190031
+      chart: "prometheus-community/kube-state-metrics"
+      values_file: "{{ helm_deployment_dir }}/kube-state-metrics/helm-values.yml.j2"
+      namespace: "{{ k8s_default_namespace }}"
+      version: "{{ kube_state_metrics_version }}"
+    - name: k8s-int-issue-serverless-iqoct-pr190031
+      values_file: '{{ helm_deployment_dir }}/elastic_agent/standalone-afinity/helm-values.yml.j2'
+      chart: '{{ helm_charts_dir }}/elastic_agent'
+      version: 0.1.0
+      namespace: "{{ k8s_default_namespace }}"
+      extra_args: "--set metricsService=ksm-issue-serverless-iqoct-pr190031-kube-state-metrics:8080"
+    - name: opbeans-go
+      values_file: "{{ helm_deployment_dir }}/opbeans/go/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/opbeans_go"
+      namespace: "{{ k8s_default_namespace }}"
+      build_deps: true
+      version: 0.1.0
+    - name: opbeans-java
+      values_file: "{{ helm_deployment_dir }}/opbeans/java/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/opbeans_java"
+      namespace: "{{ k8s_default_namespace }}"
+      build_deps: true
+      version: 0.1.0
+    - name: opbeans-python
+      values_file: "{{ helm_deployment_dir }}/opbeans/python/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/opbeans_python"
+      namespace: "{{ k8s_default_namespace }}"
+      build_deps: true
+      version: 0.1.0
+    - name: apm-synthtrace-ms
+      values_file: '{{ helm_deployment_dir }}/apm-synthtrace/helm-values-ms.yml.j2'
+      chart: '{{ helm_charts_dir }}/apm-synthtrace'
+      version: 0.1.0
+      namespace: "{{ k8s_default_namespace }}"
+gitops:
+  enabled: "true"
+  issue: "41722"
+  repository: "elastic/observability-test-environments"

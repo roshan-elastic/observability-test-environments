@@ -1,0 +1,17 @@
+---
+- name: Custom Destroy
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.common
+  tasks:
+    - name: Nothing
+      changed_when: false
+      shell: |
+        echo OK

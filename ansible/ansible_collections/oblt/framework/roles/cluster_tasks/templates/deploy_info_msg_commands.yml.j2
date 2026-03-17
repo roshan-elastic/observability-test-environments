@@ -1,0 +1,29 @@
+{% import 'macros.j2' as fn %}
+# Retrieve cluster credentials
+
+```
+oblt-cli cluster secrets credentials --cluster-name {{ cluster_name }}
+```
+
+{% if oblt_username != "observability-robots" %}
+# Destroy cluster
+
+```
+oblt-cli cluster destroy --cluster-name {{ cluster_name }}
+```
+
+# Retrieve Kibana YAML sample file
+
+```
+oblt-cli cluster secrets kibana-config --cluster-name {{ cluster_name }}
+```
+{% endif %}
+
+To retrieve the secrets you can use oblt-robot, the command is `/cluster-secret`
+
+*help:*
+  * {{ fn.showlink("https://ela.st/oblt-cli", "Oblt CLI documentation", slack) }}
+  * {{ fn.showlink("https://ela.st/oblt-robot", "Oblt Robot documentation", slack) }}
+  * {{ fn.showlink("https://ela.st/oblt-clusters", "Oblt Clusters documentation", slack) }}
+  * {{ fn.showlink("https://ela.st/oblt-deploy", "Oblt Deploy my Kibana PR documentation", slack) }}
+  * {{ fn.showlink("https://ela.st/oblt-serverless", "Oblt Serverless documentation", slack) }}

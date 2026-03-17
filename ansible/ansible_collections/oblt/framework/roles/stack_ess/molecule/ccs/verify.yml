@@ -1,0 +1,94 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config-01.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Set Cluster Id fact
+      set_fact:
+        cluster_01_name: "{{ cluster_name }}"
+
+    - name: Get Deployment info
+      no_log: true
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: get_deployment_info.yml
+
+    - name: check Provider
+      vars:
+        match: "{{ _deployment_info.json.resources.elasticsearch[0].info.metadata.endpoint | regex_search(ess_provider) }}"
+      fail:
+        msg: "Error: The provider is incorrect"
+      when:
+        - (match | length) == 0
+
+    - name: Create a document
+      uri:
+        url: "{{ elasticsearch_url }}/test_index/_doc/1"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        method: POST
+        body: '{ "name": "foo" }'
+        validate_certs: false
+        status_code:
+          - 200
+          - 201
+        headers:
+          Content-Type: application/json
+      register: _result
+
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config-02.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Get Deployment info
+      no_log: true
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: get_deployment_info.yml
+
+    - name: check Provider
+      vars:
+        match: "{{ _deployment_info.json.resources.elasticsearch[0].info.metadata.endpoint | regex_search(ess_provider) }}"
+      fail:
+        msg: "Error: The provider is incorrect"
+      when:
+        - (match | length) == 0
+
+    - name: Seacrh document on remote cluster
+      uri:
+        url: "{{ elasticsearch_url }}/remote_cluster:test_index/_search"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        method: GET
+        validate_certs: false
+        status_code: 200
+        return_content: true
+      register: _result
+
+    - name: check document exist
+      fail:
+        msg: "Error: The provider is incorrect"
+      when:
+        - _result.json.hits.total.value == "1"

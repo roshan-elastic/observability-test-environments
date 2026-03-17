@@ -1,0 +1,9 @@
+---
+enabled: true
+namespace: crossplane-system
+projectName: argocd-cluster
+gcp:
+  project: elastic-observability
+  clusterLocation: us-central1-c
+  clusterName: argocd
+  serviceAccountName: k8s-crossplane@elastic-observability.iam.gserviceaccount.com

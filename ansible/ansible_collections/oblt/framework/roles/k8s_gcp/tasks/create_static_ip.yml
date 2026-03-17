@@ -1,0 +1,17 @@
+---
+- name: Static IP for load balancer
+  block:
+    - name: Create IP address
+      google.cloud.gcp_compute_address:
+          name: "{{ gke_cluster_name }}-ip"
+          description: "IP for the oblt cluster {{ gke_cluster_name }}"
+          state: present
+          region: "{{ static_ip_region }}"
+      register: ip_address
+
+    - name: Set IP address
+      set_fact:
+        load_balancer_ip: "{{ ip_address.address }}"
+  when:
+    - static_ip is defined
+    - static_ip

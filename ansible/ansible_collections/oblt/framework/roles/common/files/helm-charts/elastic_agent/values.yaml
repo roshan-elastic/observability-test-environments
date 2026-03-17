@@ -1,0 +1,180 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+# Default values for elastic-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+#
+# This file should contain all the variables with the default values and documented
+# for variables that should not have default, it is needed to comment the variable with `#@ `
+# it allows to generate the correct README.md file with `make readme`
+# Every time you add a new setting you should add a new object to the schema validation `values.schema.json`
+
+## @section Docker image settings
+image:
+  ## @param image.name Docker image of the Elastic Agent.
+  name: docker.elastic.co/beats/elastic-agent
+  ## @param image.tag Tag for the Docker image.
+  tag: 7.16.2
+  ## @param image.pullSecrets List of secret names used to pull Docker images.
+  pullSecrets: []
+  ## @param image.pullPolicy Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+
+## @param commandArgs Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+## @param mode Elastic Agent deployment type [deploymnent, daemonset, standalone, deployment-standalone]
+mode: deployment
+## @param kubeSystemNamespace Kubernetes namespace where the kube-system pods are running.
+kubeSystemNamespace: kube-system
+## @param metricsService Kubernetes service name for kube-state-metrics.
+metricsService: kube-state-metrics:8080
+
+## @section Elastic Agent Standalone packages configuration
+standalonePackages:
+  ## @param standalonePackages.kubernetes Kubernetes package versions in used standalone mode.
+  kubernetes: 1.17.2
+  ## @param standalonePackages.log log package versions in used standalone mode.
+  log: 1.0.0
+  ## @param standalonePackages.system system package versions in used standalone mode.
+  system: 1.11.0
+## @section standaloneInputs standalone inputs configuration
+standaloneInputs:
+  ## @param standaloneInputs.kubernetesClusterMetrics Collect Kubernetes cluster metrics.
+  kubernetesClusterMetrics: true
+  ## @param standaloneInputs.kubernetesNodeMetrics Collect Kubernetes nodes metrics.
+  kubernetesNodeMetrics: true
+  ## @param standaloneInputs.systemLogs Collect Nodes logs.
+  systemLogs: true
+  ## @param standaloneInputs.systemMetrics Collect Nodes metrics.
+  systemMetrics: true
+  ## @param standaloneInputs.containerLogs Collect containers logs.
+  containerLogs: true
+  ## @param standaloneInputs.extra Configure additional inputs.
+  extra: []
+
+## @param ecsVersion Elastic Common Schema versions.
+ecsVersion: 1.9.0
+
+## @section fleet Elastic Agent settings.
+fleet:
+  ## @param fleet.secretName [string] Kubernetes secret name to use for the Elastic Agent configuration. By default `ELACTIC_AGENT_NAME-fleet-creds`.
+  ## @skip fleet.secretName
+  # secretName: ""
+  ## @param fleet.enrollToken [string] token to use for the Elastic Agent enrollment. This is not needed in case fleet server is configured and `fleet.enroll` is set. Then the token is fetched from Kibana.
+  ## @skip fleet.enrollToken
+  # enrollToken: ""
+  ## @param fleet.tokenPolicyName [string] token policy name to use for fetching token from Kibana. This requires Kibana configs to be set. This setting is ignored if you provide a `enrollToken`.
+  ## @skip fleet.tokenPolicyName
+  # tokenPolicyName: "Default policy"
+  ## @param fleet.force To ensure that enrollment occurs on every start of the container set `fleet.force` to true.
+  force: true
+  ## @param fleet.enroll set to `true` for enrollment into fleet-server. If not set, Elastic Agent is run in standalone mode.
+  enroll: true
+  ## @param fleet.insecure communicate with Fleet with either insecure HTTP or unverified HTTPS.
+  insecure: false
+  ## @param fleet.serverUrl [string] URL of the Fleet Server to enroll into (e.g. https://fleet-server:8220).
+  ## @skip fllet.serverUrl
+  # serverUrl: ""
+
+## @section fleetServer Fleet server settings
+fleetServer:
+  ## @param fleetServer.enabled set to true enables bootstrapping of Fleet Server inside Elastic Agent (forces `fleet.enroll` enabled).
+  enabled: false
+  ## @param fleetServer.insecureHttp expose Fleet Server over HTTP (not recommended; insecure).
+  insecureHttp: false
+  ## @param fleetServer.host binding host for Fleet Server HTTP (overrides the policy). By default this is 0.0.0.0.
+  host: 0.0.0.0
+  ## @param fleetServer.port binding port for Fleet Server HTTP (overrides the policy).
+  port: 8220
+  ## @param fleetServer.serviceToken service token to use for communication with elasticsearch.
+  serviceToken: ""
+  ## @param fleetServer.policyId policy ID for Fleet Server to use for itself ("Default Fleet Server policy" used when undefined).
+  policyId: ""
+  ## @param fleetServer.secretName Kubernetes secret name to use for the Fleet server configuration. By default `ELACTIC_AGENT_NAME-fleet-server-creds`.
+  secretName: ""
+
+## @section elasticsearch Elasticsearch settings.
+## @skip elasticsearch
+# elasticsearch:
+  ## @param elasticsearch.host [string] URL of the Elasticsearch (e.g. https://elasticsearch:9200).
+  # host: ""
+  ## @param elasticsearch.username [string] Elasticsearch username.
+  # username: ""
+  ## @param elasticsearch.password [string] Elasticsearch password.
+  # password: ""
+  ## @param elasticsearch.secretName [string] Kubernetes secret name to use for the Elasticsearch configuration. By default `ELACTIC_AGENT_NAME-es-creds`.
+  # secretName: ""
+  ## @param elasticsearch.apiToken [string] service token to use for communication with Elasticsearch.
+  # apiToken: ""
+
+## @section kibana Kibana settings.
+## @skip kibana
+# kibana:
+  ## @param kibana.host [string] URL of the Kibana (e.g. https://kibana:5601).
+  # host: ""
+  ## @param kibana.username [string] Elasticsearch username.
+  # username: ""
+  ## @param kibana.password [string] Elasticsearch password.
+  # password: ""
+  ## @param kibana.secretName [string] service token to use for communication with Kibana.
+  # secretName: ""
+  ## @param kibana.agent_policies [array] list of agent policies in YAML to create in Kibana.
+  # agent_policies: []
+  ## @param kibana.package_policies [array] list of package policies in YAML to create in Kibana.
+  # package_policies: []
+
+## @param nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `elastic-agent`.
+nameOverride: ""
+## @param fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `elastic-agent`.
+fullnameOverride: ""
+
+## @section serviceAccount Kubernetes Service Account settings
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a service account should be created
+  create: true
+  ## @param serviceAccount.annotations Annotations to add to the service account
+  annotations: {}
+  ## @param serviceAccount.name The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+## @section serviceAccount Allows you to set the [securityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) for the pod
+## @skip podSecurityContext
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+
+## @section serviceAccount Allows you to set the [securityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) for the container
+## @skip securityContext
+securityContext:
+  runAsUser: 0
+  capabilities:
+    add: ["SYS_PTRACE"]
+## @section serviceAccount Additional labels to add to the Kubernetes objects.
+## @skip labels
+labels:
+  app.kubernetes.io/app: agent-ingest-management-nodescope
+  app.kubernetes.io/group: ingest-management
+
+## @section resources Allows you to set the [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) for the kubernetes pods.
+## @skip resources
+resources:
+  limits:
+    memory: 1Gi
+  requests:
+    cpu: 0.1
+    memory: 500Mi
+
+## @section nodeSelector Configurable [nodeSelector](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector) so that you can target specific nodes for your Elasticsearch cluster.
+## @skip nodeSelector
+nodeSelector: {}
+
+## @param tolerations Configurable [tolerations](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).
+tolerations: []
+
+## @section affinity Value for the [node affinity settings](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity-beta-feature).
+## @skip affinity
+affinity: {}
+
+## @param extraEnvs Additional environment variables for pods.
+extraEnvs: []

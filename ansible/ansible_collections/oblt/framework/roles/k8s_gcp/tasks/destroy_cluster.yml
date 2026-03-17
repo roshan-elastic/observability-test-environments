@@ -1,0 +1,63 @@
+---
+- name: Destroy k8s cluster
+  google.cloud.gcp_container_cluster:
+    name: "{{ gke_cluster_name }}"
+    initial_node_count: 1
+    logging_service: 'none'
+    monitoring_service: 'none'
+    zone: "{{ k8s_region }}"
+    state: absent
+  register: gcp_cluster
+  ignore_errors: true
+  retries: 5
+  delay: 60
+  when:
+    - destroy_cluster
+    - k8s_enabled|bool
+    - gke_create_cluster | default(false) |bool
+
+- name: Destroy resources on a shared GKE cluster
+  # this code is duplicated in ansible/ansible_collections/oblt/framework/roles/k8s_common/tasks/delete_default_namespace.yml
+  # the reason is that include the role here causes a weird unresolved issue
+  # https://github.com/ansible/ansible/issues/20493
+  block:
+    - name: Delete a default namespace
+      kubernetes.core.k8s:
+        name: "{{ k8s_default_namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: absent
+
+    - name: Delete a kube-system namespace
+      kubernetes.core.k8s:
+        name: "{{ kube_system_namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: absent
+  when:
+    - not gke_create_cluster | default(false) |bool
+    - destroy_cluster
+    - k8s_enabled|bool
+
+- name: Delete static IP
+  import_tasks: delete_static_ip.yml
+  when:
+    - destroy_cluster
+    - k8s_enabled|bool
+    - gke_create_cluster | default(false) |bool
+
+- name: destroy network
+  google.cloud.gcp_compute_network:
+    name: "{{ gcp_default_network }}"
+    auto_create_subnetworks: 'true'
+    state: absent
+  retries: 3
+  delay: 30
+  when:
+    - destroy_cluster
+    - k8s_enabled|bool
+    - gcp_default_network is defined
+    - gcp_default_network != "oblt-clusters-vpc"
+    - gcp_default_network != "oblt-clusters-test-vpc"
+    - gcp_default_network != "oblt-clusters-vm-vpc"
+    - gcp_default_network != "oblt-clusters-test-vm-vpc"

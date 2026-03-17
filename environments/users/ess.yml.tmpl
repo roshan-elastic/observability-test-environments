@@ -1,0 +1,96 @@
+---
+# last update {{ .Date }}
+template_name: ess
+template_description: |
+  Elastic Cloud (ESS) template configure a oblt cluster that runs on ESS dev region on production.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#ess)
+
+#{{- $productType := "observability" }}
+#{{- if .ProductType }}
+#{{- $productType := .ProductType }}
+#{{- end }}
+cluster_name: "{{ .ClusterName }}"
+slack_channel: "{{ .SlackChannel }}"
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+oblt_username: "{{ $username }}"
+#{{- if .EphemeralCluster }}
+ephemeral_cluster: "{{ .EphemeralCluster }}"
+#{{- end }}
+#{{- $zonesIntegrations := "1" }}
+#{{- if .ZonesIntegrations }}
+#{{ $zonesIntegrations = .ZonesIntegrations }}
+#{{- end }}
+#{{- $zonesKibana := "1" }}
+#{{- if .ZonesKibana }}
+#{{ $zonesKibana = .ZonesKibana }}
+#{{- end }}
+#{{- $zonesElasticsearch := "2" }}
+#{{- if .ZonesElasticsearch }}
+#{{ $zonesElasticsearch = .ZonesElasticsearch }}
+#{{- end }}
+#{{- $autoscaleElasticsearch := "true" }}
+#{{- if .AutoscaleElasticsearch }}
+#{{ $autoscaleElasticsearch = .AutoscaleElasticsearch }}
+#{{- end }}
+
+
+create_users: true
+configure_external_snapshots_repo_ro: true
+expire_date: '{{ now | mustDateModify "+720h" | date "2006-01-02" }}'
+
+stack:
+  version: "{{ .StackVersion }}"
+  mode: ess
+  template: "{{ $productType }}"
+  target: production
+  observability: true
+  ess:
+    autoscale: "{{ $autoscaleElasticsearch }}"
+    elasticsearch:
+      zones: "{{ $zonesElasticsearch }}"
+#{{- if .ElasticsearchDockerImage }}
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- if .ElasticsearchMemory }}
+      mem: "{{ .ElasticsearchMemory }}"
+#{{- end }}
+    kibana:
+      zones: "{{ $zonesKibana }}"
+#{{- if .KibanaDockerImage }}
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .KibanaMemory }}
+      mem: "{{ .KibanaMemory }}"
+#{{- end }}
+    integrations:
+      zones: "{{ $zonesIntegrations }}"
+#{{- if .ElasticAgentDockerImage }}
+      image: "{{ .ElasticAgentDockerImage }}"
+#{{- end }}
+#{{- if .IntegrationsMemory }}
+      mem: "{{ .IntegrationsMemory }}"
+#{{- end }}
+
+gitops:
+  enabled: "{{ .GitOps }}"
+#{{- if .GitHubCommit }}
+  commit: "{{ .GitHubCommit }}"
+#{{- end }}
+#{{- if .GitHubIssue }}
+  issue: "{{ .GitHubIssue }}"
+#{{- end }}
+#{{- if .GitHubPullRequest }}
+  pull_request: "{{ .GitHubPullRequest }}"
+#{{- end }}
+#{{- if .GitHubRepository }}
+  repository: "{{ .GitHubRepository }}"
+#{{- end }}
+#{{- if .GitHubCommentId }}
+  comment_id: "{{ .GitHubCommentId }}"
+#{{- end }}

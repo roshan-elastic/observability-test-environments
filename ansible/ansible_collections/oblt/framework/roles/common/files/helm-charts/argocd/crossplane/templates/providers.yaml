@@ -1,0 +1,67 @@
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp-storage
+  namespace: {{ .Values.namespace }}
+spec:
+  package: xpkg.upbound.io/upbound/provider-gcp-storage:v0.38.1
+  controllerConfigRef:
+    name: crossplane-controller-config
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp-secretmanager
+  namespace: {{ .Values.namespace }}
+spec:
+  package: xpkg.upbound.io/upbound/provider-gcp-secretmanager:v0.38.1
+  controllerConfigRef:
+    name: crossplane-controller-config
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp-compute
+  namespace: {{ .Values.namespace }}
+spec:
+  package: xpkg.upbound.io/upbound/provider-gcp-compute:v0.38.1
+  controllerConfigRef:
+    name: crossplane-controller-config
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp-container
+  namespace: {{ .Values.namespace }}
+spec:
+  package: xpkg.upbound.io/upbound/provider-gcp-container:v0.38.1
+  controllerConfigRef:
+    name: crossplane-controller-config
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp-cloudplatform
+spec:
+  package: xpkg.upbound.io/upbound/provider-gcp-cloudplatform:v0.39.0
+  controllerConfigRef:
+    name: crossplane-controller-config
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp-iam
+  namespace: {{ .Values.namespace }}
+spec:
+  package: xpkg.upbound.io/upbound/provider-gcp-iam:v0.39.0
+  controllerConfigRef:
+    name: crossplane-controller-config
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-ansible
+  namespace: {{ .Values.namespace }}
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/provider-ansible:v0.5.0

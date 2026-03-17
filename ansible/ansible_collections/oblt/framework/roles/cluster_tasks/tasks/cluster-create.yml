@@ -1,0 +1,97 @@
+---
+- name: Check the cluster does not exist
+  ansible.builtin.fail:
+    msg: "Cluster {{ cluster_name }} already exists"
+  when:
+    - cluster_created is defined
+    - cluster_created | bool
+
+- name: "Create {{ build_dir }}/activate"
+  vars:
+    env: |
+      export HOME={{ build_dir }}
+      export PATH=${HOME}/bin:${PATH}
+  ansible.builtin.copy:
+    content: "{{ env }}"
+    dest: "{{ build_dir }}/activate"
+
+- name: Deploy Elastic Stack
+  block:
+    - name: Include tasks from tasks-prepare-gcp.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: prepare-gcp.yml
+
+    - name: Include tasks from tasks-k8s.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: k8s.yml
+
+    - name: Include tasks from tasks-stack.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: stack.yml
+
+    - name: Include tasks from tasks-stack-config.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: stack-config.yml
+
+    - name: Include tasks from tasks-k8s-deployments.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: k8s-deployments.yml
+
+    - name: Include tasks from tasks-eden.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: eden.yml
+
+    - name: Include tasks tasks-snapshot-repo.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: snapshot-repo.yml
+      when:
+        - configure_external_snapshots_repo | default(false)
+
+    - name: Include tasks tasks-snapshot-repos-oblt-ro.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: snapshot-repos-oblt-ro.yml
+      when:
+        - configure_external_snapshots_repo_ro | default(false)
+
+    - name: Include tasks from tasks-vault-secrets.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: vault-secrets.yml
+      when:
+        - save_secrets|bool
+
+    - name: Include tasks from tasks-cluster-info.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: cluster-info.yml
+
+    - name: Features
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: features.yml
+
+  rescue:
+    - name: Include tasks from tasks-destroy-cluster.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: destroy-cluster.yml
+      when:
+        - destroy_cluster
+    - name: Fail Deploying
+      fail:
+        msg: "Cluster deploy failed"
+  always:
+    - name: Include tasks from tasks-github-summary.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: github-summary.yml
+      when:
+        - github_enabled | bool

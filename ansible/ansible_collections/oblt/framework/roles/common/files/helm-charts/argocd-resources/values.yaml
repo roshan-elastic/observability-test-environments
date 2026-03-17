@@ -1,0 +1,6 @@
+externalSecrets:
+  enabled: true
+  gcp:
+    project: elastic-observability
+    clusterLocation: us-central1-c
+    clusterName: argocd

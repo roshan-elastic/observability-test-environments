@@ -1,0 +1,1788 @@
+openapi: 3.0.1
+info:
+  title: Project API
+  description: The Project API allows managing Elastic Cloud Serverless Projects.
+  version: 0.1.0
+tags:
+  - name: all projects
+    description: Management projects of any kind
+  - name: elasticsearch projects
+    description: Management of Elasticsearch projects
+  - name: proxy elasticsearch projects
+    description: Proxy requests through to the underlying Elasticsearch instance of the elasticsearch project
+  - name: observability projects
+    description: Management of Observability projects
+  - name: proxy observability projects
+    description: Proxy requests through to the underlying Elasticsearch instance of the observability project
+  - name: security projects
+    description: Management of Security projects
+  - name: proxy security projects
+    description: Proxy requests through to the underlying Elasticsearch instance of the security project
+
+paths:
+
+  /api/v1/admin/serverless/projects/_convert-to-paid:
+    post:
+      description: Convert all the active projects of an organization from trial to paid. Deleted projects will be converted if they are restored at some point.
+      summary: Convert projects from trial to paid
+      operationId: convertOrganizationProjectsToPaid
+      tags:
+        - all projects
+      parameters:
+        - name: organization_id
+          in: query
+          description: Organization whose projects will be converted from trial to paid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Organization projects successfully converted to paid
+        "401":
+          $ref: "./user-v1-spec.yml#/components/responses/Unauthorized"
+
+  /api/v1/admin/serverless/projects/_suspend:
+    post:
+      description: Suspend all the projects of an organization. Users will be able to resume them later when the organization has converted to paying.
+      summary: Suspend projects
+      operationId: suspendOrganizationProjects
+      tags:
+        - all projects
+      parameters:
+        - name: organization_id
+          in: query
+          description: Organization whose projects will be suspended
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: The details for suspending all the projects from an organization
+        required: true
+        content:
+          application/json:
+            example:
+              cause: Trial expired on Jan 22nd 2023
+            schema:
+              $ref: "#/components/schemas/SuspendOrganizationProjectsRequest"
+      responses:
+        "200":
+          description: Organization projects successfully suspended
+        "401":
+          $ref: "./user-v1-spec.yml#/components/responses/Unauthorized"
+
+  /api/v1/admin/serverless/projects/elasticsearch:
+    get:
+      description: The number of projects included can be configured with page_size. Consecutive calls can be made to retrieve next pages by providing a token.
+      summary: Get Elasticsearch projects
+      operationId: adminListElasticsearchProjects
+      tags:
+        - elasticsearch projects
+      parameters:
+        - name: organization_id
+          in: query
+          description: Filters the returned list of projects by the organization_id provided.
+          required: false
+          schema:
+            type: string
+        - name: region_id
+          in: query
+          description: Filters the returned list of projects by the region_id provided.
+          required: false
+          schema:
+            type: string
+        - name: cluster_id
+          in: query
+          description: Filters the returned list of projects by the cluster_id provided.
+          required: false
+          schema:
+            type: string
+        - name: include_deleted
+          in: query
+          description: Includes deleted projects in the returned list when true.
+          required: false
+          schema:
+            type: boolean
+        - name: project_id
+          in: query
+          description: Filters the returned list of projects starting with the project_id provided.
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProjectID"
+        - name: page_size
+          in: query
+          description: Maximum number of projects returned in the response.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: next_page
+          in: query
+          description: Token to the next page containing the list of projects.
+          required: false
+          schema:
+            type: string
+            x-go-type: apiutil.APIContinuationToken
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/apiutil
+      responses:
+        "200":
+          description: The Elasticsearch project list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElasticsearchProjectList"
+        "401":
+          $ref: "./user-v1-spec.yml#/components/responses/Unauthorized"
+
+  /api/v1/admin/serverless/projects/elasticsearch/{id}:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    get:
+      summary: Get an Elasticsearch project
+      operationId: adminGetElasticsearchProject
+      tags:
+        - elasticsearch projects
+      responses:
+        "200":
+          description: The requested elasticsearch project
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElasticsearchProject"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+    patch:
+      description: Only the fields included in the body of the request will be updated.
+      summary: Update an Elasticsearch project
+      operationId: adminPatchElasticsearchProject
+      tags:
+        - elasticsearch projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      requestBody:
+        description: The patched Elasticsearch project
+        required: true
+        content:
+          application/json:
+            example:
+              name: Example project
+            schema:
+              $ref: "#/components/schemas/PatchElasticsearchProjectRequest"
+      responses:
+        "200":
+          description: The updated Elasticsearch project.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElasticsearchProject"
+        "400":
+          $ref: "./user-v1-spec.yml#/components/responses/BadRequest"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+        "422":
+          $ref: "./user-v1-spec.yml#/components/responses/UnprocessableEntity"
+
+    delete:
+      summary: Delete an Elasticsearch project
+      operationId: adminDeleteElasticsearchProject
+      tags:
+        - elasticsearch projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project deletion scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/elasticsearch/{id}/_proxy/{path}:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+      - name: path
+        in: path
+        required: true
+        description: Path in the upstream Elasticsearch service to submit the proxied request through to.
+        example: _cluster/health
+        schema:
+          type: string
+
+    get:
+      description: Proxies a GET request through to the underlying Elasticsearch instance.
+      summary: Proxy GET request to Elasticsearch
+      operationId: adminProxyElasticsearchProjectGetRequest
+      tags:
+        - proxy elasticsearch projects
+      requestBody:
+        description: The request body
+        content:
+          "*:*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    put:
+      description: Proxies a PUT request through to the underlying Elasticsearch instance.
+      summary: Proxy PUT request to Elasticsearch
+      operationId: adminProxyElasticsearchProjectPutRequest
+      tags:
+        - proxy elasticsearch projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    post:
+      description: Proxies a POST request through to the underlying Elasticsearch instance.
+      summary: Proxy POST request to Elasticsearch
+      operationId: adminProxyElasticsearchProjectPostRequest
+      tags:
+        - proxy elasticsearch projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    delete:
+      description: Proxies a DELETE request through to the underlying Elasticsearch instance.
+      summary: Proxy DELETE request to Elasticsearch
+      operationId: adminProxyElasticsearchProjectDeleteRequest
+      tags:
+        - proxy elasticsearch projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/elasticsearch/{id}/_reprocess:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    post:
+      description: Schedule a reprocessing for an Elasticsearch project by incrementing the version and triggering a reconciliation.
+      summary: Reprocess an Elasticsearch project
+      operationId: adminReprocessElasticsearchProject
+      tags:
+        - elasticsearch projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project reprocess scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/elasticsearch/{id}/_restore:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    post:
+      description: Restore a previously deleted Elasticsearch project. It does not resume a previously suspended project.
+      summary: Restore an Elasticsearch project
+      operationId: adminRestoreElasticsearchProject
+      tags:
+        - elasticsearch projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project restore scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/elasticsearch/{id}/status:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+    get:
+      summary: Get the status of an Elasticsearch project
+      description: The response indicates whether the project is initialized and ready to be used. The phase will change from "initializing" to "initialized" when the project is ready.
+      operationId: adminGetElasticsearchProjectStatus
+      tags:
+        - elasticsearch projects
+      responses:
+        "200":
+          description: The requested Elasticsearch project status
+          content:
+            application/json:
+              schema:
+                $ref: "./user-v1-spec.yml#/components/schemas/ProjectStatus"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/observability:
+    get:
+      description: The number of projects included can be configured with page_size. Consecutive calls can be made to retrieve next pages by providing a token.
+      summary: Get Observability projects
+      operationId: adminListObservabilityProjects
+      tags:
+        - observability projects
+      parameters:
+        - name: organization_id
+          in: query
+          description: Filters the returned list of projects by the organization_id if provided.
+          required: false
+          schema:
+            type: string
+        - name: region_id
+          in: query
+          description: Filters the returned list of projects by the region_id provided.
+          required: false
+          schema:
+            type: string
+        - name: cluster_id
+          in: query
+          description: Filters the returned list of projects by the cluster_id provided.
+          required: false
+          schema:
+            type: string
+        - name: include_deleted
+          in: query
+          description: Includes deleted projects in the returned list when true.
+          required: false
+          schema:
+            type: boolean
+        - name: project_id
+          in: query
+          description: Filters the returned list of projects by the project_id provided.
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProjectID"
+        - name: page_size
+          in: query
+          description: Maximum number of projects returned in the response.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: next_page
+          in: query
+          description: Token to the next page containing the list of projects.
+          required: false
+          schema:
+            type: string
+            x-go-type: apiutil.APIContinuationToken
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/apiutil
+      responses:
+        "200":
+          description: The Observability project list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservabilityProjectList"
+        "401":
+          $ref: "./user-v1-spec.yml#/components/responses/Unauthorized"
+
+  /api/v1/admin/serverless/projects/observability/{id}:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    get:
+      summary: Get an Observability project
+      operationId: adminGetObservabilityProject
+      tags:
+        - observability projects
+      responses:
+        "200":
+          description: The requested observability project
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservabilityProject"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+    patch:
+      description: Only the fields included in the body of the request will be updated.
+      summary: Update an Observability project
+      operationId: adminPatchObservabilityProject
+      tags:
+        - observability projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      requestBody:
+        description: The updated Observability project
+        required: true
+        content:
+          application/json:
+            example:
+              name: Example project
+            schema:
+              $ref: "#/components/schemas/PatchObservabilityProjectRequest"
+      responses:
+        "200":
+          description: The updated Observability project.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservabilityProject"
+        "400":
+          $ref: "./user-v1-spec.yml#/components/responses/BadRequest"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+        "422":
+          $ref: "./user-v1-spec.yml#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete an Observability project
+      operationId: adminDeleteObservabilityProject
+      tags:
+        - observability projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project deletion scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/observability/{id}/_proxy/{path}:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+      - name: path
+        in: path
+        required: true
+        description: Path in the upstream Elasticsearch service to submit the proxied request through to.
+        example: _cluster/health
+        schema:
+          type: string
+
+    get:
+      description: Proxies a GET request through to the underlying Elasticsearch instance.
+      summary: Proxy GET request to Elasticsearch
+      operationId: adminProxyObservabilityProjectGetRequest
+      tags:
+        - proxy observability projects
+      requestBody:
+        description: The request body
+        content:
+          "*:*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    put:
+      description: Proxies a PUT request through to the underlying Elasticsearch instance.
+      summary: Proxy PUT request to Elasticsearch
+      operationId: adminProxyObservabilityProjectPutRequest
+      tags:
+        - proxy observability projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    post:
+      description: Proxies a POST request through to the underlying Elasticsearch instance.
+      summary: Proxy POST request to Elasticsearch
+      operationId: adminProxyObservabilityProjectPostRequest
+      tags:
+        - proxy observability projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    delete:
+      description: Proxies a DELETE request through to the underlying Elasticsearch instance.
+      summary: Proxy DELETE request to Elasticsearch
+      operationId: adminProxyObservabilityProjectDeleteRequest
+      tags:
+        - proxy observability projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/observability/{id}/_reprocess:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    post:
+      summary: Reprocess an Observability project
+      description: Schedules a new reprocessing for an Observability project by incrementing the version and triggering a reconciliation.
+      operationId: adminReprocessObservabilityProject
+      tags:
+        - observability projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project reprocess scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/observability/{id}/_restore:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    post:
+      description: Restore a previously deleted Observability project. It does not resume a previously suspended project.
+      summary: Restore an Observability project
+      operationId: adminRestoreObservabilityProject
+      tags:
+        - observability projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project restore scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/observability/{id}/status:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+    get:
+      description: The response indicates whether the project is initialized and ready to be used. The phase will change from "initializing" to "initialized" when the project is ready.
+      summary: Get the status of an Observability project
+      operationId: adminGetObservabilityProjectStatus
+      tags:
+        - observability projects
+      responses:
+        "200":
+          description: The requested Observability project status
+          content:
+            application/json:
+              schema:
+                $ref: "./user-v1-spec.yml#/components/schemas/ProjectStatus"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/security:
+    get:
+      description: The number of projects included can be configured with page_size. Consecutive calls can be made to retrieve next pages by providing a token.
+      summary: Get Security projects
+      operationId: adminListSecurityProjects
+      tags:
+        - security projects
+      parameters:
+        - name: organization_id
+          in: query
+          description: Filters the returned list of projects by the organization_id if provided.
+          required: false
+          schema:
+            type: string
+        - name: region_id
+          in: query
+          description: Filters the returned list of projects by the region_id provided.
+          required: false
+          schema:
+            type: string
+        - name: cluster_id
+          in: query
+          description: Filters the returned list of projects by the cluster_id provided.
+          required: false
+          schema:
+            type: string
+        - name: include_deleted
+          in: query
+          description: Includes deleted projects in the returned list when true.
+          required: false
+          schema:
+            type: boolean
+        - name: project_id
+          in: query
+          description: Filters the returned list of projects by the project_id provided.
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProjectID"
+        - name: page_size
+          in: query
+          description: Maximum number of projects returned in the response.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: next_page
+          in: query
+          description: Token to the next page containing the list of projects.
+          required: false
+          schema:
+            type: string
+            x-go-type: apiutil.APIContinuationToken
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/apiutil
+      responses:
+        "200":
+          description: The Security project list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityProjectList"
+        "401":
+          $ref: "./user-v1-spec.yml#/components/responses/Unauthorized"
+
+  /api/v1/admin/serverless/projects/security/{id}:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    get:
+      summary: Get a Security project
+      operationId: adminGetSecurityProject
+      tags:
+        - security projects
+      responses:
+        "200":
+          description: The requested security project
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityProject"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+    patch:
+      description: Only the fields included in the body of the request will be updated.
+      summary: Update a Security project
+      operationId: adminPatchSecurityProject
+      tags:
+        - security projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      requestBody:
+        description: The updated Security project
+        required: true
+        content:
+          application/json:
+            example:
+              name: Example project
+            schema:
+              $ref: "#/components/schemas/PatchSecurityProjectRequest"
+      responses:
+        "200":
+          description: The updated Security project.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityProject"
+        "400":
+          $ref: "./user-v1-spec.yml#/components/responses/BadRequest"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+        "422":
+          $ref: "./user-v1-spec.yml#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete a Security project
+      operationId: adminDeleteSecurityProject
+      tags:
+        - security projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project deletion scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/security/{id}/_proxy/{path}:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+      - name: path
+        in: path
+        required: true
+        description: Path in the upstream Elasticsearch service to submit the proxied request through to.
+        example: _cluster/health
+        schema:
+          type: string
+
+    get:
+      description: Proxies a GET request through to the underlying Elasticsearch instance.
+      summary: Proxy GET request to Elasticsearch
+      operationId: adminProxySecurityProjectGetRequest
+      tags:
+        - proxy security projects
+      requestBody:
+        description: The request body
+        content:
+          "*:*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    put:
+      description: Proxies a PUT request through to the underlying Elasticsearch instance.
+      summary: Proxy PUT request to Elasticsearch
+      operationId: adminProxySecurityProjectPutRequest
+      tags:
+        - proxy security projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    post:
+      description: Proxies a POST request through to the underlying Elasticsearch instance.
+      summary: Proxy POST request to Elasticsearch
+      operationId: adminProxySecurityProjectPostRequest
+      tags:
+        - proxy security projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+    delete:
+      description: Proxies a DELETE request through to the underlying Elasticsearch instance.
+      summary: Proxy DELETE request to Elasticsearch
+      operationId: adminProxySecurityProjectDeleteRequest
+      tags:
+        - proxy security projects
+      requestBody:
+        description: The request body
+        content:
+          "*/*": {}
+      responses:
+        "200":
+          description: Request successfully proxied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnyValue"
+            "*:*": {}
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/security/{id}/_reprocess:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    post:
+      summary: Reprocess an Security project
+      description: Schedules a new reprocessing for a Security project by incrementing the version and triggering a reconciliation.
+      operationId: adminReprocessSecurityProject
+      tags:
+        - security projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project reprocess scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/security/{id}/_restore:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+
+    post:
+      description: Restore a previously deleted Security project. It does not resume a previously suspended project.
+      summary: Restore a Security project
+      operationId: adminRestoreSecurityProject
+      tags:
+        - security projects
+      parameters:
+        - name: If-Match
+          in: header
+          description: ETag value fetched in a previous GET project request. Used to prevent simultaneous updates
+          required: false
+          schema:
+            type: string
+            x-go-type: httputil.ETag
+            x-go-type-import:
+              path: github.com/elastic/k8s-arch-commons/pkg/httputil
+      responses:
+        "200":
+          description: Project restore scheduled.
+          headers:
+            ETag:
+              schema:
+                type: string
+                x-go-type: httputil.ETag
+                x-go-type-import:
+                  path: github.com/elastic/k8s-arch-commons/pkg/httputil
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+  /api/v1/admin/serverless/projects/security/{id}/status:
+    parameters:
+      - name: id
+        description: The ID of the project
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProjectID"
+    get:
+      summary: Get the status of a Security project
+      description: The response indicates whether the project is initialized and ready to be used. The phase will change from "initializing" to "initialized" when the project is ready.
+      operationId: adminGetSecurityProjectStatus
+      tags:
+        - security projects
+      responses:
+        "200":
+          description: The requested Security project status
+          content:
+            application/json:
+              schema:
+                $ref: "./user-v1-spec.yml#/components/schemas/ProjectStatus"
+        "404":
+          $ref: "./user-v1-spec.yml#/components/responses/NotFound"
+
+components:
+  schemas:
+    AnyValue:
+      description: "Can be anything: string, number, array, object, etc., including `null`"
+      example: This could be any valid JSON value. A string, number, boolean, array, object
+
+    ApplicationOverrides:
+      type: object
+      description: Overrides applied to an application.
+      properties:
+        docker_image:
+          description: An alternative docker image to use
+          type: string
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    CloudID:
+      type: string
+      description: The cloud ID, an encoded string that provides other Elastic services with the necessary information to connect to this Elasticsearch and Kibana.
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ClusterID:
+      type: string
+      description: Unique human-readable identifier for an application cluster
+      example: prd-awsuse1-cp-internal-app-1
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    CommonProjectFields:
+      type: object
+      description: Common fields of serverless projects.
+      required:
+        - id
+        - name
+        - alias
+        - region_id
+        - metadata
+        - cloud_id
+      properties:
+        id:
+          $ref: "#/components/schemas/ProjectID"
+        name:
+          $ref: "#/components/schemas/ProjectName"
+        region_id:
+          $ref: "#/components/schemas/RegionID"
+        alias:
+          $ref: "#/components/schemas/ProjectAlias"
+        metadata:
+          $ref: "#/components/schemas/ProjectMetadata"
+        cloud_id:
+          $ref: "#/components/schemas/CloudID"
+        trial:
+          type: boolean
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    CommonProjectOverrides:
+      type: object
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, they can only be updated and read by Elastic employees.
+      properties:
+        elasticsearch:
+          $ref: "#/components/schemas/ApplicationOverrides"
+        kibana:
+          $ref: "#/components/schemas/ApplicationOverrides"
+        cluster:
+          type: string
+          description: The Cluster ID where the application should be deployed
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      minProperties: 1
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ElasticsearchOptimizedFor:
+      type: string
+      description: The purpose for which the hardware of this elasticsearch project is optimized for. Also known as the Elasticsearch project subtype. The 'search' value is deprecated and should no longer be used.
+      enum: [search, general_purpose, vector]
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ElasticsearchProject:
+      description: An Elasticsearch serverless project.
+      allOf:
+        - $ref: "#/components/schemas/CommonProjectFields"
+        - $ref: "#/components/schemas/ElasticsearchProjectFields"
+
+    ElasticsearchProjectClusters:
+      type: object
+      description: The ID of the Kubernetes clusters where each application is deployed.
+      properties:
+        elasticsearch:
+          $ref: "#/components/schemas/ClusterID"
+        kibana:
+          $ref: "#/components/schemas/ClusterID"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ElasticsearchProjectEndpoints:
+      type: object
+      description: The endpoints to access the different apps of the project.
+      required:
+        - elasticsearch
+        - kibana
+      properties:
+        elasticsearch:
+          type: string
+          description: The endpoint to access elasticsearch.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        kibana:
+          type: string
+          description: The endpoint to access kibana.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ElasticsearchProjectFields:
+      type: object
+      description: Specific fields of an Elasticsearch serverless project.
+      required:
+        - type
+        - optimized_for
+        - endpoints
+      properties:
+        type:
+          type: string
+          description: the type of the project
+          enum: [elasticsearch]
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        optimized_for:
+          $ref: "#/components/schemas/ElasticsearchOptimizedFor"
+        search_lake:
+          $ref: "#/components/schemas/ElasticsearchSearchLake"
+        endpoints:
+          $ref: "#/components/schemas/ElasticsearchProjectEndpoints"
+        clusters:
+          $ref: "#/components/schemas/ElasticsearchProjectClusters"
+        overrides:
+          $ref: "#/components/schemas/CommonProjectOverrides"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ElasticsearchProjectList:
+      type: object
+      description: A paginated list of serverless elasticsearch projects.
+      required:
+        - items
+      properties:
+        next_page:
+          description: A token to fetch the next page.
+          type: string
+          x-go-type: apiutil.APIContinuationToken
+          x-go-type-import:
+            path: github.com/elastic/k8s-arch-commons/pkg/apiutil
+        items:
+          type: array
+          description: The actual projects.
+          items:
+            $ref: "#/components/schemas/ElasticsearchProject"
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+
+    ElasticsearchSearchLake:
+      type: object
+      description: Configuration for entire set of capabilities that make the data searchable in Elasticsearch.
+      properties:
+        search_power:
+          type: integer
+          description: Controls how fast searches are against the project data. When ingested, a certain amount of data is loaded into a cache that makes it super fast to query. You can either increase the performance of searches on cached data by adding replicas, or reduce the quantity of cached data by a static factor to save on costs.
+          minimum: 5
+          maximum: 100000
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        boost_window:
+          description: Determines how much data can benefit from faster search. When ingested, a certain amount of data is loaded into a cache that makes it super fast to query. The system dynamically adjusts the cache allocated to the project based on how much data is ingested during the period defined by the Search Boost Window.
+          type: integer
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    FleetOverrides:
+      type: object
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, any values specified here will be ignored unless you're an Elastic employee.
+      properties:
+        fleet:
+          $ref: "#/components/schemas/ApplicationOverrides"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ObservabilityProject:
+      description: An Observability project.
+      allOf:
+        - $ref: "#/components/schemas/CommonProjectFields"
+        - $ref: "#/components/schemas/ObservabilityProjectFields"
+
+    ObservabilityProjectClusters:
+      type: object
+      description: The ID of the Kubernetes clusters where each application is deployed.
+      properties:
+        elasticsearch:
+          $ref: "#/components/schemas/ClusterID"
+        kibana:
+          $ref: "#/components/schemas/ClusterID"
+        fleet:
+          $ref: "#/components/schemas/ClusterID"
+        apm:
+          $ref: "#/components/schemas/ClusterID"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ObservabilityProjectEndpoints:
+      type: object
+      description: The endpoints to access the different apps of the project.
+      required:
+        - elasticsearch
+        - kibana
+        - apm
+      properties:
+        elasticsearch:
+          description: The endpoint to access elasticsearch.
+          type: string
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        kibana:
+          type: string
+          description: The endpoint to access kibana.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        apm:
+          type: string
+          description: The endpoint to access APM.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ObservabilityProjectFields:
+      type: object
+      description: Specific fields of an Observability project.
+      required:
+        - type
+        - endpoints
+      properties:
+        type:
+          type: string
+          description: the type of the project
+          enum: [observability]
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        endpoints:
+          $ref: "#/components/schemas/ObservabilityProjectEndpoints"
+        clusters:
+          $ref: "#/components/schemas/ObservabilityProjectClusters"
+        overrides:
+          $ref: "#/components/schemas/ObservabilityProjectOverrides"
+
+    ObservabilityProjectList:
+      type: object
+      description: A paginated list of serverless Observability projects.
+      required:
+        - items
+      properties:
+        next_page:
+          description: A token to fetch the next page.
+          type: string
+          x-go-type: apiutil.APIContinuationToken
+          x-go-type-import:
+            path: github.com/elastic/k8s-arch-commons/pkg/apiutil
+        items:
+          type: array
+          description: The actual projects.
+          items:
+            $ref: "#/components/schemas/ObservabilityProject"
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+
+    ObservabilityProjectOverrides:
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, any values specified here will be ignored unless you're an Elastic employee.
+      allOf:
+        - $ref: "#/components/schemas/CommonProjectOverrides"
+        - $ref: "#/components/schemas/FleetOverrides"
+      minProperties: 1
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    OptionalApplicationOverrides:
+      type: object
+      description: Overrides applied to applications. They can be passed as `null` to delete existing application overrides.
+      properties:
+        docker_image:
+          description: An alternative docker image to use
+          type: string
+          nullable: true
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      nullable: true
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    OptionalCommonProjectOverrides:
+      type: object
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, any values specified here will be ignored unless you're an Elastic employee.
+      properties:
+        elasticsearch:
+          $ref: "#/components/schemas/OptionalApplicationOverrides"
+        kibana:
+          $ref: "#/components/schemas/OptionalApplicationOverrides"
+      minProperties: 1
+      nullable: true
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    OptionalElasticsearchSearchLake:
+      type: object
+      description: Configuration for entire set of capabilities that make the data searchable in Elasticsearch. It can be passed as `null` to reset configuration to the default values.
+      properties:
+        search_power:
+          type: integer
+          nullable: true
+          description: Controls how fast searches are against the project data. When ingested, a certain amount of data is loaded into a cache that makes it super fast to query. You can either increase the performance of searches on cached data by adding replicas, or reduce the quantity of cached data by a static factor to save on costs. It can be passed as `null` to reset the Search Power to the default value.
+          minimum: 5
+          maximum: 100000
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        boost_window:
+          description: Determines how much data can benefit from faster search. When ingested, a certain amount of data is loaded into a cache that makes it super fast to query. The system dynamically adjusts the cache allocated to the project based on how much data is ingested during the period defined by the Search Boost Window. It can be passed as `null` to reset the boost_window to the default value.
+          type: integer
+          nullable: true
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      nullable: true
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    OptionalFleetOverrides:
+      type: object
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, any values specified here will be ignored unless you're an Elastic employee.
+      properties:
+        fleet:
+          $ref: "#/components/schemas/OptionalApplicationOverrides"
+      nullable: true
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    OptionalObservabilityProjectOverrides:
+      type: object
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, any values specified here will be ignored unless you're an Elastic employee.
+      allOf:
+        - $ref: "#/components/schemas/OptionalCommonProjectOverrides"
+        - $ref: "#/components/schemas/OptionalFleetOverrides"
+      minProperties: 1
+      nullable: true
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    OptionalSecurityProjectOverrides:
+      type: object
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, any values specified here will be ignored unless you're an Elastic employee.
+      allOf:
+        - $ref: "#/components/schemas/OptionalCommonProjectOverrides"
+        - $ref: "#/components/schemas/OptionalFleetOverrides"
+      minProperties: 1
+      nullable: true
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    PatchElasticsearchProjectRequest:
+      type: object
+      description: A request to update an existing Elasticsearch serverless project.
+      properties:
+        name:
+          $ref: "#/components/schemas/ProjectName"
+        alias:
+          $ref: "#/components/schemas/ProjectAlias"
+        search_lake:
+          $ref: "#/components/schemas/OptionalElasticsearchSearchLake"
+        overrides:
+          $ref: "#/components/schemas/OptionalCommonProjectOverrides"
+      additionalProperties: false
+
+    PatchObservabilityProjectRequest:
+      type: object
+      description: A request to update an existing Observability project.
+      properties:
+        name:
+          $ref: "#/components/schemas/ProjectName"
+        alias:
+          $ref: "#/components/schemas/ProjectAlias"
+        overrides:
+          $ref: "#/components/schemas/OptionalObservabilityProjectOverrides"
+      additionalProperties: false
+
+    PatchSecurityProjectRequest:
+      type: object
+      description: A request to update an existing Security project.
+      properties:
+        name:
+          $ref: "#/components/schemas/ProjectName"
+        alias:
+          $ref: "#/components/schemas/ProjectAlias"
+        overrides:
+          $ref: "#/components/schemas/OptionalSecurityProjectOverrides"
+        admin_features_package:
+          $ref: "./user-v1-spec.yml#/components/schemas/OptionalSecurityAdminFeaturesPackage"
+        product_types:
+          type: array
+          nullable: true
+          items:
+            $ref: "./user-v1-spec.yml#/components/schemas/SecurityProductType"
+          minItems: 1
+          maxItems: 3
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      additionalProperties: false
+
+    ProjectAlias:
+      type: string
+      description: A custom domain label compatible with RFC-1035 standards. Derived from the project name by default.
+      maxLength: 50
+      minLength: 1
+      pattern: "^[a-zA-Z]{1}(?:[a-zA-Z0-9-]*[a-zA-Z0-9]{1})?$"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ProjectID:
+      type: string
+      description: ID of the project.
+      pattern: "^[a-z0-9]{32}$"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ProjectMetadata:
+      type: object
+      description: Additional details about the project.
+      required:
+        - created_at
+        - created_by
+        - organization_id
+      properties:
+        created_at:
+          type: string
+          description: Date and time when the project was created.
+          format: date-time
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        created_by:
+          type: string
+          description: The user ID of the user who created the project.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        organization_id:
+          type: string
+          description: The Organization ID who owns the project.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        deleted_at:
+          type: string
+          description: Date and time when the project was deleted.
+          format: date-time
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        suspended_at:
+          type: string
+          description: Date and time when the project was suspended.
+          format: date-time
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        suspended_by:
+          type: string
+          description: The user ID of the user who suspended the project.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        suspended_reason:
+          type: string
+          description: Reason why the project was suspended.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    ProjectName:
+      type: string
+      description: Descriptive name for a project.
+      maxLength: 255
+      minLength: 1
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    RegionID:
+      type: string
+      description: Unique human-readable identifier for a region in Elastic Cloud.
+      example: aws-us-east-1
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    SecurityProject:
+      description: A Security project.
+      allOf:
+        - $ref: "#/components/schemas/CommonProjectFields"
+        - $ref: "#/components/schemas/SecurityProjectFields"
+
+    SecurityProjectClusters:
+      type: object
+      description: The ID of the Kubernetes clusters where each application is deployed.
+      properties:
+        elasticsearch:
+          $ref: "#/components/schemas/ClusterID"
+        kibana:
+          $ref: "#/components/schemas/ClusterID"
+        fleet:
+          $ref: "#/components/schemas/ClusterID"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    SecurityProjectEndpoints:
+      type: object
+      description: The endpoints to access the different apps of the project.
+      required:
+        - elasticsearch
+        - kibana
+      properties:
+        elasticsearch:
+          description: The endpoint to access elasticsearch.
+          type: string
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        kibana:
+          type: string
+          description: The endpoint to access kibana.
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    SecurityProjectFields:
+      type: object
+      description: Specific fields of a Security project.
+      required:
+        - type
+        - endpoints
+      properties:
+        type:
+          type: string
+          description: the type of the project
+          enum: [security]
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+        endpoints:
+          $ref: "#/components/schemas/SecurityProjectEndpoints"
+        clusters:
+          $ref: "#/components/schemas/SecurityProjectClusters"
+        overrides:
+          $ref: "#/components/schemas/SecurityProjectOverrides"
+        admin_features_package:
+          $ref: "./user-v1-spec.yml#/components/schemas/SecurityAdminFeaturesPackage"
+        product_types:
+          type: array
+          items:
+            $ref: "./user-v1-spec.yml#/components/schemas/SecurityProductType"
+          default: [{product_line: security, product_tier: complete}, {product_line: cloud, product_tier: complete}, {product_line: endpoint, product_tier: complete}]
+          minItems: 2
+          maxItems: 3
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    SecurityProjectList:
+      type: object
+      description: A paginated list of serverless Security projects.
+      required:
+        - items
+      properties:
+        next_page:
+          description: A token to fetch the next page.
+          type: string
+          x-go-type: apiutil.APIContinuationToken
+          x-go-type-import:
+            path: github.com/elastic/k8s-arch-commons/pkg/apiutil
+        items:
+          description: The actual projects.
+          type: array
+          items:
+            $ref: "#/components/schemas/SecurityProject"
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+
+    SecurityProjectOverrides:
+      description: Overrides applied to managed project configuration. Overrides and their child properties are admin only, any values specified here will be ignored unless you're an Elastic employee.
+      allOf:
+        - $ref: "#/components/schemas/CommonProjectOverrides"
+        - $ref: "#/components/schemas/FleetOverrides"
+      minProperties: 1
+      x-oapi-codegen-extra-tags:
+        safe-to-log: "true"
+
+    SuspendOrganizationProjectsRequest:
+      type: object
+      description: A request to suspend all the projects from an organization.
+      required:
+        - cause
+      properties:
+        cause:
+          type: string
+          description: an explanation for suspending all the projects from an organization
+          x-oapi-codegen-extra-tags:
+            safe-to-log: "true"
+      additionalProperties: false

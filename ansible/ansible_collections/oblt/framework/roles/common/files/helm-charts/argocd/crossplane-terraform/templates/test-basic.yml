@@ -1,0 +1,57 @@
+---
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default-tf
+spec:
+  # This optional configuration block can be used to inject HCL into any
+  # workspace that uses this provider config, for example to setup Terraform
+  # providers.
+  configuration: |
+    terraform {
+      required_version = ">= 1.5.0"
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-azure-westeurope"
+        namespace         = "crossplane-system"
+        in_cluster_config = true
+      }
+    }
+---
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: example-inline
+  annotations:
+    # The terraform workspace will be named 'hello-world'. If you omitted this
+    # annotation it would be derived from metadata.name - i.e. 'example-inline'.
+    crossplane.io/external-name: example-inline
+spec:
+  forProvider:
+    # For simple cases you can use an inline source to specify the content of
+    # main.tf as opaque, inline HCL.
+    source: Inline
+    module: |
+      resource "random_id" "example" {
+        byte_length = 4
+      }
+
+      output "hello_world" {
+        value = "Hello, World! - ${terraform.workspace}-${random_id.example.hex}"
+      }
+
+      resource "local_file" "example" {
+        content  = "${random_id.example.hex}"
+        filename = "${path.module}/example.txt"
+      }
+
+      data "template_file" "init" {
+        template = ""
+        vars = {
+          consul_address = ""
+        }
+      }
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: terraform-workspace-hello-world
+  providerConfigRef:
+    name: default-tf

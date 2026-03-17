@@ -1,0 +1,5 @@
+---
+- name: Import role stack_eck
+  include_role:
+    name: "oblt.framework.stack_eck"
+    tasks_from: "license.yml"

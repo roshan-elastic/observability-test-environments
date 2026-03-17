@@ -1,0 +1,14 @@
+---
+- block:
+    - name: Deploy Opbeans
+      vars:
+        apps:
+          helm: "{{ opbeans_helm_charts | to_yaml | from_yaml }}"
+      include_role:
+        name: oblt.framework.helm_apps
+  when:
+    - k8s_enabled|bool
+  tags:
+    - opbeans
+    - deploy
+    - molecule-idempotence-notest

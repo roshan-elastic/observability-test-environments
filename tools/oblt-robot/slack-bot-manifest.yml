@@ -1,0 +1,73 @@
+display_information:
+  name: oblt-robot
+  description: OBLT Robots
+  background_color: "#2c2d30"
+features:
+  bot_user:
+    display_name: oblt-robot
+    always_online: false
+  slash_commands:
+    - command: /create-ccs-cluster
+      description: Create a CCS clusters
+      should_escape: false
+    - command: /create-serverless-cluster
+      description: Create a Serverless clusters
+      should_escape: false
+    - command: /destroy-cluster
+      description: Destroy a cluster
+      should_escape: false
+    - command: /list-clusters
+      description: Display all clusters
+      should_escape: true
+    - command: /list-templates
+      description: Display all templates
+      should_escape: true
+    - command: /my-clusters
+      description: Display my clusters
+      should_escape: true
+    - command: /show-status
+      description: Display the status messages for the tool
+      should_escape: true
+    - command: /cluster-secret
+      description: Display a secret for a CCS cluster
+      should_escape: false
+    - command: /oblt-bug-report
+      description: Submit a Bug in the observability-robots repository
+      should_escape: false
+    - command: /oblt-faq-entry
+      description: Submit a FAQ entry to the knowledge base
+      should_escape: false
+    - command: /oblt-onboarding-aws
+      description: Create an AWS account in the `elastic-observability` project
+      should_escape: false
+    - command: /oblt-onboarding-ci
+      description: Enroll a new GitHub project in the CI
+      should_escape: false
+    - command: /oblt-onboarding-cloud
+      description: Enroll an Elastic email to the Elastic Cloud org
+      should_escape: false
+    - command: /oblt-reset-aws
+      description: Reset an AWS account in the `elastic-observability` project
+      should_escape: false
+    - command: /oblt-configure
+      description: Configure the OBLT tool
+      should_escape: false
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read
+      - channels:history
+      - chat:write
+      - chat:write.customize
+      - commands
+      - incoming-webhook
+      - users:read
+settings:
+  event_subscriptions:
+    bot_events:
+      - app_mention
+  interactivity:
+    is_enabled: true
+  org_deploy_enabled: false
+  socket_mode_enabled: true
+  token_rotation_enabled: false

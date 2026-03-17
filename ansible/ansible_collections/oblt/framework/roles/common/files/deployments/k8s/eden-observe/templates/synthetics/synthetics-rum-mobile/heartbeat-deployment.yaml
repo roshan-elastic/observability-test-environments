@@ -1,0 +1,82 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: heartbeat-synthetics-mobile
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+spec:
+  selector:
+    matchLabels:
+      k8s-app: heartbeat
+  template:
+    metadata:
+      labels:
+        k8s-app: heartbeat
+    spec:
+      serviceAccountName: heartbeat-{{ .Chart.Name }}-{{ .Values.username }}
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: heartbeat
+        image: docker.elastic.co/{{ .Values.docker_namespace_beats }}/heartbeat:8.1.3
+        # enable for debugging
+        #command: [ "/bin/bash", "-c", "--" ]
+        #args: [ "while true; do sleep 30; done;" ]
+        args: ["-e"]
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 903Mi
+          requests:
+            cpu: 0.05
+            memory: 500Mi
+        env:
+        - name: HIPSTER_BASIC_URL
+          value: "http://frontend-js"
+        - name: HIPSTER_BASIC_PORT
+          value: "3000"
+        - name: ELASTICSEARCH_USERNAME
+          value: "elastic"
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-es-creds
+              key: ELASTICSEARCH_PASSWORD
+        - name: ELASTICSEARCH_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-es-creds
+              key: ELASTICSEARCH_URL
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: todo
+          mountPath: /etc/heartbeat/todo
+        - name: config-mobile
+          mountPath: /usr/share/heartbeat/heartbeat.yml
+          readOnly: true
+          subPath: heartbeat.yml
+        - name: config-mobile
+          mountPath: /usr/share/heartbeat/ilm_policy.json
+          readOnly: true
+          subPath: ilm_policy.json
+        - name: config-mobile
+          mountPath: /etc/heartbeat/todo/add-remove.journey.ts
+          subPath: add-remove.journey.ts
+        - name: config-mobile
+          mountPath: /etc/heartbeat/todo/package.json
+          subPath: package.json
+        - name: dockersock
+          mountPath: /var/run
+      volumes:
+      - name: dockersock
+        hostPath:
+          path: /var/run
+      - name: config-mobile
+        configMap:
+          defaultMode: 0755
+          name: heartbeat-config-synthetics-mobile
+      - name: todo
+        emptyDir: {}

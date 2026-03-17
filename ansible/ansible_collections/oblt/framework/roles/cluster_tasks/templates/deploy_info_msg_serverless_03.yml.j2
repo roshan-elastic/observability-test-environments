@@ -1,0 +1,12 @@
+{% if stack_target == 'production' %}
+{% set _overview_url = 'https://overview.elastic-cloud.com/app/dashboards#/view/serverless-project-applications-logs' %}
+{% endif %}
+{% if stack_target == 'qa' %}
+{% set _overview_url = 'https://overview.qa.cld.elstc.co/app/dashboards#/view/serverless-project-applications-logs' %}
+{% endif %}
+{% if stack_target == 'staging' %}
+{% set _overview_url = 'https://overview.aws.staging.foundit.no/app/dashboards#/view/serverless-project-applications-logs' %}
+{% endif %}
+{% import 'macros.j2' as fn %}
+
+{{ fn.showlink("{}?_g=!n&_a=(controlGroupInput:(chainingSystem:HIERARCHICAL,controlStyle:oneLine,id:control_group_c1b9afc7-ad10-409d-b4b6-2adf1b848d06,panels:('86a6404b-606f-4d7f-8727-98d283c9ccda':(explicitInput:(dataViewId:'serverless.logs-*',fieldName:serverless.project.id,grow:!t,id:'86a6404b-606f-4d7f-8727-98d283c9ccda',selectedOptions:!({}),title:serverless.project.id),grow:!t,order:0,type:optionsListControl),ac57e4f9-eaa9-4c8f-a82d-b498ca0f4c1c:(explicitInput:(dataViewId:'serverless.logs-*',exclude:!t,fieldName:log.level,grow:!t,id:ac57e4f9-eaa9-4c8f-a82d-b498ca0f4c1c,selectedOptions:!(DEBUG,WARN,debug,trace),title:log.level),grow:!t,order:3,type:optionsListControl,width:small),e8befe75-9f43-4357-a023-c94011fc1946:(explicitInput:(dataViewId:'serverless.logs-*',fieldName:kubernetes.labels.k8s_elastic_co%2Fapplication-id,grow:!t,id:e8befe75-9f43-4357-a023-c94011fc1946,selectedOptions:!(kb),title:application.id),grow:!t,order:1,type:optionsListControl))),filters:!())".format(_overview_url, serverless_deployment_id), "Kibana Logs", slack) }}

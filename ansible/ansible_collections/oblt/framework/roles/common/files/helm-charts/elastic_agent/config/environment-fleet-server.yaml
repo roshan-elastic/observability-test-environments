@@ -1,0 +1,27 @@
+- name: FLEET_SERVER_ENABLE
+  value: {{ if ((.Values.fleetServer).enabled) }}"1"{{ else }}"0"{{ end }}
+{{- if ((.Values.fleetServer).enabled) }}
+- name: FLEET_SERVER_INSECURE_HTTP
+  value: {{ if ((.Values.fleetServer).insecureHttp) }}"1"{{ else }}"0"{{ end }}
+- name: FLEET_SERVER_HOST
+  value: {{ ((.Values.fleetServer).host) | quote }}
+- name: FLEET_SERVER_PORT
+  value: {{ ((.Values.fleetServer).port) | quote }}
+- name: FLEET_SERVER_SERVICE_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.fleetServerCreds" . }}
+      key: token
+- name: FLEET_SERVER_POLICY_ID
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.fleetServerCreds" . }}
+      key: policy_id
+{{- end }}
+{{- if ((.Values.elasticsearch).host) }}
+- name: ELASTICSEARCH_HOST
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.esCreds" . }}
+      key: host
+{{- end }}

@@ -1,0 +1,66 @@
+---
+## Workflow to provision the Elastic Stack in ESS and run some API calls.
+#{% raw %}
+name: oblt-cli Run Api Calls
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required to use Workload Identity Provider
+  id-token: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    env:
+      CLUSTER_INFO_FILE: ${{ github.workspace }}/cluster-info.json
+      ENV_FILE: ${{ github.workspace }}/env.sh
+      ELASTIC_STACK_VERSION: 8.10.0
+    steps:
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.SECRET_WITH_PULLREQUEST_PERMISSIONS }}
+
+      - name: Provision Elastic Stack
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        with:
+          command: 'cluster create ess --stack-version "${ELASTIC_STACK_VERSION}" --cluster-name-prefix my-job --wait 15 --output-file "${CLUSTER_INFO_FILE}"'
+          github-token: ${{ secrets.SECRET_WITH_PULLREQUEST_PERMISSIONS }}
+          slack-channel: '#observablt-bots' # default
+          username: 'obltmachine' # default
+
+      - name: Authenticate to Google Cloud
+        uses: elastic/oblt-actions/google/auth@v1
+
+      - name: Fetch credentials
+        uses: elastic/oblt-actions/oblt-cli/cluster-credentials@v1
+        with:
+          cluster-info-file: ${{ env.CLUSTER_INFO_FILE }}
+          github-token: ${{ secrets.SECRET_WITH_PULLREQUEST_PERMISSIONS }}
+
+      - name: Run Api Calls
+        run: |
+          echo "Make some calls to the API"
+          curl -X GET -sSfL \
+            -u "${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}" \
+            "${ELASTICSEARCH_HOST}/_cluster/health" | jq .
+
+          curl -X GET -sSfL \
+            -H "kbn-xsrf: true" \
+            -H 'Content-Type: application/json' \
+            -u "${KIBANA_USERNAME}:${KIBANA_PASSWORD}" \
+            "${KIBANA_HOST}/api/status" | jq .
+
+          curl -X GET -sSfL \
+            -H "Authorization: Bearer ${ELASTIC_APM_SECRET_TOKEN}" \
+            "${ELASTIC_APM_SERVER_URL}/" | jq .
+
+      - name: Cleanup
+        if: always()
+        uses: elastic/oblt-actions/oblt-cli/cluster-destroy@v1
+        with:
+          cluster-info-file: ${{ env.CLUSTER_INFO_FILE }}
+          github-token: ${{ secrets.SECRET_WITH_PULLREQUEST_PERMISSIONS }}
+#{% endraw %}

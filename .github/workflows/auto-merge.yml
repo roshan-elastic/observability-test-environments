@@ -1,0 +1,79 @@
+---
+## Workflow to automerge PRs after run some workflows. It verify that checks are OK.
+name: automerge
+on:
+  workflow_run:
+    workflows:
+      - Oblt Cluster manager
+      - Ansible Roles
+      - Lint changes
+      - oblt-cli
+      - oblt-robot
+      - Update channels Docker image test
+      - Docker build and push APM synthtrace
+      - Docker build and push integrations dind
+      - Docker build and push integrations package registry
+      - Docker build and push workspace
+      - Oblt Framework test
+      - lint GitHub Actions
+      - Release-oblt-framework
+    types:
+      - completed
+    branches-ignore:
+      - 'main'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: "automerge-${{ github.event.workflow_run.pull_requests[0].number || github.ref }}"
+      cancel-in-progress: true
+    steps:
+      - uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.OBLT_CLI_GITHUB_TOKEN }}
+
+      - id: automerge
+        name: automerge
+        uses: "pascalgn/automerge-action@d1203c0bf94a827b991e5de69d662e9163304fa0"
+        env:
+          GITHUB_TOKEN: ${{ secrets.OBLT_CLI_GITHUB_TOKEN }}
+          MERGE_LABELS: "automerge"
+          MERGE_METHOD: "squash"
+          MERGE_FORKS: "false"
+          MERGE_DELETE_BRANCH: "true"
+          MERGE_RETRIES: "12"
+          MERGE_RETRY_SLEEP: "10000"
+          LOG: "TRACE"
+          MERGE_READY_STATE: "clean"
+
+      - name: Report automerge status
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          GH_CONTEXT: ${{ toJson(github) }}
+        with:
+          script: |
+            const prNumber = context.payload.workflow_run.pull_requests[0]?.number || 0;
+            const workflowName = '${{ github.event.workflow.name }}'
+            const eventName = '${{ github.event_name }}'
+            const ghContext = JSON.parse(process.env.GH_CONTEXT)
+
+            core.debug(`Payload: ${JSON.stringify(context.payload, null, '\t')}`)
+            core.debug(`Payload: ${JSON.stringify(ghContext, null, '\t')}`)
+            core.info(`Event name: ${eventName}`)
+            core.info(`PR number: ${prNumber}`)
+
+            if (prNumber != 0) {
+              github.rest.issues.createComment({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🤖 ${workflowName} [Automerge status](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) : ${{ steps.automerge.outputs.mergeResult || 'canceled' }} / event : ${eventName}`
+              })
+            }

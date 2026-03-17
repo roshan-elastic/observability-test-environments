@@ -1,0 +1,117 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "opbeans": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.",
+                    "default": true
+                },
+                "nameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.",
+                    "default": ""
+                },
+                "fullnameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.",
+                    "default": ""
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).",
+                            "default": "docker.elastic.co/observability-ci/opbeans-frontend"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "description": "Tag of the Docker image (latest).",
+                            "default": "daily"
+                        },
+                        "pullPolicy": {
+                            "type": "string",
+                            "description": "Docker image pull policy (IfNotPresent|Always|Never)",
+                            "default": "IfNotPresent"
+                        }
+                    }
+                },
+                "apm": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Type of reporting API [apm|otel|annotations]",
+                            "default": "annotations"
+                        },
+                        "annotationType": {
+                            "type": "string",
+                            "description": "Type of annotations to use [none|nodejs|java]",
+                            "default": "nodejs"
+                        },
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable to send data to the APM service.",
+                            "default": true,
+                            "nullable": true
+                        }
+                    }
+                },
+                "ingress": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable or disable the ingress resource.",
+                            "default": true
+                        },
+                        "certificateIssuer": {
+                            "type": "string",
+                            "description": "Name of the certificates issuer.",
+                            "default": "letsencrypt-stage"
+                        },
+                        "host": {
+                            "type": "string",
+                            "description": "Hostname exposed by the ingress resource.",
+                            "default": "opbeans-frontend.127.0.0.1.ip.es.io"
+                        }
+                    }
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "memory": {
+                                    "type": "string",
+                                    "description": "The memory limit for the Opbean",
+                                    "default": "1Gi"
+                                }
+                            }
+                        },
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "memory": {
+                                    "type": "string",
+                                    "description": "The requested memory for the Opbean",
+                                    "default": "256Mi"
+                                },
+                                "cpu": {
+                                    "type": "number",
+                                    "description": "The requested cpu for the Opbean",
+                                    "default": 0.1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

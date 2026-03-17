@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: test-framework-1
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+configure_external_snapshots_repo_ro: true
+create_users: false
+grab_cluster_info: true
+golden_cluster: true
+stack:
+  version: 8.13.0
+  mode: ess
+  template: observability
+  target: production

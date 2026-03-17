@@ -1,0 +1,9 @@
+# Default values for otel_ci.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Opentelemetry Collector see https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
+opentelemetry-collector: {}
+
+# -- Jenkins settings see https://github.com/jenkinsci/helm-charts/tree/main/charts/jenkins
+jenkins: {}

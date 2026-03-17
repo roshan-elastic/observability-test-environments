@@ -1,0 +1,49 @@
+---
+- name: Check if default-tls secrets is created
+  k8s_info:
+    kind: Secret
+    name: default-tls
+    namespace: "{{ k8s_default_namespace }}"
+  register: k8s_default_tls
+  tags:
+    - check
+    - deploy
+
+- name: Check if the selfsigned certificate is created
+  shell: "[ -f '{{ ingress_dir }}/cert.crt' ]"
+  register: cert_exists
+  ignore_errors: true
+  no_log: true
+  changed_when: false
+  tags:
+    - check
+    - deploy
+
+- name: Generate a selfsigned certificate (4096 bits, RSA)
+  changed_when: false
+  command: |
+    openssl req -x509 -newkey rsa:4096 \
+      -keyout {{ ingress_dir }}/key.pem \
+      -out {{ ingress_dir }}/cert.crt \
+      -days 365 \
+      -subj '/CN=*' -nodes
+  when:
+    - cert_exists.failed is not defined or cert_exists.failed
+    - not k8s_default_tls.resources
+  tags:
+    - deploy
+    - k8s
+    - tls
+
+- name: Create default TLS Secret
+  changed_when: false
+  command: |
+    kubectl create secret generic default-tls \
+      --from-file=tls.crt={{ ingress_dir }}/cert.crt \
+      --from-file=tls.key={{ ingress_dir }}/key.pem
+  when:
+    - not k8s_default_tls.resources
+  tags:
+    - secrets
+    - docker
+    - deploy

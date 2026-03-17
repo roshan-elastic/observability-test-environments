@@ -1,0 +1,7 @@
+---
+- block:
+  - name: Deploy Cert Manager
+    import_tasks: deploy.yml
+  when:
+    - k8s_enabled|bool
+    - certmanager_enabled|bool

@@ -1,0 +1,36 @@
+---
+name: download-bucket
+description: Download files for a GCS bucket in a location.
+inputs:
+  workloadIdentityProvider:
+    description: 'Workload Identity Provider'
+    required: true
+  serviceAccount:
+    description: 'Service Account'
+    required: true
+  bucketUrl:
+    description: 'GCS Bucket URL'
+    required: true
+  destination:
+    description: 'Destination folder'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Authenticate to Google Cloud
+      uses: ./.github/actions/gcp-auth
+      with:
+        workloadIdentityProvider: ${{ inputs.workloadIdentityProvider }}
+        serviceAccount: ${{ inputs.serviceAccount }}
+        accessTokenLifetime: 3600s
+
+    - name: Download Bucket files
+      shell: bash
+      run: |
+        mkdir -p "${DST_FOLDER}"
+        gcloud storage cp -r "${BUCKET_URL}/*" "${DST_FOLDER}"
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+        BUCKET_URL: ${{ inputs.bucketUrl }}
+        DST_FOLDER: ${{ inputs.destination }}

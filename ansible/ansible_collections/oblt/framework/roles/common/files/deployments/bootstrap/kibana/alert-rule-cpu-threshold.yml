@@ -1,0 +1,39 @@
+---
+# Description of what the recipe do.
+description: Alert Rule - CPU threshold alert
+# Path to the REST API call.
+api: "/app/observability/alerts/rules?_a=(lastResponse:!())"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PUT
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+# The payload to send to the REST API.
+body: |
+  {
+    "throttle": null,
+    "name": "CPU threshold alert",
+    "tags": [],
+    "schedule": { "interval": "1m" },
+    "params": {
+      "criteria": [
+        {
+          "aggType": "avg",
+          "comparator": ">",
+          "threshold": [0.5],
+          "timeSize": 2,
+          "timeUnit": "s",
+          "metric": "system.cpu.idle.pct"
+        }
+      ],
+      "sourceId": "default",
+      "alertOnNoData": true,
+      "alertOnGroupDisappear": true
+    },
+    "notify_when": "onActionGroupChange",
+    "actions": []
+  }
+# The expected return code.
+return_code:
+  - 200

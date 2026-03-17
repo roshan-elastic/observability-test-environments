@@ -1,0 +1,66 @@
+---
+name: Send a Slack payload file as Slack message
+description: 'Send a Slack payload file as a Slack message.'
+inputs:
+  slack-channel:
+    description: 'The slack channel to post to.'
+    required: true
+  slack-bot-token:
+    description: 'The Slack bot token.'
+    required: true
+  message:
+    description: 'The text message to send. It can be multiline.'
+    required: true
+  thread-timestamp:
+    description: 'The thread timestamp to replay.'
+    required: false
+outputs:
+  thread-timestamp:
+    description: 'The thread timestamp.'
+    value: ${{ steps.slack-thread.outputs.ts }}
+
+runs:
+  using: "composite"
+  steps:
+      - name: Read payload file
+        uses: actions/github-script@v7
+        id: read-payload
+        env:
+          TS: ${{ inputs.thread-timestamp || '' }}
+          MSG: ${{ inputs.message }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const os = require('os');
+            const msg = JSON.stringify(process.env.MSG);
+            const content = `{
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ${msg}
+                  }
+                }
+              ]
+            }`;
+            const ts = process.env.TS || '';
+            jsonContent = JSON.parse(content.toString());
+            if (ts != ''){
+              core.debug('Updating thread_ts');
+              jsonContent.thread_ts = ts;
+            }
+            core.setOutput('payload', JSON.stringify(jsonContent));
+            core.setSecret(jsonContent);
+            core.setSecret(msg);
+            core.setSecret(process.env.MSG);
+      - name: Send slack message
+        uses: slackapi/slack-github-action@v1.26.0
+        id: slack-thread
+        env:
+          SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }}
+          SLACK_MESSAGE: ''
+        with:
+          channel-id: "${{ inputs.slack-channel }}"
+          payload: ${{ steps.read-payload.outputs.payload }}

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apache2-integration
+  namespace: "default"
+  labels:
+    app: apache2-integration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apache2-integration
+  template:
+    metadata:
+      labels:
+        app: apache2-integration
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: docker.elastic.co
+      volumes:
+        - name: shared-data
+          emptyDir: {}
+      containers:
+        - name: apache
+          image: docker.elastic.co/observability-ci/integrations/apache:2.4.46
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/local/apache2/logs
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+        - name: elastic-agent
+          image: "docker.elastic.co/observability-ci/elastic-agent:{{ stack_version }}"
+          env:
+            - name: FLEET_ENROLL
+              value: "1"
+            - name: FLEET_INSECURE
+              value: "true"
+            - name: FLEET_TOKEN_POLICY_NAME
+              value: "Apache2 integration"
+            - name: KIBANA_HOST
+              value: "{{ kibana_url }}"
+            - name: KIBANA_FLEET_USERNAME
+              value: "{{ kibana_username }}"
+            - name: KIBANA_FLEET_PASSWORD
+              value: "{{ kibana_password }}"
+            - name: FLEET_URL
+              value: "{{ fleet_url }}"
+          volumeMounts:
+            - name: shared-data
+              mountPath: /var/log/apache2
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi

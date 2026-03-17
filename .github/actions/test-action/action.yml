@@ -1,0 +1,12 @@
+---
+name: Test action
+description: 'Action to use for experimenting'
+
+runs:
+  using: "composite"
+  steps:
+    - if: ${{ failure() }}
+      name: Test failure
+      shell: bash
+      run: |
+        echo "Failure works" >> $GITHUB_STEP_SUMMARY

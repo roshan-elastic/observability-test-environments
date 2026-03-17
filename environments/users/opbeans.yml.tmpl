@@ -1,0 +1,61 @@
+---
+# last update {{ .Date }}
+template_name: opbeans
+template_description: |
+  Deploy The Elastic Stack on ESS and all Opbeans in a Kubernetes cluster.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#opbeans)
+
+cluster_name: "{{ .ClusterName }}"
+slack_channel: "{{ .SlackChannel }}"
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+oblt_username: "{{ $username }}"
+
+create_users: true
+configure_external_snapshots_repo_ro: true
+expire_date: '{{ now | mustDateModify "+720h" | date "2006-01-02" }}'
+
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ `{{ deployment_dir }}/bootstrap-fleet` }}"
+
+k8s:
+    provider: autopilot
+    region: us-central1
+    default_namespace: "{{ .ClusterName }}-default"
+    kube_system_namespace: "{{ .ClusterName }}-kube-system"
+    shared: "autopilot-oblt"
+
+stack:
+  version: "{{ .StackVersion }}"
+  mode: ess
+  template: observability
+  target: production
+  observability: true
+  ess:
+#{{- if .ElasticsearchDockerImage }}
+    elasticsearch:
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- if .KibanaDockerImage }}
+    kibana:
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .ElasticAgentDockerImage }}
+    integrations:
+      image: "{{ .ElasticAgentDockerImage }}"
+#{{- end }}
+
+apps:
+    helm:
+        - name: kubernetes-integration-{{ `{{ cluster_hash }}` }}
+          values_file: "{{ `{{ helm_deployment_dir }}/elastic_agent/kubernetes/helm-values.yml.j2` }}"
+          chart: "{{ `{{ helm_charts_dir }}/elastic_agent` }}"
+          version: 0.1.0
+opbeans:
+    enabled: true

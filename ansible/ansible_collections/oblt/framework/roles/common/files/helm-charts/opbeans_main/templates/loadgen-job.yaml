@@ -1,0 +1,89 @@
+{{- if .Values.enabled }}
+{{- if .Values.loadgen.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "opbeans.fullname" . }}-loadgen
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "{{ .Values.loadgen.schedule }}"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  concurrencyPolicy: {{ .Values.loadgen.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      parallelism: {{ .Values.loadgen.parallelism }}
+      completions: {{ .Values.loadgen.completions }}
+      template:
+        spec:
+          dnsPolicy: ClusterFirstWithHostNet
+          automountServiceAccountToken: false
+          serviceAccountName: {{ include "opbeans.serviceAccountName" . }}
+          containers:
+          {{- if .Values.loadgen.api.enabled }}
+          - name: opbeans-loadgen
+            image: "{{ .Values.loadgen.api.image.name }}:{{ .Values.loadgen.api.image.tag }}"
+            imagePullPolicy: "{{ .Values.loadgen.api.image.pullPolicy }}"
+            env:
+              - name: OPBEANS_URLS
+                value: "{{ .Values.loadgen.api.urls }}"
+              - name: OPBEANS_RLS
+                value: "{{ .Values.loadgen.api.runLength }}"
+              - name: OPBEANS_RPMS
+                value: "{{ .Values.loadgen.api.requestMinute }}"
+              - name: REAL_IP_HEADER
+                value: "X-Forwarded-For"
+            resources:
+              limits:
+                memory: 1Gi
+              requests:
+                cpu: 0.5
+                memory: 256Mi
+          {{- end }}
+          {{- if .Values.loadgen.frontend.enabled }}
+          - name: opbeans-frontend-test
+            image: "{{ .Values.loadgen.frontend.image.name }}:{{ .Values.loadgen.frontend.image.tag }}"
+            imagePullPolicy: "{{ .Values.loadgen.frontend.image.pullPolicy }}"
+            env:
+              - name: CYPRESS_opbeansURL
+                value: "{{ .Values.loadgen.frontend.url }}"
+            command: ["npm", "run", "test"]
+            resources:
+              limits:
+                memory: 1Gi
+              requests:
+                cpu: 0.5
+                memory: 256Mi
+          {{- end }}
+          {{- if .Values.loadgen.molotov.enabled }}
+          - name: opbeans-loadgen-molotov
+            image: "{{ .Values.loadgen.api.image.name }}:{{ .Values.loadgen.api.image.tag }}"
+            imagePullPolicy: "{{ .Values.loadgen.api.image.pullPolicy }}"
+            env:
+              - name: OPBEANS_BASE_URL
+                value: "{{ .Values.loadgen.molotov.url }}"
+            command:
+              - "molotov"
+              - "--duration"
+              - "{{ .Values.loadgen.molotov.duration }}"
+              - "--sizing"
+              - "--sizing-tolerance"
+              - "{{ .Values.loadgen.molotov.tolerance }}"
+              - "--force-shutdown"
+              - "--console"
+              - "/app/molotov_scenarios.py"
+            resources:
+              limits:
+                memory: 1Gi
+              requests:
+                cpu: 500m
+                memory: 256Mi
+          {{- end }}
+          imagePullSecrets:
+          {{- with .Values.imagePullSecrets }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          restartPolicy: OnFailure
+{{- end -}}
+{{- end -}}

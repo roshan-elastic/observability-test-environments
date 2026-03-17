@@ -1,0 +1,20 @@
+{
+  "mysql-logfile": {
+    "streams": {
+      "mysql.error": {
+        "vars": {
+          "paths": [
+            "/usr/shared/data/logs/mysql/error.log*"
+          ]
+        }
+      },
+      "mysql.slowlog": {
+        "vars": {
+          "paths": [
+            "/usr/shared/data/logs/mysql/*-slow.log*"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "applications": [
+    {
+      "application": "kibana-.kibana",
+      "privileges": [
+        "feature_apm.read",
+        "feature_logs.read",
+        "feature_infrastructure.read",
+        "feature_ml.read",
+        "feature_uptime.read"
+      ],
+      "resources": [
+        "*"
+      ]
+    }
+  ],
+  "transient_metadata": {
+    "enabled": true
+  },
+  "run_as": [],
+  "cluster": [],
+  "indices": [
+    {
+      "privileges": [
+        "read",
+        "view_index_metadata"
+      ],
+      "allow_restricted_indices": false,
+      "names": [
+        "apm-*",
+        "logs-apm*",
+        "metrics-apm*",
+        "traces-apm*",
+        "observability-annotations"
+      ]
+    },
+    {
+      "privileges": [
+        "read",
+        "view_index_metadata"
+      ],
+      "allow_restricted_indices": false,
+      "names": [
+        "logs-*",
+        "filebeat-*",
+        "kibana_sample_data_logs*"
+      ]
+    },
+    {
+      "privileges": [
+        "read",
+        "view_index_metadata"
+      ],
+      "allow_restricted_indices": false,
+      "names": [
+        "metrics-*",
+        "metricbeat-*"
+      ]
+    },
+    {
+      "privileges": [
+        "read",
+        "view_index_metadata"
+      ],
+      "allow_restricted_indices": false,
+      "names": [
+        "heartbeat-*",
+        "synthetics-*"
+      ]
+    }
+  ],
+  "metadata": {
+    "version": 1
+  }
+}

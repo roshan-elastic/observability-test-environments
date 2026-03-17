@@ -1,0 +1,161 @@
+---
+description: Create a Elasticsearch Stack monitoring Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "stack-monitoring-policy",
+    "package": {
+      "name": "elasticsearch",
+      "version": "{{ packages_result.json | json_query('[?name==`elasticsearch`].version') | first }}"
+    },
+    "name": "stack_monitoring_es_policy",
+    "id": "stack_monitoring_es_policy",
+    "description": "",
+    "namespace": "default",
+    "inputs": {
+      "elasticsearch-logfile": {
+        "enabled": false,
+        "vars": {},
+        "streams": {
+          "elasticsearch.audit": {
+            "enabled": false,
+            "vars": {
+              "paths": [
+                "/var/log/elasticsearch/*_audit.json"
+              ]
+            }
+          },
+          "elasticsearch.deprecation": {
+            "enabled": false,
+            "vars": {
+              "paths": [
+                "/var/log/elasticsearch/*_deprecation.json"
+              ]
+            }
+          },
+          "elasticsearch.gc": {
+            "enabled": false,
+            "vars": {
+              "paths": [
+                "/var/log/elasticsearch/gc.log.[0-9]*",
+                "/var/log/elasticsearch/gc.log"
+              ]
+            }
+          },
+          "elasticsearch.server": {
+            "enabled": false,
+            "vars": {
+              "paths": [
+                "/var/log/elasticsearch/*_server.json"
+              ]
+            }
+          },
+          "elasticsearch.slowlog": {
+            "enabled": false,
+            "vars": {
+              "paths": [
+                "/var/log/elasticsearch/*_index_search_slowlog.json",
+                "/var/log/elasticsearch/*_index_indexing_slowlog.json"
+              ]
+            }
+          }
+        }
+      },
+      "elasticsearch-elasticsearch/metrics": {
+        "enabled": true,
+        "vars": {
+          "hosts": [
+            "{{ elasticsearch_url }}"
+          ],
+          "username": "{{ elasticsearch_username }}",
+          "password": "{{ elasticsearch_password }}",
+          "scope": "node",
+          "ssl": "#certificate_authorities: [\"/etc/ca.crt\"]\n#certificate: \"/etc/client.crt\"\n#key: \"/etc/client.key\"\n",
+          "leaderelection": false
+        },
+        "streams": {
+          "elasticsearch.stack_monitoring.ccr": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "elasticsearch.stack_monitoring.cluster_stats": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "elasticsearch.stack_monitoring.enrich": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "elasticsearch.stack_monitoring.index": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "elasticsearch.stack_monitoring.index_recovery": {
+            "enabled": true,
+            "vars": {
+              "active.only": true,
+              "period": "10s"
+            }
+          },
+          "elasticsearch.stack_monitoring.index_summary": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "elasticsearch.ingest_pipeline": {
+            "enabled": true,
+            "vars": {
+              "ingest_pipeline_processor_sampling_rate": "0.25"
+            }
+          },
+          "elasticsearch.stack_monitoring.ml_job": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "elasticsearch.stack_monitoring.node": {
+            "enabled": true,
+            "vars": {
+              "period": "2s"
+            }
+          },
+          "elasticsearch.stack_monitoring.node_stats": {
+            "enabled": true,
+            "vars": {
+              "period": "2s"
+            }
+          },
+          "elasticsearch.stack_monitoring.pending_tasks": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          },
+          "elasticsearch.stack_monitoring.shard": {
+            "enabled": true,
+            "vars": {
+              "period": "10s"
+            }
+          }
+        }
+      }
+    }
+  }

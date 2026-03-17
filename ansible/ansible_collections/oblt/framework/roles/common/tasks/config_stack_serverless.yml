@@ -1,0 +1,80 @@
+---
+- name: Load config - template Serverless Elasticsearch
+  set_fact:
+    elasticsearch_enabled: true
+    elasticsearch_type: "{{ stack_mode }}"
+    kibana_enabled: true
+    kibana_type: "{{ stack_mode }}"
+    serverless_enabled: true
+    elasticsearch_image: "{{ stack.serverless.elasticsearch.image | default(None) }}"
+    kibana_image: "{{ stack.serverless.kibana.image | default(None) }}"
+    serverless_cluster: "{{ stack.serverless.cluster | default(None) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'serverless'
+    - stack_template == 'elasticsearch'
+
+- name: Load config - template Serverless Observability
+  set_fact:
+    apm_enabled: true
+    apm_type: "{{ stack_mode }}"
+    elasticsearch_enabled: true
+    elasticsearch_type: "{{ stack_mode }}"
+    fleet_enabled: true
+    fleet_type: "{{ stack_mode }}"
+    kibana_enabled: true
+    kibana_type: "{{ stack_mode }}"
+    serverless_enabled: true
+    elasticsearch_image: "{{ stack.serverless.elasticsearch.image | default(None) }}"
+    kibana_image: "{{ stack.serverless.kibana.image | default(None) }}"
+    fleet_image: "{{ stack.serverless.fleet.image | default(None) }}"
+    serverless_cluster: "{{ stack.serverless.cluster | default(None) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'serverless'
+    - stack_template == 'observability'
+
+- name: Load config - template Serverless Security
+  set_fact:
+    elasticsearch_enabled: true
+    elasticsearch_type: "{{ stack_mode }}"
+    fleet_enabled: true
+    fleet_type: "{{ stack_mode }}"
+    kibana_enabled: true
+    kibana_type: "{{ stack_mode }}"
+    serverless_enabled: true
+    elasticsearch_image: "{{ stack.serverless.elasticsearch.image | default(None) }}"
+    kibana_image: "{{ stack.serverless.kibana.image | default(None) }}"
+    fleet_image: "{{ stack.serverless.fleet.image | default(None) }}"
+    serverless_cluster: "{{ stack.serverless.cluster | default(None) }}"
+  when:
+    - stack is defined
+    - stack_mode == 'serverless'
+    - stack_template == 'security'
+
+- name: Load config - Serverless Production
+  set_fact:
+    secret_serverless_account: "elastic-cloud-observability-team-pro"
+    serverless_region: "{{ stack.serverless.region | default('aws-us-east-1') }}"
+  when:
+    - stack is defined
+    - stack_mode == 'serverless'
+    - stack_target == 'production'
+
+- name: Load config - Serverless Staging
+  set_fact:
+    secret_serverless_account: "elastic-cloud-observability-team-staging"
+    serverless_region: "{{ stack.serverless.region | default('aws-us-east-1') }}"
+  when:
+    - stack is defined
+    - stack_mode == 'serverless'
+    - stack_target == 'staging'
+
+- name: Load config - Serverless QA
+  set_fact:
+    secret_serverless_account: "elastic-cloud-observability-team-qa"
+    serverless_region: "{{ stack.serverless.region | default('aws-eu-west-1') }}"
+  when:
+    - stack is defined
+    - stack_mode == 'serverless'
+    - stack_target == 'qa'

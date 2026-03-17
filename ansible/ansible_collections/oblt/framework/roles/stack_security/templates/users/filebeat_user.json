@@ -1,0 +1,9 @@
+{
+  "username" : "filebeat_user",
+  "password" : "{{ elasticsearch_password }}",
+  "roles" : [
+    "beats_system",
+    "filebeat",
+    "kibana_write_role"
+  ]
+}

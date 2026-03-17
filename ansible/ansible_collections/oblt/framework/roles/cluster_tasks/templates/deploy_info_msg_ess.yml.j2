@@ -1,0 +1,16 @@
+{% import 'macros.j2' as fn %}
+# Throbleshooting
+
+{{ fn.showlink("https://github.com/elastic/observability-dev/blob/main/docs/how-we-work/collect-kibana-logs-and-diagnostics.md", "Collect Kibana logs and diagnostics", slack) }}
+{{ fn.showlink("https://elastic.github.io/observability-test-environments/user-guide/use-case-check-logs/", "How to check logs", slack) }}
+{{ fn.showlink("https://monitoring-oblt.kb.us-west2.gcp.elastic-cloud.com/app/apm/services?kuery=labels.deploymentName:%20%22{}%22".format(cluster_name), "APM data", slack) }}
+{{ fn.showlink("https://monitoring-oblt.kb.us-west2.gcp.elastic-cloud.com/app/monitoring", "Stack Monitoring", slack) }}
+{% if stack_target == 'production' %}
+{{ fn.showlink("https://admin.found.no/deployments/{}".format(ess_deployment_id), "Cluster console", slack) }}
+{% endif %}
+{% if stack_target == 'qa' %}
+{{ fn.showlink("https://admin.qa.cld.elstc.co/deployments/{}".format(ess_deployment_id), "Cluster console", slack) }}
+{% endif %}
+{% if stack_target == 'staging' %}
+{{ fn.showlink("https://admin.staging.foundit.no/deployments/{}".format(ess_deployment_id), "Cluster console", slack) }}
+{% endif %}

@@ -1,0 +1,110 @@
+---
+## Workflow notify owners their clusters will be destroy in a few days destroys expired clusters
+name: Oblt Cluster destroy expired notify
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  clusters-closed-to-expire:
+    runs-on: ubuntu-latest
+    outputs:
+      clusters: ${{ steps.process-file.outputs.clusters }}
+      isEmpty: ${{ steps.process-file.outputs.isEmpty }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+      - name: Generate dates
+        uses: actions/github-script@v7
+        id: gen-dates
+        with:
+          script: |
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+              const date = new Date();
+              date.setDate(date.getDate() + i);
+              dates.push(date.toISOString().split('T')[0]);
+            }
+            core.setOutput('dates', JSON.stringify(dates));
+            core.info(`Generated dates: ${dates}`);
+      - name: Setup oblt-cli
+        uses: elastic/oblt-actions/oblt-cli/setup@v1
+        with:
+          slack-channel: '#observablt-bots'
+          username: 'robots'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Search for close to expired clusters"
+        env:
+          DATES: ${{ steps.gen-dates.outputs.dates }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PLAIN_DATES=$(echo "${DATES}" | jq -r '.[]')
+          for d in ${PLAIN_DATES}; do
+              oblt-cli cluster list --all --filter "expire_date=${d}" --output-file "${GITHUB_WORKSPACE}/close-to-expire-tmp-${d}.json" || true
+          done
+          cat "${GITHUB_WORKSPACE}/close-to-expire-tmp"*|jq -s '{"items": [.[].items[]]}' >"${GITHUB_WORKSPACE}/close-to-expire.json"
+      - name: Set outputs
+        uses: actions/github-script@v7
+        id: process-file
+        with:
+          script: |
+            const path = require('path');
+            const fs = require('fs');
+            const closeToExpireFile = path.join(process.env.GITHUB_WORKSPACE, 'close-to-expire.json');
+            closeToExpire = {items:[]};
+            isEmpty = true;
+            if (fs.existsSync(closeToExpireFile)) {
+              closeToExpire = JSON.parse(fs.readFileSync(closeToExpireFile, 'utf8'));
+              closeToExpire.items.forEach((item) => {
+                if (item.obltUsername != 'deploykibana' && item.obltUsername != 'apmmachine' && item.obltUsername != 'obltmachine') {
+                  closeToExpire.items.push(item);
+                }
+              });
+            }
+            if (closeToExpire.items.length > 0) {
+              isEmpty = false;
+            }
+            core.setOutput('clusters', JSON.stringify(closeToExpire));
+            core.setOutput('isEmpty', isEmpty);
+            core.info(`Clusters to expire: ${JSON.stringify(closeToExpire)}`);
+  notify-owners:
+    if: ${{ needs.clusters-closed-to-expire.outputs.isEmpty == 'false' }}
+    needs:
+      - clusters-closed-to-expire
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        clusters: ${{ fromJson(needs.clusters-closed-to-expire.outputs.clusters).items }}
+    steps:
+      - name: Slack notification
+        uses: elastic/oblt-actions/slack/send@v1
+        with:
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: ${{ matrix.clusters.slackChannel }}
+          message: |
+            :warning: *Cluster ${{ matrix.clusters.clusterName }} will be destroyed in a few days*
+            Please destroy and create a new cluster if it is needed
+
+            To destroy the cluster:
+
+            ```
+            oblt-cli cluster destroy --cluster-name ${{ matrix.clusters.clusterName }}
+            ```
+
+            To create a new cluster check <https://ela.st/oblt-clusters|the docs> or check the create command help `oblt-cli cluster create --help`
+
+            You also can extend the live of the cluster by running the following command:
+
+            ```
+            oblt-cli cluster update --cluster-name ${{ matrix.clusters.clusterName }} --parameters '{"expire_date":"2024-12-31"}'
+            ```

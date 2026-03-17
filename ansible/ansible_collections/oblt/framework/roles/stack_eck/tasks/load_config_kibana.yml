@@ -1,0 +1,9 @@
+---
+- name: Configure host variables
+  set_fact:
+    kibana_url: "https://{{ kibana_host }}:443"
+    kibana_username: "{{ elasticsearch_username }}"
+    kibana_password: "{{ elasticsearch_password }}"
+  tags:
+    - kibana
+    - load_config

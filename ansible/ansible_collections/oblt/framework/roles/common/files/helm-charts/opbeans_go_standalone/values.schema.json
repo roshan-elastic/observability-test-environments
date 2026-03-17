@@ -1,0 +1,477 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "opbeans": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.",
+                    "default": true
+                },
+                "nameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.",
+                    "default": ""
+                },
+                "fullnameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.",
+                    "default": "opbeans-go-standalone"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).",
+                            "default": "docker.elastic.co/observability-ci/opbeans-go"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "description": "Tag of the Docker image (latest).",
+                            "default": "daily"
+                        },
+                        "pullPolicy": {
+                            "type": "string",
+                            "description": "Docker image pull policy (IfNotPresent|Always|Never)",
+                            "default": "IfNotPresent"
+                        }
+                    }
+                },
+                "command": {
+                    "type": "array",
+                    "description": "Override default container command (useful when using custom images)",
+                    "default": [
+                        "/opbeans-go"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "args": {
+                    "type": "array",
+                    "description": "Override default container args (useful when using custom images)",
+                    "default": [
+                        "-log-level",
+                        "debug",
+                        "-log-json",
+                        "-listen=:$(OPBEANS_SERVER_PORT)",
+                        "-frontend=/opbeans-frontend",
+                        "-db=postgres:",
+                        "-cache=$(REDIS_URL)"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "apm": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Type of reporting API [apm|otel|annotations]",
+                            "default": "apm"
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "URL to the APM service.",
+                            "default": "http://opbeans-go-standalone-apm:8200"
+                        },
+                        "token": {
+                            "type": "string",
+                            "description": "Token to authenticate against the APM service.",
+                            "default": "SuP3RSeCr3T"
+                        },
+                        "verifyServerCert": {
+                            "type": "string",
+                            "description": "Enable Certificates verification on TLS connections.",
+                            "default": "true"
+                        },
+                        "serviceName": {
+                            "type": "string",
+                            "description": "Name of the service deploy for the Helm chart (APM spans).",
+                            "default": "opbeans-go-standalone"
+                        },
+                        "serviceVersion": {
+                            "type": "string",
+                            "description": "Version of the service deploy for the Helm chart (APM spans).",
+                            "default": "1.0"
+                        },
+                        "logLevel": {
+                            "type": "string",
+                            "description": "Level of debug.",
+                            "default": "debug"
+                        },
+                        "logFile": {
+                            "type": "string",
+                            "description": "File to debug to.",
+                            "default": "stderr"
+                        },
+                        "inferredSpans": {
+                            "type": "string",
+                            "description": "Enable inferred spans.",
+                            "default": "true"
+                        },
+                        "logCorrelation": {
+                            "type": "string",
+                            "description": "Enable log correlation.",
+                            "default": "true"
+                        },
+                        "transactionRate": {
+                            "type": "string",
+                            "description": "Configure the APM transaction rate (0.9).",
+                            "default": "0.9"
+                        },
+                        "environment": {
+                            "type": "string",
+                            "description": "Environment where the service is deployed.",
+                            "default": "production"
+                        }
+                    }
+                },
+                "db": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable the database service deploy.",
+                            "default": true
+                        },
+                        "host": {
+                            "type": "string",
+                            "description": "Database host.",
+                            "default": "opbeans-go-standalone-db"
+                        },
+                        "name": {
+                            "type": "string",
+                            "description": "Database name.",
+                            "default": "opbeans-go-standalone"
+                        },
+                        "port": {
+                            "type": "number",
+                            "description": "Database port.",
+                            "default": 5432
+                        },
+                        "type": {
+                            "type": "string",
+                            "description": "Database type [mysql|postgresql]",
+                            "default": "postgresql"
+                        },
+                        "username": {
+                            "type": "string",
+                            "description": "Database Username.",
+                            "default": "elastic"
+                        },
+                        "password": {
+                            "type": "string",
+                            "description": "Database Password.",
+                            "default": "none"
+                        }
+                    }
+                },
+                "redis": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "Redis URL.",
+                            "default": "redis://opbeans-go-standalone-redis-master:6379"
+                        }
+                    }
+                }
+            }
+        },
+        "postgresql": {
+            "type": "object",
+            "properties": {
+                "fullnameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.",
+                    "default": "opbeans-go-standalone-db"
+                },
+                "auth": {
+                    "type": "object",
+                    "properties": {
+                        "username": {
+                            "type": "string",
+                            "description": "Name for a custom user to create",
+                            "default": "elastic"
+                        },
+                        "existingSecret": {
+                            "type": "string",
+                            "description": "Name of existing secret to use for PostgreSQL credentials. `auth.postgresPassword`, `auth.password`, and `auth.replicationPassword` will be ignored and picked up from this secret. The secret might also contains the key `ldap-password` if LDAP is enabled. `ldap.bind_password` will be ignored and picked from this secret in this case.",
+                            "default": "opbeans-go-standalone-db-creds"
+                        }
+                    }
+                },
+                "primary": {
+                    "type": "object",
+                    "properties": {
+                        "persistence": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "Enable persistence using PVC",
+                                    "default": false
+                                }
+                            }
+                        },
+                        "initdb": {
+                            "type": "object",
+                            "properties": {
+                                "scriptsConfigMap": {
+                                    "type": "string",
+                                    "description": "Name of existing ConfigMap containing the initdb scripts.",
+                                    "default": "opbeans-go-standalone-initdb"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "redis": {
+            "type": "object",
+            "properties": {
+                "fullnameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.",
+                    "default": "opbeans-go-standalone-redis"
+                },
+                "auth": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable password authentication",
+                            "default": false
+                        }
+                    }
+                },
+                "master": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The memory limit for the Opbean",
+                                            "default": "512Mi"
+                                        }
+                                    }
+                                },
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The requested memory for the Opbean",
+                                            "default": "256Mi"
+                                        },
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "The requested cpu for the Opbean",
+                                            "default": 0.1
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "persistence": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "Enable persistence using PVC",
+                                    "default": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "replica": {
+                    "type": "object",
+                    "properties": {
+                        "replicaCount": {
+                            "type": "number",
+                            "description": "Number of replicas to deploy",
+                            "default": 1
+                        },
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The memory limit for the Opbean",
+                                            "default": "512Mi"
+                                        }
+                                    }
+                                },
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The requested memory for the Opbean",
+                                            "default": "256Mi"
+                                        },
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "The requested cpu for the Opbean",
+                                            "default": 0.1
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "persistence": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "Enable persistence using PVC",
+                                    "default": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a ServiceAccount should be created",
+                    "default": true
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the ServiceAccount to use.",
+                    "default": "opbeans-go-standalone"
+                }
+            }
+        },
+        "apm": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable the APM Server deploy.",
+                    "default": true
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Docker image name.",
+                            "default": "docker.elastic.co/apm/apm-server"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "description": "Docker image tag.",
+                            "default": "8.8.1"
+                        },
+                        "pullPolicy": {
+                            "type": "string",
+                            "description": "Docker image pull policy.",
+                            "default": "IfNotPresent"
+                        }
+                    }
+                },
+                "args": {
+                    "type": "array",
+                    "description": "Arguments to run.",
+                    "default": [
+                        "--strict.perms=false",
+                        "-e"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "elasticsearch": {
+                    "type": "object",
+                    "properties": {
+                        "host": {
+                            "type": "string",
+                            "description": "Elasticsearch hosts.",
+                            "default": "https://elasticsearch.example.com"
+                        },
+                        "username": {
+                            "type": "string",
+                            "description": "Elasticsearch username.",
+                            "default": "elastic"
+                        },
+                        "password": {
+                            "type": "string",
+                            "description": "Elasticsearch password.",
+                            "default": "changeme"
+                        }
+                    }
+                },
+                "secretToken": {
+                    "type": "string",
+                    "description": "APM Server secret token.",
+                    "default": "SuP3RSeCr3T"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Kubernetes service type.",
+                            "default": "ClusterIP"
+                        },
+                        "port": {
+                            "type": "number",
+                            "description": "Kubernetes service port.",
+                            "default": 8200
+                        }
+                    }
+                },
+                "podSecurityContext": {
+                    "type": "object",
+                    "description": "Security context policies to add to the APM Server pods.",
+                    "default": {}
+                },
+                "containerSecurityContext": {
+                    "type": "object",
+                    "description": "Security context policies to add to the APM Server containers.",
+                    "default": {}
+                },
+                "extraEnvVars": {
+                    "type": "array",
+                    "description": "Extra environment variables to add to the APM Server pods.",
+                    "default": [],
+                    "items": {}
+                },
+                "imagePullSecrets": {
+                    "type": "array",
+                    "description": "Name of the Docker secret.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name of the Docker secret."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,120 @@
+---
+- block:
+    - name: Get Elasticsearch info
+      uri:
+        url: "{{ elasticsearch_url }}/?pretty"
+        method: GET
+        validate_certs: false
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        force_basic_auth: true
+        headers:
+          Content-Type: application/json; charset=utf-8
+          Accept: application/json
+      register: _result_es
+      until: _result_es.status == 200  and _result_es.json is defined
+      retries: 20
+      delay: 20
+      when:
+        - elasticsearch_url is defined
+        - elasticsearch_enabled | bool
+      tags:
+        - elasticsearch
+        - info
+
+    - name: Set fact Elasticsearch
+      vars:
+        es_sha: "{{ _result_es.json.version.build_hash | default(None, true) }}"
+        es_version_split: "{{ _result_es.json.version.number.split('.') | default(None, true)}}"
+      set_fact:
+        es_url: "{{ elasticsearch_url | default(None, true) }}"
+        es_type: "{{ elasticsearch_type | default(None, true) }}"
+        es_sha: "{{ es_sha }}"
+        es_version: "{{ 'master' if cluster_name == 'edge-oblt' else (es_version_split[0] + '.' + es_version_split[1]) | default('main', true) }}"
+      when:
+        - _result_es.status is defined
+        - _result_es.status == 200
+
+    - name: Get Kibana info
+      uri:
+        url: "{{ kibana_url }}/api/status"
+        method: GET
+        validate_certs: false
+        user: "{{ kibana_username }}"
+        password: "{{ kibana_password }}"
+        force_basic_auth: true
+        headers:
+          Content-Type: application/json; charset=utf-8
+          Accept: application/json
+      register: _result_kb
+      until: _result_kb.status == 200  and _result_kb.json is defined
+      retries: 20
+      delay: 20
+      when:
+        - kibana_url is defined
+        - kibana_enabled | bool
+      tags:
+        - kibana
+        - info
+
+    - name: Set fact Kibana
+      vars:
+        kb_sha: "{{ _result_kb.json.version.build_hash | default(None, true) }}"
+        kb_version_split: "{{ _result_kb.json.version.number.split('.') | default(default_stack_version.split('.'), true)}}"
+      set_fact:
+        kb_url: "{{ kibana_url | default(None, true) }}"
+        kb_type: "{{ kibana_type | default(None, true) }}"
+        kb_sha: "{{ kb_sha }}"
+        kb_version: "{{ 'main' if cluster_name == 'edge-oblt' else (kb_version_split[0] + '.' + kb_version_split[1]) | default('main', true) }}"
+      when:
+        - _result_kb.status is defined
+        - _result_kb.status == 200
+
+    - name: Get APM info
+      uri:
+        url: "{{ apm_url }}"
+        method: GET
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ apm_token }}"
+          Content-Type: application/json; charset=utf-8
+          Accept: application/json
+      register: _result_apm
+      until: _result_apm.status == 200 and _result_apm.json is defined
+      retries: 20
+      delay: 20
+      when:
+        - apm_url is defined
+        - apm_enabled | bool
+        # FIXME remove it when the APM is available on serverless
+        - elasticsearch_type != 'serverless'
+
+      tags:
+        - apm
+        - info
+
+    - name: Set fact APM
+      vars:
+        apm_sha: "{{ _result_apm.json.build_sha | default(None, true) }}"
+        apm_version_split: "{{ _result_apm.json.version.split('.') | default(None, true)}}"
+      set_fact:
+        apm_url: "{{ apm_url | default(None, true) }}"
+        apm_type: "{{ apm_type | default(None, true) }}"
+        apm_sha: "{{ apm_sha }}"
+        apm_version: "{{ 'main' if cluster_name == 'edge-oblt' else (apm_version_split[0] + '.' + apm_version_split[1]) | default('main', true) }}"
+      when:
+        - _result_apm.status is defined
+        - _result_apm.status == 200
+        - _result_apm.json is defined
+
+    - name: "Create {{ build_dir }}/cluster-info.json file"
+      copy:
+        content: "{{ lookup('ansible.builtin.template', '{{ templates_dir }}/cluster-info.json.j2') }}"
+        dest: "{{ build_dir }}/cluster-info.json"
+
+    - name: "Create {{ build_dir }}/cluster-info.md file"
+      copy:
+        content: "{{ lookup('ansible.builtin.template', '{{ templates_dir }}/cluster-info.md.j2') }}"
+        dest: "{{ build_dir }}/cluster-info.md"
+  when:
+    - grab_cluster_info | bool

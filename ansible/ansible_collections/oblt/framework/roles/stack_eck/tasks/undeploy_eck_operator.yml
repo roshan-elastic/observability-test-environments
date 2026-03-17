@@ -1,0 +1,9 @@
+---
+- name: Uninstall ECK Operator
+  changed_when: false
+  kubernetes.core.kubernetes.core.k8s:
+    state: absent
+    src: "{{ k8s_dir }}/eck-operator.yaml"
+  tags:
+    - eck
+    - undeploy

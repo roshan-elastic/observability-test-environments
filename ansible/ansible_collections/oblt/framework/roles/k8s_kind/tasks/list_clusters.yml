@@ -1,0 +1,8 @@
+---
+- name: List clusters
+  changed_when: false
+  command: kind get clusters
+  tags:
+    - deploy
+    - kind
+    - k8s

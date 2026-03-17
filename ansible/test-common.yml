@@ -1,0 +1,12 @@
+---
+- name: Generate configuration files for a k8s cluster
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars_files:
+    - "{{ lookup('env','CLUSTER_CONFIG_FILE') | mandatory }}"
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ playbook_dir }}/build/bin:{{ playbook_dir }}/build/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.common

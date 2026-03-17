@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.common
+  tasks:
+    - name: "Check observability loaded"
+      fail:
+        msg: |
+          Observability is enabled
+      when: >
+        observability_enabled

@@ -1,0 +1,7 @@
+{
+  "username" : "superuser_restricted_indices",
+  "password" : "{{ elasticsearch_password }}",
+  "roles" : [ "superuser", "superuser_restricted_indices"],
+  "full_name" : "superuser_restricted_indices",
+  "email" : "observability-robots@elastic.co"
+}

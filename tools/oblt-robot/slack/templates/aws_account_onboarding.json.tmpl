@@ -1,0 +1,38 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Hey there 👋 I'm oblt-robot. I'm here to help you with Oblt Clusters, CI and some automation!\n"
+			}
+		},
+		{{ if .Elastic }}
+		{{ if .Success }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "<@{{ .User }}>, your AWS account is going to be created! Automation will send you an email, to `{{ .Email }}`, with the configuration details"
+			}
+		}
+		{{ else }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Something went wrong when running the automation, please contact your Observability Productivity team"
+			}
+		}
+		{{ end }}
+		{{ else }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "I'm sorry <@{{ .User }}>, please use your `@elastic.co` email account, rather than {{ .Email }}"
+			}
+		}
+		{{ end }}
+	]
+}

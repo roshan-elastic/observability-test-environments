@@ -1,0 +1,24 @@
+---
+- name: Custom Destroy
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars:
+    cluster_name: "oblt-test-{{ cluster_seed }}"
+    k8s:
+      enabled: true
+      provider: kind
+      region: "none"
+      domain: "ip.es.io"
+      default_namespace: "default"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+  tasks:
+    - name: Import role
+      include_role:
+        name: oblt.framework.k8s_kind
+        tasks_from: destroy_cluster_all.yml

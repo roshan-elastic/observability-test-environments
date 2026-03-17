@@ -1,0 +1,29 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+    bin_dir: "{{ build_dir }}/bin"
+    vm_gcp_ip: "{{ lookup('file', build_dir + '/vm_gcp_ip') }}"
+    vm_gcp_user: "admin"
+    vm_gcp_os: "windows"
+    vm_gcp_name: "test-instance-{{ cluster_seed }}"
+    vm_gcp_ssh_private_key: "{{ build_dir }}/id_rsa"
+  tasks:
+    - name: Add a host
+      ansible.builtin.add_host:
+        hostname: "{{ vm_gcp_ip }}"
+        ansible_host: "vm-test"
+        ansible_port: "22"
+        ansible_ssh_private_key_file: "{{ vm_gcp_ssh_private_key }}"
+    - name: Wait for SSH to come up
+      ansible.builtin.wait_for:
+        host: "{{ vm_gcp_ip }}"
+        port: 22
+        delay: 10
+        timeout: 60
+      register: result
+      until: result is succeeded
+      retries: 6

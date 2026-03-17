@@ -1,0 +1,23 @@
+---
+description: Create a Microsoft SQL Server package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "microsoft-sqlserver-integration",
+    "package": {
+      "name": "microsoft_sqlserver",
+      "version": "1.19.0"
+    },
+    "name": "microsoft-sqlserver",
+    "id": "microsoft-sqlserver",
+    "description": "Microsoft SQL Server integration",
+    "namespace": "default"
+  }

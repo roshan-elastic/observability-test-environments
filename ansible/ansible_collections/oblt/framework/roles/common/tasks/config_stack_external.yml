@@ -1,0 +1,24 @@
+---
+- name: Load config - template External Stack
+  vars:
+    stack_config: "{{ lookup('oblt.framework.gcp_secret_manager', key=stack.external.secret)|safe()|from_yaml }}"
+  set_fact:
+    apm_enabled: "{{ (stack_config.apm_url | default(''))|length > 0|bool }}"
+    apm_apikey: "{{ stack_config.apm_apikey | default('') }}"
+    apm_token: "{{ stack_config.apm_token | default('') }}"
+    apm_url: "{{ stack_config.apm_url | default('') }}"
+    apm_type: "{{ stack_mode }}"
+    elasticsearch_enabled: "{{ (stack_config.elasticsearch_url | default(''))|length > 0|bool }}"
+    elasticsearch_apikey: "{{ stack_config.elasticsearch_apikey | default('') }}"
+    elasticsearch_password: "{{ stack_config.elasticsearch_password }}"
+    elasticsearch_url: "{{ stack_config.elasticsearch_url }}"
+    elasticsearch_username: "{{ stack_config.elasticsearch_username }}"
+    kibana_enabled: "{{ (stack_config.kibana_url | default(''))|length > 0|bool }}"
+    kibana_password: "{{ stack_config.kibana_password }}"
+    kibana_url: "{{ stack_config.kibana_url }}"
+    kibana_username: "{{ stack_config.kibana_username }}"
+    fleet_enabled: "{{ (stack_config.fleet_url | default(''))|length > 0|bool }}"
+    fleet_url: "{{ stack_config.fleet_url }}"
+  when:
+    - stack is defined
+    - stack_mode == 'external'

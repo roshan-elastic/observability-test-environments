@@ -1,0 +1,9 @@
+{
+  "username" : "beats_user",
+  "password" : "{{ elasticsearch_password }}",
+  "roles" : [
+    "beats_system",
+    "beats",
+    "kibana_write_role"
+  ]
+}

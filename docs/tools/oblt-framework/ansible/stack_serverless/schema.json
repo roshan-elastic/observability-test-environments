@@ -1,0 +1,21 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "serverless_credentials": {
+            "type": "string",
+            "description": "The credentials for the serverless account from GCSM",
+            "default": "\"\""
+        },
+        "serverless_endpoint": {
+            "type": "string",
+            "description": "The endpoint for the serverless API",
+            "default": "\"\""
+        },
+        "serverless_apikey": {
+            "type": "string",
+            "description": "The API key for the serverless API",
+            "default": "\"\""
+        }
+    }
+}

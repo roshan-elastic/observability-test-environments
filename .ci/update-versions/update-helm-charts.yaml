@@ -1,0 +1,43 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update Helm Charts
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  chart:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      labels:
+        - "dependencies"
+        - "automerge"
+
+sources:
+# {{- range $i, $v := .HelmCharts }}
+  lastRelease-{{ $v.Name }}-{{ $v.File }}:
+    name: "Checking {{ $v.Name }} Helm Chart"
+    kind: helmchart
+    spec:
+      url: "{{ $v.Url }}"
+      name: "{{ $v.Name }}"
+# {{- end }}
+targets:
+# {{- range $i, $v := .HelmCharts }}
+  updateChart-{{ $v.Name }}-{{ $v.File }}:
+    name: "Updating {{ $v.Name }} version"
+    sourceid: lastRelease-{{ $v.Name }}-{{ $v.File }}
+    scmid: githubConfig
+    kind: yaml
+    spec:
+      file: "{{ $v.File }}"
+      key: "{{ $v.Key }}"
+# {{- end }}

@@ -1,0 +1,6 @@
+{% macro showlink (link, text, slack) %}
+{% if slack == true %}
+<{{link}}|{{text}}>
+{% else %}
+[{{text}}]({{link}})
+{%- endif -%}{% endmacro -%}

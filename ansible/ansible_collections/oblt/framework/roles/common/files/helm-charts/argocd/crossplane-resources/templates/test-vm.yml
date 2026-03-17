@@ -1,0 +1,34 @@
+---
+# https://marketplace.upbound.io/providers/upbound/provider-gcp-compute
+apiVersion: compute.gcp.upbound.io/v1beta1
+kind: Instance
+metadata:
+  annotations:
+    meta.upbound.io/example-id: compute/v1beta1/targetinstance
+  labels:
+    name: {{ .Values.gcp.clusterName }}
+    owner: oblt-robots
+    division: engineering
+    org: obs
+    team: observability
+    project: oblt-clusters
+  name: crossplane-created-instance
+  namespace: {{ .Values.namespace }}
+spec:
+  forProvider:
+    bootDisk:
+      - initializeParams:
+          - image: debian-cloud/debian-11
+    machineType: e2-medium
+    networkInterface:
+      - network: default
+    zone: us-central1-a
+    labels:
+      name: {{ .Values.gcp.clusterName }}
+      owner: oblt-robots
+      division: engineering
+      org: obs
+      team: observability
+      project: oblt-clusters
+  providerConfigRef:
+    name: workload-id-providerconfig

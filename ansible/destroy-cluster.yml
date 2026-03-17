@@ -1,0 +1,18 @@
+---
+- name: Destroy a cluster
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars_files:
+    - "{{ lookup('env','CLUSTER_CONFIG_FILE') | mandatory }}"
+  environment:
+    HOME: "{{ playbook_dir }}/build"
+    PATH: "{{ playbook_dir }}/build/bin:{{ playbook_dir }}/build/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+  tasks:
+    - name: Destroy Cluster
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: cluster-destroy.yml

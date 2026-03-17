@@ -1,0 +1,3 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: mp-ensemble-test
+oblt_managed: false

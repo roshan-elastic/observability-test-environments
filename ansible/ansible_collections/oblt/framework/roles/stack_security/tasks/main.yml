@@ -1,0 +1,98 @@
+---
+- block:
+    - name: Copy Security files to the build dir
+      synchronize:
+        src: "{{ role_path }}/files/"
+        dest: "{{ build_dir }}"
+      tags:
+        - generate_config
+        - molecule-idempotence-notest
+
+    - name: Generate User files
+      template:
+        src: "{{ file_item }}"
+        dest: "{{ build_dir }}/stack-security/users/{{ file_item | basename | splitext | first }}.json"
+        mode: 0600
+      with_fileglob: "{{ role_path }}/templates/users/*.json"
+      loop_control:
+        loop_var: file_item
+      tags:
+        - apm
+        - generate-config
+
+    - name: wait for Elasticsearch ready
+      uri:
+        url: "{{ elasticsearch_url }}/_cluster/health"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        method: GET
+        force_basic_auth: true
+        validate_certs: false
+        status_code: 200
+        headers:
+          Content-Type: application/json
+          Accept: application/json
+      register: wait_for_resource
+      until: (wait_for_resource.json.status|default('')) in ['green', 'yellow']
+      retries: 60
+      delay: 20
+
+    - name: Create Roles
+      vars:
+        role_name: "{{ file_item | basename | splitext | first }}"
+      uri:
+        url: "{{ elasticsearch_url }}/_security/role/{{ role_name }}"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        method: POST
+        body: "{{ lookup('file', '{{ file_item }}') }}"
+        force_basic_auth: yes
+        validate_certs: false
+        status_code: 200
+        body_format: json
+      retries: 3
+      delay: 10
+      with_fileglob: "{{ build_dir }}/stack-security/roles/*.json"
+      loop_control:
+        loop_var: file_item
+
+    - name: Create Users
+      vars:
+        user_def: "{{ lookup('file', '{{ file_item }}') | from_json }}"
+      uri:
+        url: "{{ elasticsearch_url }}/_security/user/{{ user_def.username }}"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        method: POST
+        body: "{{ lookup('file', '{{ file_item }}') }}"
+        force_basic_auth: yes
+        validate_certs: false
+        status_code: 200
+        body_format: json
+      retries: 3
+      delay: 10
+      with_fileglob: "{{ build_dir }}/stack-security/users/*.json"
+      loop_control:
+        loop_var: file_item
+
+    - name: Set Users password
+      vars:
+        user_def: "{{ lookup('file', '{{ file_item }}') | from_json }}"
+      ignore_errors: true
+      register: _result
+      uri:
+        url: "{{ elasticsearch_url }}/_security/user/{{ user_def.username }}/_password"
+        user: "{{ elasticsearch_username }}"
+        password: "{{ elasticsearch_password }}"
+        method: POST
+        body: '{"password" : "{{ elasticsearch_password }}"}'
+        force_basic_auth: yes
+        validate_certs: false
+        status_code: 200
+        body_format: json
+      retries: 3
+      delay: 10
+      with_fileglob: "{{ build_dir }}/stack-security/users/*.json"
+      loop_control:
+        loop_var: file_item
+  when: elasticsearch_enabled

@@ -1,0 +1,33 @@
+---
+{% if ingress_available %}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: "{{ certificate_issuer }}"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  labels:
+    app: elasticsearch
+  name: elasticsearch
+spec:
+  rules:
+  - host: {{ elasticsearch_host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ elasticsearch_host_int }}
+            port:
+              number: {{ elasticsearch_port_int }}
+        path: /
+        pathType: Prefix
+{% if certmanager_available %}
+  tls:
+  - hosts:
+    - {{ elasticsearch_host }}
+    secretName: elasticsearch-ingress-tls
+{% endif %}
+{% endif %}

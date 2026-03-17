@@ -1,0 +1,39 @@
+---
+## Workflow to daily update dependencies and tools.
+name: update-tools
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 1-5"
+
+permissions:
+  pull-requests: write
+  contents: write
+  id-token: write
+
+jobs:
+  tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Setup updatecli"
+        uses: "updatecli/updatecli-action@v2.65.0"
+        with:
+          version: "v0.75.0"
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: 'pip'
+          cache-dependency-path: .ci/requirements.txt
+      - name: Authenticate to Google Cloud
+        uses: ./.github/actions/gcp-auth
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL}}
+          accessTokenLifetime: 3600s
+      - uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+      - run: make -C .ci/update-versions update-tools
+        env:
+          GITHUB_TOKEN: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}

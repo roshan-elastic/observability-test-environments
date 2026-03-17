@@ -1,0 +1,1010 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jobs
+data:
+  folders.dsl: |
+    folder('hello')
+    folder('test-use-cases')
+    folder('junit-to-otel')
+
+  helloWorld-helm.dsl: |
+    pipelineJob('hello/helloWorld-k8s') {
+      definition {
+        cps {
+          script("""\
+            pipeline {
+              agent { label 'k8s' }
+              stages {
+                stage ('Hello') {
+                  steps {
+                    echo "hello World"
+                  }
+                }
+              }
+            }""".stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+
+    pipelineJob('hello/helloWorld-gcp') {
+      definition {
+        cps {
+          script("""\
+            pipeline {
+              agent { label 'ubuntu-18' }
+              stages {
+                stage ('Hello') {
+                  steps {
+                    echo "hello World"
+                  }
+                }
+              }
+            }""".stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+
+  load-testing-mpb.dsl: |
+    multibranchPipelineJob('load-testing') {
+      branchSources {
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+        branchSource {
+          source {
+            github {
+              id('20200109')
+              credentialsId('2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken')
+              repoOwner('v1v')
+              repository('load-testing-otel-plugin')
+              repositoryUrl('https://github.com/v1v/load-testing-otel-plugin')
+              configuredByUrl(false)
+              traits {
+                gitHubBranchDiscovery {
+                  strategyId(1)
+                }
+              }
+            }
+          }
+        }
+      }
+      orphanedItemStrategy {
+        discardOldItems {
+          numToKeep(20)
+        }
+      }
+    }
+
+  beats-mpb.dsl: |
+    multibranchPipelineJob('beats') {
+      branchSources {
+        factory {
+          inlineDefinitionBranchProjectFactory {
+            markerFile('Jenkinsfile.yml')
+            sandbox(true)
+            script('''\
+              pipeline {
+                agent { label 'ubuntu-18 && immutable' }
+                environment {
+                  REPO = 'beats'
+                  BASE_DIR = "src/github.com/elastic/${env.REPO}"
+                  PIPELINE_LOG_LEVEL = 'INFO'
+                }
+                options {
+                  timeout(time: 2, unit: 'HOURS')
+                  buildDiscarder(logRotator(numToKeepStr: '60', artifactNumToKeepStr: '20', daysToKeepStr: '30'))
+                  timestamps()
+                  ansiColor('xterm')
+                  disableResume()
+                  durabilityHint('PERFORMANCE_OPTIMIZED')
+                  quietPeriod(10)
+                  rateLimitBuilds(throttle: [count: 60, durationName: 'hour', userBoost: true])
+                }
+                stages {
+                  stage('Checkout') {
+                    options { skipDefaultCheckout() }
+                    steps {
+                      pipelineManager([ cancelPreviousRunningBuilds: [ when: 'PR' ] ])
+                      deleteDir()
+                      gitCheckout(basedir: "${BASE_DIR}", githubNotifyFirstTimeContributor: false)
+                      stash allowEmpty: true, name: 'source', useDefaultExcludes: false
+                      dir("${BASE_DIR}"){
+                        // Skip all the stages except docs for PR's with asciidoc and md changes only
+                        setEnvVar('ONLY_DOCS', isGitRegionMatch(patterns: [ '.*\\\\.(asciidoc|md)' ], shouldMatchAll: true).toString())
+                        setEnvVar('GO_MOD_CHANGES', isGitRegionMatch(patterns: [ '^go.mod' ], shouldMatchAll: false).toString())
+                        setEnvVar('PACKAGING_CHANGES', isGitRegionMatch(patterns: [ '^dev-tools/packaging/.*' ], shouldMatchAll: false).toString())
+                        setEnvVar('GO_VERSION', readFile(".go-version").trim())
+                        withEnv(["HOME=${env.WORKSPACE}"]) {
+                          retryWithSleep(retries: 2, seconds: 5){ sh(label: "Install Go ${env.GO_VERSION}", script: '.ci/scripts/install-go.sh') }
+                        }
+                      }
+                    }
+                  }
+                  /*
+                  stage('Lint'){
+                    options { skipDefaultCheckout() }
+                    environment {
+                      GOFLAGS = '-mod=readonly'
+                    }
+                    steps {
+                      withMageEnv(version: env.GO_VERSION) {
+                        dir("${BASE_DIR}"){
+                          setEnvVar('VERSION', sh(label: 'Get beat version', script: 'make get-version', returnStdout: true)?.trim())
+                          whenTrue(env.ONLY_DOCS == 'true') {
+                            cmd(label: "make check", script: "make check")
+                          }
+                          whenTrue(env.ONLY_DOCS == 'false') {
+                            cmd(label: "make check-python", script: "make check-python")
+                            cmd(label: "make check-go", script: "make check-go")
+                            cmd(label: "make notice", script: "make notice")
+                            cmd(label: "Check for changes", script: "make check-no-changes")
+                          }
+                        }
+                      }
+                    }
+                  }*/
+                  stage('Build&Test') {
+                    options { skipDefaultCheckout() }
+                    steps {
+                      buildAndTest()
+                    }
+                  }
+                }
+              }
+
+              def buildAndTest() {
+                dir("${BASE_DIR}"){
+                  def mapParallelTasks = [:]
+                  def content = readYaml(file: 'Jenkinsfile.yml')
+                  content['projects'].each { projectName ->
+                    generateStages(project: projectName, changeset: content['changeset']).findAll {k,v -> isEnabledProject(id: k)}.each { k,v ->
+                      mapParallelTasks["${k}"] = v
+                    }
+                  }
+                  parallel(mapParallelTasks)
+                }
+              }
+
+              def generateStages(Map args = [:]) {
+                def projectName = args.project
+                def changeset = args.changeset
+                def mapParallelStages = [:]
+                def fileName = "${projectName}/Jenkinsfile.yml"
+                if (fileExists(fileName)) {
+                  def content = readYaml(file: fileName)
+                  mapParallelStages = beatsStages(project: projectName, content: content, changeset: changeset, function: new RunCommand(steps: this))
+                } else {
+                  log(level: 'WARN', text: "${fileName} file does not exist. Please review the top-level Jenkinsfile.yml")
+                }
+                return mapParallelStages
+              }
+
+              class RunCommand extends co.elastic.beats.BeatsFunction {
+                public RunCommand(Map args = [:]){
+                  super(args)
+                }
+                public run(Map args = [:]){
+                  if (!args.label.contains('immutable && ubuntu-18')) {
+                    steps.echo 'skipped for the time being. only supported linux'
+                    return
+                  }
+                  if(args?.content?.containsKey('mage')) {
+                    steps.target(context: args.context, command: args.content.mage, directory: args.project, label: args.label, isMage: true, id: args.id)
+                  }
+                }
+              }
+
+              def isEnabledProject(args) {
+                if (args.id.contains('arm') || args.id.contains('windows') || args.id.contains('macos')) {
+                  echo 'skipped for the time being. ARM/Windows/MacOS not supported'
+                  return false
+                }
+                if (args.id.contains('IntegTest')) {
+                  echo 'skipped for the time being. only supported unit tests'
+                  return false
+                }
+                if (args.id == 'x-pack/auditbeat-build') {
+                  echo 'skipped for the time being. Missing dependency in the worker -> fatal error: rpm/rpmlib.h'
+                  return false
+                }
+                if (args.id == 'filebeat-build' || args.id == 'metricbeat-unitTest') {
+                  echo 'skipped for the time being. can only be writable by the owner but the permissions are "-rw-rw-r--"'
+                  return false
+                }
+                if (args.id == 'journalbeat-unitTest') {
+                  echo 'skipped for the time being. Missing dependency in the worker -> fatal error: systemd/sd-journal.h'
+                  return false
+                }
+                if (args.id == 'heartbeat-build') {
+                  echo 'skipped for the time being. beat.beat.Timeout'
+                  return false
+                }
+                if (args.id == 'x-pack/packetbeat-build' || args.id == 'x-pack/packetbeat-Lint' || args.id == 'x-pack/filebeat-build' ||
+                  args.id == 'packetbeat-build' || args.id == 'libbeat-build') {
+                  echo 'skipped for the time being. Missing dependency in the worker -> fatal error: pcap.h'
+                  return false
+                }
+                return true
+              }
+
+              def target(Map args = [:]) {
+                def command = args.command
+                def context = args.context
+                def directory = args.get('directory', '')
+                def isMage = args.get('isMage', false)
+                withNode(args.label) {
+                  deleteDir()
+                  unstash 'source'
+                  withMageEnv(version: env.GO_VERSION) {
+                    dir("${BASE_DIR}"){
+                      // make commands use -C <folder> while mage commands require the dir(folder)
+                      // let's support this scenario with the location variable.
+                      dir(isMage ? directory : '') {
+                        try {
+                          cmd(label: "${args.id?.trim() ? args.id : env.STAGE_NAME} - ${command}", script: "${command}")
+                        } finally {
+                          junit(allowEmptyResults: true, keepLongStdio: true, testDataPublishers: [[$class: 'JUnitOTELReporterTestDataPublisher']], testResults: "build/TEST*.xml")
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+
+              def withNode(String label, Closure body) {
+                node(label) {
+                  body()
+                }
+              }
+            '''.stripIndent())
+          }
+        }
+        branchSource {
+          source {
+            github {
+              id('20210310')
+              credentialsId('2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken')
+              repoOwner('elastic')
+              repository('beats')
+              repositoryUrl('https://github.com/elastic/beats')
+              configuredByUrl(false)
+              traits {
+                disableStatusUpdateTrait()
+                headRegexFilter {
+                  regex('^(main|8.[0-9]+|PR-2[0-9]+5)$')
+                }
+                gitHubBranchDiscovery {
+                  strategyId(1)
+                }
+              }
+            }
+          }
+        }
+      }
+      configure {
+        def traits = it / sources / data / 'jenkins.branch.BranchSource' / source / traits
+        traits << 'org.jenkinsci.plugins.github__branch__source.ForkPullRequestDiscoveryTrait' {
+          strategyId(1)
+        }
+      }
+      orphanedItemStrategy {
+        discardOldItems {
+          numToKeep(20)
+        }
+      }
+    }
+
+  beats-k8s.dsl: |
+    pipelineJob('beats-k8s') {
+      definition {
+        cps {
+          script('''\
+            pipeline {
+              agent { label 'golang-1.15.10' }
+              environment {
+                REPO = 'beats'
+                BASE_DIR = "src/github.com/elastic/${env.REPO}"
+                PIPELINE_LOG_LEVEL = 'INFO'
+              }
+              stages {
+                stage ('checkout') {
+                  steps {
+                    dir("${BASE_DIR}") {
+                      git 'https://github.com/elastic/beats'
+                    }
+                  }
+                }
+                stage ('lint') {
+                  environment {
+                    GOFLAGS = '-mod=readonly'
+                  }
+                  steps {
+                    dir("${BASE_DIR}"){
+                      setEnvVar('VERSION', sh(label: 'Get beat version', script: 'make get-version', returnStdout: true)?.trim())
+                      cmd(label: "make check", script: "make check")
+                    }
+                  }
+                }
+              }
+            }'''.stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+
+  ansible-elastic-plugin.dsl: |
+    pipelineJob('ansible-elastic-plugin') {
+      definition {
+        cps {
+          script('''\
+            pipeline {
+              agent { label 'ubuntu-20 && immutable' }
+              environment {
+                OTEL_EXPORTER = 'True'
+              }
+              stages {
+                stage('checkout') {
+                  steps {
+                    git(credentialsId: '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken',
+                        url: 'https://github.com/v1v/ansible-opentelemetry-plugin.git',
+                        branch: 'feature/elastic')
+                  }
+                }
+                stage('prepare-context') {
+                  environment {
+                    // See https://github.com/elastic/beats/pull/24775
+                    CRYPTOGRAPHY_DONT_BUILD_RUST = '1'
+                  }
+                  steps {
+                    sh """#!/usr/bin/env bash
+                      virtualenv -q --python=python3 .venv
+                      source .venv/bin/activate
+                      echo "https://github.com/grpc/grpc/issues/22815"
+                      pip3 install --upgrade pip
+                      pip3 install setuptools-rust
+                      echo "Required to install ansible"
+                      pip3 install ansible
+                      echo "The required elastic dependencies"
+                      pip3 install elastic-apm
+                    """
+                  }
+                }
+                stage('run-ansible') {
+                  steps {
+                    withCredentials([
+                      string(credentialsId: 'apm-server-token', variable: 'ELASTIC_APM_SECRET_TOKEN'),
+                      string(credentialsId: 'apm-server-url', variable: 'ELASTIC_APM_SERVER_URL')
+                    ]) {
+                      sh """#!/usr/bin/env bash
+                        source .venv/bin/activate
+                        TRACE_PARENT="00-\${TRACE_ID}-\${SPAN_ID}-01" \
+                        ansible-playbook -i hosts test.yml
+                      """
+                    }
+                  }
+                }
+              }
+            }'''.stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+
+  ansible-otel-plugin.dsl: |
+    pipelineJob('ansible-otel-plugin') {
+      definition {
+        cps {
+          script('''\
+            pipeline {
+              agent { label 'ubuntu-20 && immutable' }
+              environment {
+                OTEL_EXPORTER = 'True'
+              }
+              stages {
+                stage('checkout') {
+                  steps {
+                    git credentialsId: '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken', url: 'https://github.com/v1v/ansible-opentelemetry-plugin.git'
+                  }
+                }
+                stage('prepare-context') {
+                  environment {
+                    // See https://github.com/elastic/beats/pull/24775
+                    CRYPTOGRAPHY_DONT_BUILD_RUST = '1'
+                  }
+                  steps {
+                    sh """#!/usr/bin/env bash
+                      virtualenv -q --python=python3 .venv
+                      source .venv/bin/activate
+                      echo "https://github.com/grpc/grpc/issues/22815"
+                      pip3 install --upgrade pip
+                      pip3 install setuptools-rust
+                      echo "Required to install ansible"
+                      pip3 install ansible
+                      echo "The required opentelemetry dependencies"
+                      pip3 install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp
+                    """
+                  }
+                }
+                stage('run-ansible') {
+                  steps {
+                    withCredentials([
+                      string(credentialsId: 'apm-server-token', variable: 'APM_SECRET_TOKEN'),
+                      string(credentialsId: 'apm-server-url', variable: 'OTEL_EXPORTER_OTLP_ENDPOINT')
+                    ]) {
+                      withEnvMask(vars: [
+                        [var: 'OTEL_EXPORTER_OTLP_HEADERS', password: "authorization=Bearer ${APM_SECRET_TOKEN}"]
+                      ]){
+                        sh """#!/usr/bin/env bash
+                          source .venv/bin/activate
+                          ansible-playbook -i hosts test.yml
+                        """
+                      }
+                    }
+                  }
+                }
+              }
+            }'''.stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+
+  do-continuous-delivery.dsl: |
+    pipelineJob('do-continuous-delivery') {
+      definition {
+        cps {
+          script('''\
+            pipeline {
+              agent { label 'ubuntu-20 && immutable' }
+              environment {
+                OTEL_EXPORTER = 'True'
+              }
+              stages {
+                stage('checkout') {
+                  steps {
+                    dir('build') {
+                      git(credentialsId: '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken',
+                          url: 'https://github.com/elastic/apm-pipeline-library.git')
+                    }
+                  }
+                }
+                stage('build') {
+                  steps {
+                    dir('build'){
+                      sh(label: 'mvn compile', script: "echo 'pretend a mvn compile'")
+                    }
+                  }
+                }
+                stage('test') {
+                  steps {
+                    dir('build') {
+                      sh(label: 'prepare venv', script: """#!/usr/bin/env bash
+                          virtualenv -q --python=python3 .venv
+                          source .venv/bin/activate
+                          cd resources/scripts
+                          pip3 install ./pytest_apm""")
+                      withCredentials([
+                        string(credentialsId: 'apm-server-token', variable: 'ELASTIC_APM_SECRET_TOKEN'),
+                        string(credentialsId: 'apm-server-url', variable: 'ELASTIC_APM_SERVER_URL')
+                      ]) {
+                        sh(label: 'run pytest',
+                          script: """
+                            source .venv/bin/activate
+                            cd resources/scripts/pytest_apm
+                            pytest --apm-trace-parent "00-\${TRACE_ID}-\${SPAN_ID}-01" \
+                                   --apm-service-name pytest_apm \
+                                   --apm-session-name='My_Test_cases'""",
+                          returnStatus: true)
+                      }
+                    }
+                  }
+                }
+                stage('deploy') {
+                  environment {
+                    // See https://github.com/elastic/beats/pull/24775
+                    CRYPTOGRAPHY_DONT_BUILD_RUST = '1'
+                  }
+                  steps {
+                    git(credentialsId: '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken',
+                        url: 'https://github.com/v1v/ansible-opentelemetry-plugin.git',
+                        branch: 'feature/elastic')
+                    sh(label: 'prepare venv', script: """#!/usr/bin/env bash
+                      virtualenv -q --python=python3 .venv
+                      source .venv/bin/activate
+                      echo "https://github.com/grpc/grpc/issues/22815"
+                      pip3 install --upgrade pip
+                      pip3 install setuptools-rust
+                      echo "Required to install ansible"
+                      pip3 install ansible
+                      echo "The required elastic dependencies"
+                      pip3 install elastic-apm
+                    """)
+                    withCredentials([
+                      string(credentialsId: 'apm-server-token', variable: 'ELASTIC_APM_SECRET_TOKEN'),
+                      string(credentialsId: 'apm-server-url', variable: 'ELASTIC_APM_SERVER_URL')
+                    ]) {
+                      sh(label: 'run ansible', script: """#!/usr/bin/env bash
+                        source .venv/bin/activate
+                        TRACE_PARENT="00-\${TRACE_ID}-\${SPAN_ID}-01" \
+                        ansible-playbook -i hosts test.yml
+                      """)
+                    }
+                  }
+                }
+              }
+            }'''.stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+  fail-at-datetime.dsl: |
+    pipelineJob('test-use-cases/fail-at-datetime') {
+      definition {
+        cps {
+          script("""\
+              pipeline {
+                agent { label "k8s" }
+                triggers {
+                  cron('H/2 * * * *')
+                }
+                stages {
+                    stage('test') {
+                        steps {
+                           sh '''
+                            sleep 10s
+                            case $(date +%H:%M) in
+                                (1[345]:[34]*) echo exit 1;;
+                                (*)           exit 0;;
+                            esac
+                           '''
+                        }
+                    }
+                }
+              }
+            }""".stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+  fail-provision-random.dsl: |
+    pipelineJob('test-use-cases/fail-provision-random') {
+      definition {
+        cps {
+          script("""\
+            pipeline {
+              agent none
+              options {
+                  timeout(time: 4, unit: 'MINUTES')
+              }
+              triggers {
+                cron('H/6 * * * *')
+              }
+              stages {
+                  stage('checkout') {
+                      agent { label 'k8s' }
+                      steps {
+                          sh 'sleep 30'
+                          seed()
+                      }
+                  }
+                  stage('lint'){
+                      agent { label "k8s${env.SEED}" }
+                      steps {
+                          sh 'sleep 30'
+                          seed()
+                      }
+                  }
+                  stage('build'){
+                      agent { label "k8s${env.SEED}" }
+                      steps {
+                          sh 'sleep 30'
+                          seed()
+                      }
+                  }
+                  stage('test'){
+                      agent { label "k8s${env.SEED}" }
+                      steps {
+                          sh 'sleep 30'
+                      }
+                  }
+
+              }
+          }
+
+          def seed() {
+              if( env.SEED == null ){
+                  env.SEED = ''
+              } else {
+               if(randomNumber(min: 1, max: 99) > 90){
+                  env.SEED = '-WILL-FAIL'
+               }
+              }
+          }
+            }""".stripIndent())
+            sandbox(true)
+        }
+      }
+    }
+  git-checkout-issue.dsl: |
+    pipelineJob('test-use-cases/git-checkout-issue') {
+      definition {
+        cps {
+          script("""\
+            pipeline {
+              agent none
+              options {
+                  timeout(time: 4, unit: 'MINUTES')
+              }
+              stages {
+                  stage('checkout') {
+                      agent { label 'k8s' }
+                      steps {
+                          git(branch: 'foo', credentialsId: '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken', url: 'https://github.com/elastic/apm-pipeline-library.git')
+                      }
+                  }
+                }
+              }
+          }""".stripIndent())
+          sandbox(true)
+        }
+      }
+    }
+  git-checkout-issue-url-invalid.dsl: |
+    pipelineJob('test-use-cases/git-checkout-issue-url-invalid') {
+      definition {
+        cps {
+          script("""\
+            pipeline {
+              agent none
+              options {
+                  timeout(time: 4, unit: 'MINUTES')
+              }
+              stages {
+                  stage('checkout') {
+                      agent { label 'k8s' }
+                      steps {
+                          git credentialsId: '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken', url: 'https://github.com/elastic/apm-pipeline-libraryFOO.git'
+                      }
+                  }
+              }
+            }
+          }""".stripIndent())
+          sandbox(true)
+        }
+      }
+    }
+  agent-disconnect.dsl: |
+    pipelineJob('test-use-cases/git-checkout-issue-url-invalid') {
+      definition {
+        cps {
+          script("""\
+            pipeline {
+              agent none
+              triggers {
+                cron('H/11 * * * *')
+              }
+              options {
+                  timeout(time: 10, unit: 'MINUTES')
+              }
+              stages {
+                  stage('test') {
+                      agent { label 'k8s' }
+                      steps {
+                       sleep 10
+                       sh 'kill -2 $(pgrep java)'
+                       sleep 10
+                      }
+                  }
+              }
+            }
+          }""".stripIndent())
+          sandbox(true)
+        }
+      }
+    }
+  k8s-maven-scripted-pipeline.dsl: |
+    pipelineJob('k8s-maven-scripted-pipeline') {
+      definition {
+        cps {
+          script("""\
+            // Build a Maven project using the standard image and Scripted syntax.
+            // Rather than inline YAML, you could use: yaml: readTrusted('jenkins-pod.yaml')
+            // Or, to avoid YAML: containers: [containerTemplate(name: 'maven', image: 'maven:3.6.3-jdk-8', command: 'sleep', args: 'infinity')]
+            podTemplate(yaml: '''
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: maven
+                image: maven:3.6.3-jdk-8
+                command:
+                - sleep
+                args:
+                - infinity
+            ''') {
+                node(POD_LABEL) {
+                    // or, for example: git 'https://github.com/jglick/simple-maven-project-with-tests'
+                    writeFile file: 'pom.xml', text: '''
+            <project xmlns="http://maven.apache.org/POM/4.0.0">
+                <modelVersion>4.0.0</modelVersion>
+                <groupId>sample</groupId>
+                <artifactId>sample</artifactId>
+                <version>1.0-SNAPSHOT</version>
+                <build>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <version>2.18.1</version>
+                        </plugin>
+                    </plugins>
+                </build>
+                <dependencies>
+                    <dependency>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                        <version>4.12</version>
+                        <scope>test</scope>
+                    </dependency>
+                </dependencies>
+                <properties>
+                    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+                    <maven.compiler.source>1.8</maven.compiler.source>
+                    <maven.compiler.target>1.8</maven.compiler.target>
+                </properties>
+            </project>
+                    '''
+                    writeFile file: 'src/test/java/sample/SomeTest.java', text: '''
+            package sample;
+            public class SomeTest {
+                @org.junit.Test
+                public void checks() {}
+            }
+                    '''
+                    container('maven') {
+                        sh 'mvn -B -ntp -Dmaven.test.failure.ignore verify'
+                    }
+                    junit testResults: '**/target/surefire-reports/TEST-*.xml', testDataPublishers: [[\$class: 'JUnitOTELReporterTestDataPublisher']]
+                    archiveArtifacts '**/target/*.jar'
+                }
+            }
+          }""".stripIndent())
+          sandbox(true)
+        }
+      }
+    }
+  k8s-declarative-pipeline.dsl: |
+    pipelineJob('k8s-declarative-pipeline') {
+      definition {
+        cps {
+          script("""\
+            // Uses Declarative syntax to run commands inside a container.
+            pipeline {
+                agent {
+                    kubernetes {
+                        // Rather than inline YAML, in a multibranch Pipeline you could use: yamlFile 'jenkins-pod.yaml'
+                        // Or, to avoid YAML:
+                        // containerTemplate {
+                        //     name 'shell'
+                        //     image 'ubuntu'
+                        //     command 'sleep'
+                        //     args 'infinity'
+                        // }
+                        yaml '''
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: shell
+                image: ubuntu
+                command:
+                - sleep
+                args:
+                - infinity
+            '''
+                        // Can also wrap individual steps:
+                        // container('shell') {
+                        //     sh 'hostname'
+                        // }
+                        defaultContainer 'shell'
+                    }
+                }
+                stages {
+                    stage('Main') {
+                        steps {
+                            sh 'hostname'
+                        }
+                    }
+                }
+            }
+          }""".stripIndent())
+          sandbox(true)
+        }
+      }
+    }
+
+  test-results-otlp.dsl: |
+    pipelineJob('junit-to-otel/test-results-otlp') {
+      definition {
+        cps {
+          script('''\
+            pipeline {
+              agent { label 'k8s' }
+              stages {
+                stage('test-results-otlp') {
+                  steps {
+                    sh(label: 'download test-sample', script: 'curl -s https://raw.githubusercontent.com/mdelapenya/junit2otlp/main/TEST-sample3.xml > junit.xml')
+                    junit testDataPublishers: [[$class: 'JUnitOTELReporterTestDataPublisher']], testResults: 'junit.xml'
+                  }
+                }
+              }
+            }'''.stripIndent())
+          sandbox(true)
+        }
+      }
+    }
+
+  junit-stress.dsl: |
+    pipelineJob('junit-to-otel/junit-stress') {
+      definition {
+        cps {
+          script('''\
+            pipeline {
+              agent { label 'k8s' }
+              stages {
+                stage('run-tests') {
+                  steps {
+                    parallelSteps(100)
+                  }
+                }
+              }
+            }
+          }
+
+          def parallelSteps(max){
+            def num = (max < 1) ? 1 : max
+            def parallelSteps = [:]
+            for (i = 0; i < num; i++) {
+              parallelSteps["step-${i}"] = {
+                  node('k8s'){
+                      generateTests()
+                  }
+              }
+            }
+            parallel parallelSteps
+          }
+
+          def generateTests() {
+              sh(label: 'download test-sample1', script: 'curl -s https://raw.githubusercontent.com/mdelapenya/junit2otlp/main/TEST-sample.xml > junit1.xml')
+              sh(label: 'download test-sample2', script: 'curl -s https://raw.githubusercontent.com/mdelapenya/junit2otlp/main/TEST-sample2.xml > junit2.xml')
+              sh(label: 'download test-sample3', script: 'curl -s https://raw.githubusercontent.com/mdelapenya/junit2otlp/main/TEST-sample3.xml > junit3.xml')
+              junit(testDataPublishers: [[$class: 'JUnitOTELReporterTestDataPublisher']], testResults: 'junit*.xml')
+          }'''.stripIndent())
+          sandbox(true)
+        }
+      }
+    }
+
+  junit-stress-mbp.dsl: |
+    multibranchPipelineJob('junit-to-otel/junit-stress-mbp') {
+      branchSources {
+        factory {
+          inlineDefinitionBranchProjectFactory {
+            markerFile('Jenkinsfile.yml')
+            sandbox(true)
+            script('''\
+              pipeline {
+                agent { label 'k8s' }
+                stages {
+                  stage('run-tests') {
+                    steps {
+                      parallelSteps(30)
+                    }
+                  }
+                }
+              }
+              def parallelSteps(max){
+                def num = (max < 1) ? 1 : max
+                def parallelSteps = [:]
+                for (i = 0; i < num; i++) {
+                  parallelSteps["step-${i}"] = {
+                    sleep(i)
+                    node('k8s'){
+                      generateTests()
+                    }
+                  }
+                }
+                parallel parallelSteps
+              }
+
+              def generateTests() {
+                sh(label: 'download test-sample3', script: 'curl -s https://raw.githubusercontent.com/mdelapenya/junit2otlp/main/TEST-sample3.xml > junit3.xml')
+                junit(testDataPublishers: [[$class: 'JUnitOTELReporterTestDataPublisher']], testResults: 'junit*.xml')
+              }
+            '''.stripIndent())
+          }
+        }
+        branchSource {
+          source {
+            github {
+              id('20210310')
+              credentialsId('2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken')
+              repoOwner('elastic')
+              repository('beats')
+              repositoryUrl('https://github.com/elastic/beats')
+              configuredByUrl(false)
+              traits {
+                disableStatusUpdateTrait()
+                gitHubBranchDiscovery {
+                  strategyId(1)
+                }
+                headRegexFilter {
+                  regex('^(main|8.[0-9]+|PR-2[8-9]1+)$')
+                }
+              }
+            }
+          }
+        }
+      }
+      configure {
+        def traits = it / sources / data / 'jenkins.branch.BranchSource' / source / traits
+        traits << 'org.jenkinsci.plugins.github__branch__source.ForkPullRequestDiscoveryTrait' {
+          strategyId(1)
+        }
+      }
+      orphanedItemStrategy {
+        discardOldItems {
+          numToKeep(20)
+        }
+      }
+    }
+
+  devops-world-2022-demo.dsl: |
+    multibranchPipelineJob('devops-world-2022-demo') {
+      branchSources {
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+        github {
+          id('2022092401')
+          scanCredentialsId('2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken')
+          repoOwner('kuisathaverat')
+          repository('ecommerce-antifraud-demo')
+        }
+      }
+      orphanedItemStrategy {
+        discardOldItems {
+          numToKeep(20)
+        }
+      }
+    }
+
+  devops-world-2022-load-gen.dsl: |
+    multibranchPipelineJob('devops-world-2022-load-gen') {
+      branchSources {
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('.ci/load-gen.groovy')
+          }
+        }
+        github {
+          id('2022092401')
+          scanCredentialsId('2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken')
+          repoOwner('kuisathaverat')
+          repository('ecommerce-antifraud-demo')
+        }
+      }
+      orphanedItemStrategy {
+        discardOldItems {
+          numToKeep(20)
+        }
+      }
+    }

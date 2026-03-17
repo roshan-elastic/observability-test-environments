@@ -1,0 +1,14 @@
+---
+- name: Destroy All k8s clusters
+  ignore_errors: true
+  changed_when: false
+  shell: |
+    if [ -n "${ROLE}" ]; then
+      kind export logs --name "{{ cluster_name }}" "{{ build_dir }}/kind_logs"
+    fi
+    kind delete clusters --all
+  register: _result
+  when:
+    - destroy_cluster|bool
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'

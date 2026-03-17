@@ -1,0 +1,32 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Hey there 👋 I'm oblt-robot. I'm here to help you with Oblt Clusters, CI and some automation!\n"
+			}
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Deployed Version",
+				"emoji": true
+			}
+		},
+    {
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "*Version:*\n`{{ .Version }}`"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Build:*\n`{{ .Build }}`"
+				}
+			]
+		}
+	]
+}

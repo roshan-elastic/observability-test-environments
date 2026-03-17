@@ -1,0 +1,652 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "cluster_name": {
+            "type": "string",
+            "description": "Name of the cluster (e.g. sample-oblt)",
+            "default": ""
+        },
+        "create_users": {
+            "type": "boolean",
+            "description": "True to create users for the cluster (default: true)",
+            "default": false
+        },
+        "grab_cluster_info": {
+            "type": "boolean",
+            "description": "True to grab cluster information (default: true)",
+            "default": false
+        },
+        "configure_external_snapshots_repo": {
+            "type": "boolean",
+            "description": "True to configure an external snapshot repository (default: false)",
+            "default": false
+        },
+        "ess_not_allow_settings": {
+            "type": "boolean",
+            "description": "True to disable some settings not allowed in staging.",
+            "default": true
+        },
+        "build_tf_provider_from_src": {
+            "type": "boolean",
+            "description": "True to build the Elastic terraform provider from source (default: fatse).",
+            "default": false,
+            "nullable": true
+        },
+        "use_snapshot_tf_provider": {
+            "type": "boolean",
+            "description": "True to use a snapshot version of the Elastic terraform provider (default: false)",
+            "default": true,
+            "nullable": true
+        },
+        "ess_terraform_version": {
+            "type": "string",
+            "description": "Version of the Elastic terraform provider to use (default: 0.5.0)",
+            "default": "\"\""
+        },
+        "observability_secret": {
+            "type": "string",
+            "description": "Secret name for the observability cluster (default: oblt-clusters_monitoring-oblt)",
+            "default": "\"\""
+        },
+        "secret_ess_user": {
+            "type": "string",
+            "description": "path to the secret that contains the ESS credentials (elastic-cloud-observability-team-pro)",
+            "default": "\"\""
+        },
+        "golden_cluster": {
+            "type": "boolean",
+            "description": "True to create a golden cluster (default: false)",
+            "default": true
+        },
+        "slack_channel": {
+            "type": "string",
+            "description": "Slack channel to use for notifications",
+            "default": "#observablt-bots"
+        },
+        "oblt_username": {
+            "type": "string",
+            "description": "Username to use for the observability team (default: robots)",
+            "default": "robots"
+        },
+        "expire_date": {
+            "type": "string",
+            "description": "Date to expire the cluster (e.g. 2023-12-31).",
+            "default": ""
+        },
+        "bootstrap_cluster": {
+            "type": "boolean",
+            "description": "True to bootstrap the cluster (default: false) see [bootstrap](./bootstrap.md)",
+            "default": false
+        },
+        "bootstrap_cluster_dirs": {
+            "type": "array",
+            "description": "Directories where the bootstrap cluster are located.",
+            "default": [],
+            "items": {}
+        },
+        "profiling_agent_deploy": {
+            "type": "boolean",
+            "description": "True to deploy the profiling agent in the k8s cluster (default: true)",
+            "default": true
+        },
+        "k8s": {
+            "type": "object",
+            "properties": {
+                "cluster_name": {
+                    "type": "string",
+                    "description": "Name of the k8s cluster, it replaces de default name (default: {{ cluster_name }})",
+                    "default": "\"\""
+                },
+                "certmanager": {
+                    "type": "boolean",
+                    "description": "True to enable cert-manager",
+                    "default": false,
+                    "nullable": true
+                },
+                "default_namespace": {
+                    "type": "string",
+                    "description": "Default namespace for all resources",
+                    "default": "\"\""
+                },
+                "domain": {
+                    "type": "string",
+                    "description": "Domain name for the cluster",
+                    "default": "\"\""
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "True to enable Kubernetes cluster creation",
+                    "default": true,
+                    "nullable": true
+                },
+                "ingress": {
+                    "type": "boolean",
+                    "description": "True to enable ingress controller",
+                    "default": false,
+                    "nullable": true
+                },
+                "kube_system_namespace": {
+                    "type": "string",
+                    "description": "Namespace for the kube-system resources",
+                    "default": "\"\""
+                },
+                "machine_type": {
+                    "type": "string",
+                    "description": "Machine type, e.g. n1-standard-4",
+                    "default": "\"\""
+                },
+                "max_node_count": {
+                    "type": "number",
+                    "description": "Maximum number of nodes",
+                    "default": 10,
+                    "nullable": true
+                },
+                "project": {
+                    "type": "string",
+                    "description": "Project name",
+                    "default": "\"\""
+                },
+                "provider": {
+                    "type": "string",
+                    "description": "Cloud provider, e.g. gcp, kind",
+                    "default": "\"\""
+                },
+                "region": {
+                    "type": "string",
+                    "description": "Cloud region, e.g. us-east-1, europe-west1-c",
+                    "default": "\"\""
+                },
+                "shared": {
+                    "type": "string",
+                    "description": "Name of the shared cluster.This is used to share the same cluster between different deployments, when is set a cluster is not created.",
+                    "default": "\"\""
+                },
+                "static_ip": {
+                    "type": "boolean",
+                    "description": "True to enable static IP",
+                    "default": false,
+                    "nullable": true
+                },
+                "certificate_issuer": {
+                    "type": "string",
+                    "description": "Issuer of the certificate, e.g. letsencrypt-prod, letsencrypt-staging (default: letsencrypt-staging)",
+                    "default": "\"\""
+                },
+                "network": {
+                    "type": "string",
+                    "description": "Network to use for the cluster",
+                    "default": "\"\""
+                }
+            }
+        },
+        "stack": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "description": "Version of the stack",
+                    "default": "\"\""
+                },
+                "mode": {
+                    "type": "string",
+                    "description": "Stack provider, e.g. ess, eck, serverless, external (default: ess)",
+                    "default": ""
+                },
+                "template": {
+                    "type": "string",
+                    "description": "Name of the template to use for the deployment creation (e.g. elasticsearch, kibana, observability, ccs)",
+                    "default": ""
+                },
+                "target": {
+                    "type": "string",
+                    "description": "Target environment, e.g. production, staging (default: production)",
+                    "default": "\"\""
+                },
+                "observability": {
+                    "type": "boolean",
+                    "description": "True to enable observability features to send logs, metrics, and APM to the monitoring cluster (default: false)",
+                    "default": true,
+                    "nullable": true
+                },
+                "update_channel": {
+                    "type": "string",
+                    "description": "Update channel to use for the stack, e.g. update_channel: unstable, development, release",
+                    "default": "\"\""
+                },
+                "update_mode": {
+                    "type": "string",
+                    "description": "Update mode to use for the cluster, e.g. update, recreate (default: update)",
+                    "default": "\"\""
+                },
+                "update_schedule": {
+                    "type": "string",
+                    "description": "Update schedule to use for the cluster, e.g. daily, Monday, Tuesday, Wednesday, Thursday, Friday (default: daily)",
+                    "default": "\"\""
+                },
+                "package_registry": {
+                    "type": "string",
+                    "description": "Package registry to use for the stack.",
+                    "default": "\"\""
+                },
+                "ess": {
+                    "type": "object",
+                    "properties": {
+                        "saml_id": {
+                            "type": "string",
+                            "description": "Service Provider (SP) ID configured in ESS to use for SSO authentication (optional)",
+                            "default": "\"\""
+                        },
+                        "autoscale": {
+                            "type": "boolean",
+                            "description": "True to enable autoscaling (default: true)",
+                            "default": true,
+                            "nullable": true
+                        },
+                        "ccs_remote_clusters": {
+                            "type": "array",
+                            "description": "List of remote clusters to configure CCS (optional)",
+                            "default": [],
+                            "items": {}
+                        },
+                        "elasticsearch": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "True to enable Elasticsearch deployment (default: true)",
+                                    "default": true,
+                                    "nullable": true
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Elasticsearch (optional)",
+                                    "default": "\"\""
+                                },
+                                "mem": {
+                                    "type": "number",
+                                    "description": "Memory for Elasticsearch (default: 16)(ignored on autoscaling enabled)",
+                                    "default": 16,
+                                    "nullable": true
+                                },
+                                "zones": {
+                                    "type": "number",
+                                    "description": "Number of zones to use for the Elasticsearch deployment (default: 3)",
+                                    "default": 3,
+                                    "nullable": true
+                                }
+                            }
+                        },
+                        "integrations": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "True to enable Integrations server deployment (default: true)",
+                                    "default": true,
+                                    "nullable": true
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Elastic Agent (optional)",
+                                    "default": "\"\""
+                                },
+                                "mem": {
+                                    "type": "number",
+                                    "description": "Memory for Integrations server (default: 2)(ignored on autoscaling enabled)",
+                                    "default": 2,
+                                    "nullable": true
+                                },
+                                "zones": {
+                                    "type": "number",
+                                    "description": "Number of zones to use for the Integrations serve deployment (default: 1)",
+                                    "default": 1,
+                                    "nullable": true
+                                }
+                            }
+                        },
+                        "kibana": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "True to enable Kibana deployment (default: true)",
+                                    "default": true,
+                                    "nullable": true
+                                },
+                                "further_details": {
+                                    "type": "string",
+                                    "description": "Message to show in the Kibana login page (optional)",
+                                    "default": "\"\""
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Kibana (optional)",
+                                    "default": "\"\""
+                                },
+                                "mem": {
+                                    "type": "number",
+                                    "description": "Memory for Kibana (default: 2)(ignored on autoscaling enabled)",
+                                    "default": 2,
+                                    "nullable": true
+                                },
+                                "zones": {
+                                    "type": "number",
+                                    "description": "Number of zones to use for the Kibana deployment (default: 1)",
+                                    "default": 1,
+                                    "nullable": true
+                                },
+                                "open_ai_secret": {
+                                    "type": "string",
+                                    "description": "Vault secret with the OpenaAI connection information '{\"apiKey\":\"XXXXXXX\", \"service\": \"azureOpenAI\"}', '{\"apiKey\":\"XXXXXXX\", \"service\": \"openAI\"}'",
+                                    "default": "\"\""
+                                }
+                            }
+                        },
+                        "provider": {
+                            "type": "string",
+                            "description": "Cloud provider, e.g. gcp, aws, azure (default: gcp)",
+                            "default": "\"\""
+                        },
+                        "region": {
+                            "type": "string",
+                            "description": "Cloud region, e.g. us-east-1, europe-west1-c, gcp-us-west2, azure-eastus2,  (default: us-central1-c)",
+                            "default": "\"\""
+                        },
+                        "restore_snapshot_from": {
+                            "type": "string",
+                            "description": "Restore a snapshot from a given deployment ID (optional)",
+                            "default": "\"\""
+                        },
+                        "restore_snapshot_name": {
+                            "type": "string",
+                            "description": "Name of the snapshot to restore (optional)(default: __latest_success__)",
+                            "default": "\"\""
+                        },
+                        "template": {
+                            "type": "string",
+                            "description": "Name of the ESS hardware template to use for the deployment creation (default: gcp-io-optimized-v3)",
+                            "default": "\"\""
+                        },
+                        "trusted_org": {
+                            "type": "string",
+                            "description": "Trusted ESS organization (Optional)",
+                            "default": "\"\""
+                        },
+                        "reset_password": {
+                            "type": "boolean",
+                            "description": "True to reset the password for the ESS deployment (default: false)",
+                            "default": false,
+                            "nullable": true
+                        },
+                        "profiling": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "True to enable profiling (default: false)",
+                                    "default": false,
+                                    "nullable": true
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for profiling (optional)",
+                                    "default": "\"\""
+                                }
+                            }
+                        }
+                    }
+                },
+                "eck": {
+                    "type": "object",
+                    "properties": {
+                        "agent": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "True to enable Elastic Agent deployment (default: true)",
+                                    "default": true,
+                                    "nullable": true
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Elastic Agent (optional)",
+                                    "default": "\"\""
+                                },
+                                "mem": {
+                                    "type": "number",
+                                    "description": "Memory for Elastic Agent (default: 2)",
+                                    "default": 2,
+                                    "nullable": true
+                                }
+                            }
+                        },
+                        "elasticsearch": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "True to enable Elasticsearch deployment (default: true)",
+                                    "default": true,
+                                    "nullable": true
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Elasticsearch (optional)",
+                                    "default": "\"\""
+                                },
+                                "mem": {
+                                    "type": "number",
+                                    "description": "Memory for Elasticsearch (default: 16)",
+                                    "default": 16,
+                                    "nullable": true
+                                },
+                                "node_count": {
+                                    "type": "number",
+                                    "description": "Number of nodes for the Elasticsearch deployment (default: 3)",
+                                    "default": 3,
+                                    "nullable": true
+                                },
+                                "node_storage": {
+                                    "type": "number",
+                                    "description": "Size of the storage for each node (default: 256)",
+                                    "default": 256,
+                                    "nullable": true
+                                }
+                            }
+                        },
+                        "kibana": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "True to enable Kibana deployment (default: true)",
+                                    "default": true,
+                                    "nullable": true
+                                },
+                                "further_details": {
+                                    "type": "string",
+                                    "description": "Message to show in the Kibana login page (optional)",
+                                    "default": "\"\""
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Kibana (optional)",
+                                    "default": "\"\""
+                                },
+                                "mem": {
+                                    "type": "number",
+                                    "description": "Memory for Kibana (default: 2)",
+                                    "default": 2,
+                                    "nullable": true
+                                }
+                            }
+                        },
+                        "license": {
+                            "type": "string",
+                            "description": "License to use for ECK (default: trial) ['enterprise', 'trial', 'none']",
+                            "default": "\"\""
+                        }
+                    }
+                },
+                "external": {
+                    "type": "object",
+                    "properties": {
+                        "secret": {
+                            "type": "string",
+                            "description": "Vault secret with the fields to the external Stack (default: '')",
+                            "default": "\"\""
+                        }
+                    }
+                },
+                "serverless": {
+                    "type": "object",
+                    "properties": {
+                        "region": {
+                            "type": "string",
+                            "description": "Cloud region, e.g. gcp-us-central1, aws-eu-west-1, azure-eastus2,  (default: aws-eu-west-1)",
+                            "default": "\"\""
+                        },
+                        "elasticsearch": {
+                            "type": "object",
+                            "properties": {
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Elasticsearch (optional)",
+                                    "default": "\"\""
+                                }
+                            }
+                        },
+                        "kibana": {
+                            "type": "object",
+                            "properties": {
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Kibana (optional)",
+                                    "default": "\"\""
+                                }
+                            }
+                        },
+                        "fleet": {
+                            "type": "object",
+                            "properties": {
+                                "image": {
+                                    "type": "string",
+                                    "description": "Docker image for Fleet (optional)",
+                                    "default": "\"\""
+                                }
+                            }
+                        },
+                        "cluster": {
+                            "type": "string",
+                            "description": "ID of the cluster to use for the deployment creation (e.g prd-awsuse1-cp-internal-app-1, qa-awsuse1-cp-internal-app-1)",
+                            "default": "\"\""
+                        }
+                    }
+                }
+            }
+        },
+        "apps": {
+            "type": "object",
+            "properties": {
+                "helm": {
+                    "type": "array",
+                    "description": "Chart to deploy",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "chart": {
+                                "type": "string",
+                                "description": "Chart to deploy"
+                            },
+                            "name": {
+                                "type": "string",
+                                "description": "Name of the Helm chart"
+                            },
+                            "namespace": {
+                                "type": "string",
+                                "description": "Namespace to deploy the chart"
+                            },
+                            "values_file": {
+                                "type": "string",
+                                "description": "Values file for the Helm chart"
+                            },
+                            "version": {
+                                "type": "string",
+                                "description": "Version of the chart"
+                            }
+                        }
+                    }
+                },
+                "k8s": {
+                    "type": "array",
+                    "description": "Name of the Kubernetes manifest",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name of the Kubernetes manifest"
+                            },
+                            "src": {
+                                "type": "string",
+                                "description": "Source directory for the Kubernetes manifest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "opbeans": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "True to deploy Opbeans (default: false)",
+                    "default": false
+                }
+            }
+        },
+        "synthetics_monitors_folders": {
+            "type": "array",
+            "description": "Id of the monitor",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Id of the monitor"
+                    },
+                    "folder": {
+                        "type": "string",
+                        "description": "Folder where the monitor is located"
+                    },
+                    "locale": {
+                        "type": "string",
+                        "description": "Locale to use for the monitor"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "description": "Timezone to use for the monitor"
+                    },
+                    "params": {
+                        "type": "object",
+                        "description": "Parameters to use for the monitor"
+                    }
+                }
+            }
+        },
+        "load_balancer_ip": {
+            "type": "string",
+            "description": "Loadbalancer IP to use for the cluster",
+            "default": ""
+        },
+        "features": {
+            "type": "array",
+            "description": "",
+            "default": [],
+            "items": {}
+        }
+    }
+}

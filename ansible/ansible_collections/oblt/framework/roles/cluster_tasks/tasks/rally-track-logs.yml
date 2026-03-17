@@ -1,0 +1,6 @@
+---
+- name: Create Rally track
+  vars:
+    rally_track: "obs-logs"
+    rally_track_data_streams: "logs*"
+  include_tasks: rally-track.yml

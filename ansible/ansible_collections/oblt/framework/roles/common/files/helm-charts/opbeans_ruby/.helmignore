@@ -1,0 +1,6 @@
+./tests
+./node_modules
+./readme-generator-for-helm
+./.venv
+*.lock
+*.bak

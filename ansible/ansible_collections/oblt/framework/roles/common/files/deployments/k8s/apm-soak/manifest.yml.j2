@@ -1,0 +1,75 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ gke_cluster_name }}-apm-perf
+  namespace: default
+data:
+  scenarios.yml: |
+    ---
+
+    scenarios:
+      qa:
+        - project_id: {{ serverless_deployment_id }}
+          event_rate: 50/1s
+      staging:
+        - project_id: {{ serverless_deployment_id }}
+          event_rate: 50/1s
+      production_canary:
+        - project_id: {{ serverless_deployment_id }}
+          event_rate: 50/1s
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ gke_cluster_name }}-apm-perf
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.elastic.co/project: oblt-serverless
+      k8s.elastic.co/repository: elastic_apm-perf
+      k8s.elastic.co/id: {{ serverless_deployment_id }}
+  template:
+    metadata:
+      labels:
+        k8s.elastic.co/project: oblt-serverless
+        k8s.elastic.co/repository: elastic_apm-perf
+        k8s.elastic.co/id: {{ serverless_deployment_id }}
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: main
+          image: {{ apm_perf_image }}
+          resources:
+            limits:
+              cpu: '1000m'
+              memory: '1024Mi'
+            requests:
+              cpu: '1000m'
+              memory: '1024Mi'
+          env:
+            - name: ELASTIC_APM_SERVER_URL
+              value: {{ apm_url }}
+            - name: ELASTIC_APM_API_KEYS
+              value: {{ serverless_deployment_id }}:{{ apm_apikey }}
+            - name: ELASTIC_APM_SCENARIO
+              value: {{ apm_scenario }}
+            - name: ELASTIC_APM_FILE
+              value: "/etc/apm-perf/scenarios.yml"
+          command:
+            - 'apmsoak'
+          args:
+            - 'run'
+          volumeMounts:
+            - name: config
+              mountPath: "/etc/apm-perf"
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ gke_cluster_name }}-apm-perf
+      imagePullSecrets:
+        - name: docker.elastic.co

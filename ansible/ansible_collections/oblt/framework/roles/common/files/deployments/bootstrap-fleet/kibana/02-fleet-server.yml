@@ -1,0 +1,38 @@
+---
+description: Create a Fleet Server package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "fleet-server-policy",
+    "package": {
+      "name": "fleet_server",
+      "version": "1.2.0"
+    },
+    "name": "fleet_server_policy",
+    "id": "fleet_server_policy",
+    "description": "description",
+    "namespace": "default",
+    "inputs": {
+      "fleet_server-fleet-server": {
+        "enabled": true,
+        "vars": {
+          "host": [
+            "0.0.0.0"
+          ],
+          "port": [
+            8220
+          ],
+          "custom": ""
+        },
+        "streams": {}
+      }
+    }
+  }

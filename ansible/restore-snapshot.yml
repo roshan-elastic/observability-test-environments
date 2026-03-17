@@ -1,0 +1,29 @@
+---
+- name: Generate configuration files for a k8s cluster
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars_files:
+    - "{{ lookup('env','CLUSTER_CONFIG_FILE') | mandatory }}"
+  environment:
+    HOME: "{{ playbook_dir }}/build"
+    PATH: "{{ playbook_dir }}/build/bin:{{ playbook_dir }}/build/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+  tasks:
+    - name: Include tasks from feature_restore_snapshot
+      vars:
+        role_parameters:
+          repository: "{{ lookup('env','SOURCE_REPOSITORY') | mandatory }}"
+          snapshot_name: "{{ lookup('env','SNAPSHOT_NAME') }}"
+          include_global_state: "{{ lookup('env','INCLUDE_GLOBAL_STATE') | default(false, true) | bool }}"
+          feature_states: "{{ lookup('env','FEATURE_STATES') | split(',') }}"
+          ignore_unavailable: "{{ lookup('env','IGNORE_UNAVAILABLE') | default(false, true) | bool }}"
+          indices: "{{ lookup('env','INDICES') }}"
+          index_settings: "{{ lookup('env','INDEX_SETTINGS') }}"
+          wait_for_completion: "{{ lookup('env','WAIT_FOR_COMPLETION') | default(false, true) | bool }}"
+          dry_run: "{{ lookup('env','DRY_RUN') | default(true, true) | bool }}"
+
+      include_role:
+        name: oblt.framework.feature_restore_snapshot

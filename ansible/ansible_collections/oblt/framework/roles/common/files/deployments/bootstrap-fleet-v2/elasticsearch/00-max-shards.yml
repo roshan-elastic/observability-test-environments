@@ -1,0 +1,15 @@
+---
+description: Increase the maximum number of shards per node
+api: "/_cluster/settings"
+method: PUT
+headers:
+  accept: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+body: |
+  {
+    "persistent": {
+      "cluster.max_shards_per_node": "5000"
+    }
+  }

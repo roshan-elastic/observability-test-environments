@@ -1,0 +1,13 @@
+---
+description: Get the Docker Integration package
+api: "/api/fleet/epm/packages/docker"
+method: GET
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+register: integration_package_docker_result
+body: ""
+return_code:
+  - 409
+  - 200

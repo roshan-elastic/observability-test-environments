@@ -1,0 +1,76 @@
+---
+  ## Workflow run a daily rally test against a oblt cluster.
+  ## https://github.com/elastic/observability-robots/issues/1738
+name: rally-tracks-test-daily
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 20 * * 1-5"
+
+jobs:
+  logs-race:
+    name: Run logs race
+    uses: ./.github/workflows/rally-tracks-test.yml
+    with:
+      oblt_cluster: ${{ matrix.clusterName }}
+      track_path: rally-tracks/obs-logs-track/20230720T153005/obs-logs
+      fetch_track: true
+      esrally_on_error: "abort"
+      esrally_from_sources: true
+      disable_disk_usage_stats: ${{ matrix.clusterName == 'serverless-benchmarks' }}
+    secrets: inherit
+    strategy:
+      fail-fast: false
+      matrix:
+        clusterName:
+          - "edge-benchmarks"
+          - "release-benchmarks"
+          - "serverless-benchmarks"
+
+  trace-race:
+    name: Run traces race
+    if: ${{ always() }}
+    uses: ./.github/workflows/rally-tracks-test.yml
+    needs:
+      - logs-race
+    secrets: inherit
+    with:
+      oblt_cluster: ${{ matrix.clusterName }}
+      track_path: rally-tracks/obs-traces-track/20230725T170240/obs-traces
+      fetch_track: true
+      esrally_on_error: "abort"
+      esrally_from_sources: true
+      disable_disk_usage_stats: ${{ matrix.clusterName == 'serverless-benchmarks' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        clusterName:
+          - "edge-benchmarks"
+          - "release-benchmarks"
+          - "serverless-benchmarks"
+
+  metrics-race:
+    name: Run metrics race
+    if: ${{ always() }}
+    uses: ./.github/workflows/rally-tracks-test.yml
+    needs:
+      - trace-race
+    secrets: inherit
+    with:
+      oblt_cluster: ${{ matrix.clusterName }}
+      track_path: rally-tracks/obs-metrics-track/20230803T222200/obs-metrics
+      fetch_track: true
+      esrally_on_error: "abort"
+      esrally_from_sources: true
+      disable_disk_usage_stats: ${{ matrix.clusterName == 'serverless-benchmarks' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        clusterName:
+          - "edge-benchmarks"
+          - "release-benchmarks"
+          - "serverless-benchmarks"

@@ -1,0 +1,32 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+    cluster_name: "vm-gcp-{{ cluster_seed }}"
+    vm_gcp_user: "admin"
+    vm_gcp_name: "test-instance-{{ cluster_seed }}"
+    vm_gcp_vpc_name: "oblt-clusters-vm-test-vpc"
+    gcp_vm_upload_files:
+      - source: "{{ vm_gcp_terradorm_dir }}/upload1.txt"
+        destination: "/tmp/upload1.txt"
+      - source: "{{ vm_gcp_terradorm_dir }}/upload2.txt"
+        destination: "/tmp/upload2.txt"
+    vm_gcp_startup_script: |
+      #!/usr/bin/env bash
+      echo "Hello, World!" > /tmp/hello.txt
+    ephemeral_cluster: true
+  environment:
+    PATH: "{{ build_dir }}/bin:{{ build_dir }}/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.common
+    - role: vm_gcp
+  tasks:
+    - name: Save IP address to a file
+      copy:
+        content: "{{ hostvars[vm_gcp_name].ansible_host }}"
+        dest: "{{ build_dir }}/vm_gcp_ip"
+  tags:
+    - molecule-idempotence-notest

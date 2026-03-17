@@ -1,0 +1,5 @@
+{
+  "username" : "editor",
+  "password" : "{{ elasticsearch_password }}",
+  "roles" : ["editor"]
+}

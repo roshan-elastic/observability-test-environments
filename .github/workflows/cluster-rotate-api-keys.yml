@@ -1,0 +1,37 @@
+---
+## Workflow to reotate the Api Keys on ESS
+name: Oblt Cluster Rotate Api Keys
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rotate-keys:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [pro, qa, staging]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Rotate Api Keys Staging
+        uses: ./.github/actions/make-target
+        with:
+          target: "rotate-ess-api-key-${{ matrix.environment }}"
+          baseDir: "ansible"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      - name: Notification
+        if: ${{ failure() }}
+        continue-on-error: true
+        uses: elastic/oblt-actions/slack/send@v1
+        with:
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: '#observablt-bots'
+          message: "🚨🚨 @robots-dx Unable to rotate ESS ApiKeys ${{ job.status }} - <https://github.com/elastic/observability-test-environments/actions/runs/${{ github.run_id }}|build> 🚨🚨"

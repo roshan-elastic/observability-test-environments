@@ -1,0 +1,28 @@
+---
+- name: "Undeploy Apache httpd"
+  vars:
+    helm_chart:
+      name: "apache"
+      namespace: "{{ k8s_default_namespace }}"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: undeploy_chart.yml
+  when:
+    - apache_enabled
+  tags:
+    - apache
+    - undeploy
+
+- name: "Undeploy HAproxy"
+  vars:
+    helm_chart:
+      name: "haproxy"
+      namespace: "{{ k8s_default_namespace }}"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: undeploy_chart.yml
+  when:
+    - haproxy_enabled
+  tags:
+    - haproxy
+    - undeploy

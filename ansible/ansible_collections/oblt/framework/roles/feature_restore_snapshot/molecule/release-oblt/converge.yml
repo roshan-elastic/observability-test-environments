@@ -1,0 +1,35 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+    - role: oblt.framework.stack_ess
+
+  tasks:
+    - name: Include tasks snapshot-repos-oblt-ro.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: snapshot-repos-oblt-ro.yml
+
+    - name: Include tasks from feature_restore_snapshot
+      vars:
+        role_parameters:
+          repository: "external_gcs_repository_release-oblt"
+          include_global_state: true
+          ignore_unavailable: true
+          indices:
+            - ".ds-logs-generic-*"
+          index_settings:
+            auto_expand_replicas: false
+            index.number_of_replicas: 0
+
+      include_role:
+        name: oblt.framework.feature_restore_snapshot

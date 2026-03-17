@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @descriptionStart
+## https://hub.docker.com/r/kindest/node/tags?page=1&name=v1.27.
+## https://github.com/kubernetes-sigs/kind/issues/2376
+## gh release view --repo kubernetes-sigs/kind v0.13.0 |sed -nE 's/ - ([0-9\.]+): `(kindest\/node:.+)`/{"\1": "\2"}/p' | jq -s add
+## @descriptionEnd
+## @param kindest_node_version [string] Version of the Kind nodes to use
+kindest_node_version: "v1.28.7"
+## @param cluster_context The context name of the cluster to use.
+cluster_context: "kind-{{ cluster_name }}"
+## @param kind_config_file The path to the Kind configuration file
+kind_config_file: "{{ build_dir }}/kind/config_single_node.yml"

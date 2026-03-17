@@ -1,0 +1,44 @@
+---
+- name: list of sources
+  set_fact:
+    app_config: "{{ item }}"
+    k8s_yml:
+      - "{{ item.src + '/*.yml' }}"
+      - "{{ item.src + '/*.yaml' }}"
+    k8s_j2:
+      - "{{ item.src + '/*.j2' }}"
+    k8s_app_dir: "{{ k8s_dir }}/{{ item.src | basename }}"
+
+- name: Copy Role files
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Create directories
+  file:
+    path: "{{ k8s_app_dir }}"
+    state: directory
+    mode: 0755
+
+- name: Copy k8s apps files
+  synchronize:
+    src: "{{ file_item }}"
+    dest: "{{ k8s_app_dir }}/{{ file_item | basename }}"
+  with_fileglob: "{{ k8s_yml }}"
+  loop_control:
+    loop_var: file_item
+  tags:
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Generate k8s config files
+  template:
+    src: "{{ file_item }}"
+    dest: "{{ k8s_app_dir }}/{{ file_item | basename | splitext | first }}"
+    mode: 0600
+  with_fileglob: "{{ k8s_j2 }}"
+  loop_control:
+    loop_var: file_item

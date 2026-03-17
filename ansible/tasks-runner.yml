@@ -1,0 +1,38 @@
+---
+- name: Generate configuration files for a k8s cluster
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    destroy_cluster: false
+    tasks_file: "{{ lookup('env','TASKS') | mandatory }}.yml"
+  vars_files:
+    - "{{ lookup('env','CLUSTER_CONFIG_FILE') | mandatory }}"
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ playbook_dir }}/build/bin:{{ playbook_dir }}/build/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+  tasks:
+    - name: Check the cluster exist
+      ansible.builtin.fail:
+        msg: "Cluster {{ cluster_name }} does not exists"
+      when:
+        - cluster_created is defined
+        - cluster_created is false
+
+    - name: Include tasks from tasks-prepare-gcp.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: prepare-gcp.yml
+
+    - name: Include tasks from tasks-loadbalancer.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: loadbalancer.yml
+
+    - name: Include tasks from "{{ tasks_file }}"
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: "{{ tasks_file }}"

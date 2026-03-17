@@ -1,0 +1,48 @@
+name-template: "$RESOLVED_VERSION 🌈"
+tag-template: "$RESOLVED_VERSION"
+version-template: "$MAJOR.$MINOR.$PATCH"
+categories:
+  - title: "🚀 Features"
+    labels:
+      - "feature"
+      - "enhancement"
+  - title: "🐛 Bug Fixes"
+    labels:
+      - "fix"
+      - "bug"
+  - title: "📚 Documentation"
+    labels:
+      - "docs"
+      - "question"
+  - title: "🧰 Maintenance"
+    labels:
+      - "chore"
+      - "ci"
+      - 'dependencies'
+exclude-labels:
+  - 'skip-changelog'
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+version-resolver:
+  major:
+    labels:
+      - "major"
+  minor:
+    labels:
+      - "minor"
+  patch:
+    labels:
+      - "patch"
+  default: patch
+template: |
+  ### Changes
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
+
+  For more information, please visit:
+    * clusters docs at https://ela.st/oblt-clusters
+    * oblt-cli docs at https://ela.st/oblt-cli
+    * oblt-robot docs at https://ela.st/oblt-robot
+    * Serverless docs at https://ela.st/oblt-serverless

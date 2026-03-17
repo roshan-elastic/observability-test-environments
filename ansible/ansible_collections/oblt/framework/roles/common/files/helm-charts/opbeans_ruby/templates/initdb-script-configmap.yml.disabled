@@ -1,0 +1,53 @@
+---
+# define a configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "opbeans.fullname" . }}-initdb
+data:
+  01_initdb.sh: |
+    #!/usr/bin/env bash
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER"  -d "postgres"  <<EOSQL
+
+    CREATE DATABASE "{{ .Values.opbeans.db.name }}" WITH OWNER "{{ .Values.opbeans.db.username }}";
+
+    EOSQL
+
+  02_setup.sh: |
+    #!/usr/bin/env bash
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER"  -d "{{ .Values.opbeans.db.name }}"  <<EOSQL
+
+    {{ .Files.Get "config/setup.sql" | nindent 4 }}
+
+    EOSQL
+
+  03_products.sh: |
+    #!/usr/bin/env bash
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER"  -d "{{ .Values.opbeans.db.name }}"  <<EOSQL
+
+    {{ .Files.Get "config/products.sql" | nindent 4 }}
+
+    EOSQL
+
+  04_mock_customers.sh: |
+    #!/usr/bin/env bash
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER"  -d "{{ .Values.opbeans.db.name }}"  <<EOSQL
+
+    {{ .Files.Get "config/mock_customers.sql" | nindent 4 }}
+
+    GRANT ALL ON ALL TABLES IN SCHEMA public TO {{ .Values.opbeans.db.username }};
+
+    EOSQL
+
+  05_grant.sh: |
+    #!/usr/bin/env bash
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER"  -d "{{ .Values.opbeans.db.name }}"  <<EOSQL
+
+    GRANT ALL ON ALL TABLES IN SCHEMA public TO {{ .Values.opbeans.db.username }};
+
+    EOSQL

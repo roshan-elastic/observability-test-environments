@@ -1,0 +1,118 @@
+---
+# yaml-language-server: $schema=../../docs/cluster-config-schema.json
+# last update {{ .Date }}
+template_name: serverless-load-test
+template_description: |
+  Serverless Load test template configure a oblt cluster that runs on Elastic Stack serverless on the productoin environment.
+  Then launches a load test using opbeans-go.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#serverless-load-test)
+
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+#{{- $target := "production" }}
+#{{- if .Target }}
+#{{ $target = .Target }}
+#{{- end }}
+#{{- $opbeansReplicas := "10" }}
+#{{- if .NumberOfOpbeansReplicas }}
+#{{ $opbeansReplicas = .NumberOfOpbeansReplicas }}
+#{{- end }}
+#{{- $batchLength := "120" }}
+#{{- if .BatchLength }}
+#{{ $batchLength = .BatchLength }}
+#{{- end }}
+#{{- $requestPerMinute := "4000" }}
+#{{- if .RequestPerMinute }}
+#{{ $requestPerMinute = .RequestPerMinute }}
+#{{- end }}
+#{{- $parallelism := "2" }}
+#{{- if .Parallelism }}
+#{{ $parallelism = .Parallelism }}
+#{{- end }}
+
+slack_channel: "{{ .SlackChannel }}"
+oblt_username: "{{ $username }}"
+#{{- if .EphemeralCluster }}
+ephemeral_cluster: "{{ .EphemeralCluster }}"
+#{{- end }}
+grab_cluster_info: true
+create_ilm: false
+create_users: false
+cluster_name: "{{ .ClusterName }}"
+
+opbeans_replicas: "{{ $opbeansReplicas }}"
+opbeans_loaggen_run_length: "{{ $batchLength }}"
+opbeans_loaggen_rpms: "{{ $requestPerMinute }}"
+opbeans_loaggen_parallelism: "{{ $parallelism }}"
+opbeans_loaggen_completions: "{{ $parallelism }}"
+
+expire_date: '{{ now | mustDateModify "+720h" | date "2006-01-02" }}'
+
+k8s:
+  provider: gcp
+  machine_type: e2-highcpu-4
+  max_node_count: "{{ `{{ (opbeans_replicas|int) + (opbeans_loaggen_parallelism|int) | int }}` }}"
+
+stack:
+  mode: "serverless"
+  template: "observability"
+  target: "{{ $target }}"
+  serverless:
+#{{- if .ElasticsearchDockerImage }}
+    elasticsearch:
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- if .KibanaDockerImage }}
+    kibana:
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .FleetDockerImage }}
+    fleet:
+      image: "{{ .FleetDockerImage }}"
+#{{- end }}
+
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ `{{ deployment_dir }}` }}/bootstrap-serverless"
+
+apps:
+  helm:
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ `{{ kube_state_metrics_version }}` }}"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+    - name: elastic-agent-standalone
+      values_file: '{{ `{{ helm_deployment_dir }}` }}/elastic_agent/standalone/helm-values.yml.j2'
+      chart: '{{ `{{ helm_charts_dir }}` }}/elastic_agent'
+      version: 0.1.0
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+    - name: "opbeans-go"
+      chart: "{{ `{{ helm_charts_dir }}` }}/opbeans_go"
+      version: "0.1.0"
+      values_file: "{{ `{{ helm_deployment_dir }}` }}/opbeans/go-load-test/helm-values.yml.j2"
+      build_deps: true
+
+#{{- if .GitOps }}
+gitops:
+  enabled: "{{ .GitOps }}"
+#{{- if .GitHubCommit }}
+  commit: "{{ .GitHubCommit }}"
+#{{- end }}
+#{{- if .GitHubIssue }}
+  issue: "{{ .GitHubIssue }}"
+#{{- end }}
+#{{- if .GitHubPullRequest }}
+  pull_request: "{{ .GitHubPullRequest }}"
+#{{- end }}
+#{{- if .GitHubRepository }}
+  repository: "{{ .GitHubRepository }}"
+#{{- end }}
+#{{- if .GitHubCommentId }}
+  comment_id: "{{ .GitHubCommentId }}"
+#{{- end }}
+#{{- end }}

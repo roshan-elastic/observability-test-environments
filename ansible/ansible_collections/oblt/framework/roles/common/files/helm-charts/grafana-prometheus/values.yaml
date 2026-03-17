@@ -1,0 +1,117 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+## @param prometheus_service_url Prometheus service URL
+prometheus_service_url: "http://prometheus-server.default.svc.cluster.local"
+
+## @section prometheus Prometheus configuration
+## @extra prometheus.enabled Enable Prometheus
+## @descriptionStart
+## see [Prometheus Helm Chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus)
+## @descriptionEnd
+## @skip prometheus
+prometheus:
+  enabled: true
+  alertmanager:
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"
+  nodeExporter:
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "200Mi"
+      limits:
+        memory: "300Mi"
+  pushgateway:
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "64Mi"
+      limits:
+        memory: "128Mi"
+  service:
+    extraArgs:
+      storage.local.retention: 1d
+  server:
+    retention: "1d"
+    persistentVolume:
+      enabled: false
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "512Mi"
+      limits:
+        memory: "2Gi"
+
+## @section grafana Grafana configuration
+## @extra grafana.enabled Enable Grafana
+## @descriptionStart
+## see [Grafana Helm Chart](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md)
+## @descriptionEnd
+## @skip grafana
+grafana:
+  enabled: true
+  replicas: 1
+  podLabels:
+    app: grafana
+  resources:
+    requests:
+      cpu: 0.1
+      memory: "500Mi"
+    limits:
+      memory: "1Gi"
+  service:
+    type: ClusterIP
+    port: 3000
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      ingress.kubernetes.io/ssl-redirect: "true"
+      kubernetes.io/tls-acme: "true"
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: elastic-basic-auth
+      nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+    path: /
+    hosts:
+      - grafana.127.0.0.1.ip.es.io
+    tls:
+      - hosts:
+        - grafana.127.0.0.1.ip.es.io
+        secretName: graphana-ingress-tls
+  sidecar:
+    datasources:
+      enabled: true
+      label: grafana_datasource
+  # FIXME breaks the schema validation
+  # dashboardProviders:
+  #   dashboardproviders.yaml:
+  #     apiVersion: 1
+  #     providers:
+  #       - name: 'default'
+  #         orgId: 1
+  #         folder: ''
+  #         type: file
+  #         disableDeletion: false
+  #         editable: true
+  #         options:
+  #           path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      node-exporter:
+        gnetId: 1860
+        revision: 14
+        datasource: Prometheus
+  grafana.ini:
+    users:
+      viewers_can_edit: true
+    auth:
+      disable_login_form: true
+      disable_signout_menu: true
+    auth.anonymous:
+      enabled: true
+      org_role: Admin

@@ -1,0 +1,92 @@
+{
+	"type": "modal",
+	"clear_on_close": true,
+	"title": {
+		"type": "plain_text",
+		"text": "{{ .Title }}",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hey *{{ .User }}*!\n\nThank you for taking the time to create a knowledge base entry!\n\nPlease provide a general summary of the FAQ in the title below, and I will create an entry in the FAQ database."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "input",
+			"block_id": "question",
+			"label": {
+				"type": "plain_text",
+				"text": "What do you want to question this FAQ?",
+				"emoji": true
+			},
+			"element": {
+				"type": "plain_text_input",
+				"action_id": "question"
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "answer",
+			"label": {
+				"type": "plain_text",
+				"text": "What's the answer?",
+				"emoji": true
+			},
+			"element": {
+				"type": "plain_text_input",
+				"multiline": true,
+				"action_id": "answer"
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "Tell us what you know about it, you can use markdown format.",
+					"emoji": true
+				}
+			]
+		},
+		{
+			"type": "input",
+			"block_id": "url",
+			"label": {
+				"type": "plain_text",
+				"text": "What's the URL with further details (just the URL)?",
+				"emoji": true
+			},
+			"element": {
+				"type": "plain_text_input",
+				"multiline": false,
+				"action_id": "url"
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "Not obligatory, but can help to point to where people can read further about this.",
+					"emoji": true
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,95 @@
+---
+- name: Verify Restore
+  vars:
+    url: "{{ elasticsearch_url }}"
+    repo_name: "{{ lookup('env','SNAP_REPO_NAME') | default('external_gcs_repository', true) }}"
+    snapshot_name: "{{ lookup('file', '{{ build_dir }}/latest_snapshot') | mandatory }}"
+    json_query_cluster_data_streams: "data_streams[*].name"
+    json_query_snapshot_data_streams: "snapshots[*].data_streams"
+    json_query_snapshot_indices: "snapshots[*].indices"
+    json_query_cluster_indices: "[*].index"
+    map_regex_search: "^\\.kibana.*|^metrics-.*|^logs-.*|^traces-.*|^heartbeat-.*|^filebeat-.*|^auditbeat-.*|^metricbeat-.*|^\\.monitoring-.*"
+    es_username: "{{ elasticsearch_username }}"
+    es_password: "{{ elasticsearch_password }}"
+  block:
+    - name: Collect data streams from cluster
+      uri:
+        url: "{{ url }}/_data_stream?expand_wildcards=all,hidden"
+        method: "GET"
+        validate_certs: false
+        user: "{{ es_username }}"
+        password: "{{ es_password }}"
+        force_basic_auth: true
+        headers:
+          Content-Type: application/json
+          kbn-xsrf: true
+        body_format: json
+        body: ""
+      register: _cluster_data_streams
+      until: _cluster_data_streams.status == 200
+      retries: 3
+      delay: 30
+    - name: Collect snapshot info
+      uri:
+        url: "{{ url }}/_snapshot/{{ repo_name }}/{{ snapshot_name }}"
+        method: "GET"
+        validate_certs: false
+        user: "{{ es_username }}"
+        password: "{{ es_password }}"
+        force_basic_auth: true
+        headers:
+          Content-Type: application/json
+          kbn-xsrf: true
+        body_format: json
+        body: ""
+      register: _snapshot_data
+      until: _snapshot_data.status == 200
+      retries: 3
+      delay: 30
+    - name: Collect indices from cluster
+      uri:
+        url: "{{ url }}/_cat/indices?format=json&expand_wildcards=all,hidden"
+        method: "GET"
+        validate_certs: false
+        user: "{{ es_username }}"
+        password: "{{ es_password }}"
+        force_basic_auth: true
+        headers:
+          Content-Type: application/json
+          kbn-xsrf: true
+        body_format: json
+        body: ""
+      register: _cluster_indices
+      until: _cluster_indices.status == 200
+      retries: 3
+      delay: 30
+    - name: Collect data streams from cluster
+      set_fact:
+        cluster_data_streams: "{{ _cluster_data_streams.json | json_query(json_query_cluster_data_streams) | sort(case_sensitive=False) | flatten }}"
+    - name: Collect data streams from snapshot
+      set_fact:
+        snapshot_data_streams: "{{ _snapshot_data.json | json_query(json_query_snapshot_data_streams) | sort(case_sensitive=False) | flatten }}"
+    - name: Collect indices from snapshot
+      set_fact:
+        snapshot_indices: "{{ _snapshot_data.json | json_query(json_query_snapshot_indices) | sort(case_sensitive=False) | flatten }}"
+    - name: Collect indices from cluster
+      set_fact:
+        cluster_indices: "{{ _cluster_indices.json | json_query(json_query_cluster_indices) | sort(case_sensitive=False) | flatten }}"
+    - name: Data Streams filtered
+      debug:
+        msg: |
+          {{ snapshot_data_streams | type_debug }}
+          {{ snapshot_data_streams | map('regex_search', map_regex_search) | select() | list }}
+    - name: Index filtered
+      debug:
+        msg: |
+          {{ snapshot_indices | map('regex_search', map_regex_search) | select() | list }}
+
+    - name: Check if the cluster contains data_streams from snapshot
+      debug:
+        msg: |
+          {{ snapshot_data_streams | map('regex_search', map_regex_search) | list | difference(cluster_data_streams) | select()  }}
+    - name: Check if the cluster contains indices from snapshot
+      debug:
+        msg: |
+          {{ snapshot_indices | map('regex_search', map_regex_search) | list | difference(cluster_indices) | select() }}

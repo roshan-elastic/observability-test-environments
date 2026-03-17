@@ -1,0 +1,10 @@
+---
+- name: "Undeploy feature {{ role_name }}"
+  vars:
+    _integration_name: "{{ role_parameters.feature_integrations_name | default(feature_integrations_name) }}"
+    helm_chart:
+      name: "{{ _integration_name }}"
+      namespace: "{{ k8s_default_namespace }}"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: undeploy_chart.yml

@@ -1,0 +1,30 @@
+---
+cluster_name: "{{ lookup('env','CLUSTER_NAME') | default('eck-test-oblt-{{ cluster_seed }}', true) }}"
+save_secrets: false
+certificate_issuer: letsencrypt-staging
+kind_config_file: "{{ build_dir }}/kind/config_single_node-ports.yml"
+
+k8s:
+  enabled: true
+  provider: kind
+
+stack:
+  mode: eck
+  version: "{{ default_stack_version }}"
+  template: observability
+
+apps:
+  helm:
+    - name: elastic-agent-helm
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/deployment/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent"
+      version: 0.1.0
+    - name: fleet-server-helm
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/fleet_server/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent"
+      version: 0.1.0
+    - name: elastic-agent-standalone
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/standalone/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent"
+      version: 0.1.0
+      namespace: kube-system

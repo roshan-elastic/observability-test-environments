@@ -1,0 +1,32 @@
+- name: Processing {{ item }}
+  set_fact:
+    bootstrap_api: "{{ lookup('ansible.builtin.template', '{{ item }}') | from_yaml }}"
+
+- name: Bootstrap a Apm using the API
+  vars:
+    apm_headers_tmp: |
+      Authorization: "Bearer {{ apm_token }}"
+      {% for k,v in (bootstrap_api.headers.items() | default(None)) %}
+      {{ k }}: {{ v }}
+      {% endfor %}
+    apm_headers: "{{ apm_headers_tmp | from_yaml }}"
+  uri:
+    url: "{{ apm_url }}{{ bootstrap_api.api }}"
+    method: "{{ bootstrap_api.method }}"
+    validate_certs: false
+    headers: "{{ apm_headers }}"
+    body_format: "{{ bootstrap_api.body_format | default('json') }}"
+    body: "{{ bootstrap_api.body }}"
+    status_code: "{{ bootstrap_api.return_code }}"
+  register: bootstrap_apm_result
+  ignore_errors: "{{ bootstrap_api.ignore_errors | default(false) }}"
+  retries: "{{ bootstrap_api.retries | default(3) | int }}"
+  delay: "{{ bootstrap_api.delay | default(10) | int }}"
+  until: bootstrap_apm_result.status in bootstrap_api.return_code
+
+- name: Set facts for {{ bootstrap_api.description | default(bootstrap_api.api) }}
+  set_fact:
+    "{{ bootstrap_api.register }}": "{{ bootstrap_apm_result }}"
+  when:
+    - bootstrap_apm_result is defined
+    - bootstrap_api.register is defined

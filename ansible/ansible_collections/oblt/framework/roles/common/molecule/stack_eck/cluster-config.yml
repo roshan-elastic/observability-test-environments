@@ -1,0 +1,10 @@
+---
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: false
+ephemeral_cluster: true
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+
+k8s:
+  provider: gcp
+stack:
+  mode: eck

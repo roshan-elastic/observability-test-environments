@@ -1,0 +1,59 @@
+---
+- block:
+  - name: Create a directory tools folder
+    file:
+      path: "{{ bin_dir }}"
+      state: directory
+      mode: 0750
+
+  - name: Download gcloud installer CLI
+    vars:
+      arch: "{{ ansible_system | lower }}"
+    get_url:
+      url: "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{{ gcloud_version }}-{{ arch }}-x86_64.tar.gz"
+      dest: "{{ bin_dir }}/google-cloud-sdk.tar.gz"
+      mode: 0770
+
+  - name: Extract gcloud SDK installer
+    changed_when: false
+    shell: |
+      tar -xzf {{ bin_dir }}/google-cloud-sdk.tar.gz -C {{ bin_dir }}
+    tags:
+      - skip_ansible_lint
+
+  - name: Install gcloud CLI
+    changed_when: false
+    shell: |
+      set -e
+      {{ bin_dir }}/google-cloud-sdk/install.sh -q
+      if command -v kubectl &> /dev/null; then
+        echo "kubectl already installed"
+      else
+        {{ bin_dir }}/google-cloud-sdk/bin/gcloud components install kubectl
+      fi
+    args:
+      executable: /bin/bash
+      chdir: "{{ bin_dir }}"
+  tags:
+    - kubectl
+    - gcloud
+    - cli
+    - molecule-idempotence-notest
+  when:
+    - hermit_enabled is false
+
+# workaround for https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+- name: Install gke-gcloud-auth-plugin component
+  changed_when: false
+  shell: "{{ bin_dir }}/install-gke-gcloud-auth.sh"
+  tags:
+    - molecule-idempotence-notest
+
+- name: Check tools installed - gcloud
+  changed_when: false
+  command: gcloud --version
+
+- name: Set gcloud installed
+  file:
+    path: "{{ bin_dir }}/gcloud_installed"
+    state: touch

@@ -1,0 +1,63 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Hey there 👋 I'm oblt-robot. I'm here to help you with Oblt Clusters, CI and some automation!\n\nHere are a few ways you get started with me!"
+			}
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Mentions",
+				"emoji": true
+			}
+		},
+		{{ range $action := .Mentions }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*_{{ $action.Name }}_* - {{ $action.Tldr }}"
+			}
+		},{{ end }}
+		{
+			"type": "divider"
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Commands",
+				"emoji": true
+			}
+		},
+		{{ range $action := .Commands }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*_{{ $action.Name }}_* - {{ $action.Tldr }}"
+			}
+		},{{ end }}
+		{
+			"type": "divider"
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "image",
+					"image_url": "https://pbs.twimg.com/profile_images/625633822235693056/lNGUneLX_400x400.jpg",
+					"alt_text": "cute cat"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*oblt-robot* was built with :heart: from the @observablt-robots."
+				}
+			]
+		}
+	]
+}

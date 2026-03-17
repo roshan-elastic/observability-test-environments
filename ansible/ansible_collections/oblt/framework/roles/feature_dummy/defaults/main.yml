@@ -1,0 +1,6 @@
+---
+# yaml-language-server: $schema=../schema.json
+# see https://github.com/bitnami/readme-generator-for-helm
+## @section General
+## @param dummy_version [string] Default value for a parameter
+dummy_version: "default"

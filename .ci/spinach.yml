@@ -1,0 +1,114 @@
+---
+# A Popeye sample configuration file
+popeye:
+  # Checks resources against reported metrics usage.
+  # If over/under these thresholds a sanitization warning will be issued.
+  # Your cluster must run a metrics-server for these to take place!
+  allocations:
+    cpu:
+      underPercUtilization: 200  # Checks if cpu is under allocated by more than 200% at current load.
+      overPercUtilization: 50    # Checks if cpu is over allocated by more than 50% at current load.
+    memory:
+      underPercUtilization: 200  # Checks if mem is under allocated by more than 200% at current load.
+      overPercUtilization: 50    # Checks if mem is over allocated by more than 50% usage at current load.
+
+  # Excludes section provides for excluding certain resources scanned by Poppeye.
+  excludes:
+    # Exclude any configmaps within namespace fred that ends with a version#
+    v1/configmap:
+      - name: rx:fred*\.v\d+
+    # Exclude kube-system + any namespace the start with either kube or istio
+    v1/namespace:
+      - name: kube-public
+      - name: rx:kube
+      - name: rx:istio
+    # Exclude any pods that start with nginx or contains -telemetry
+    v1/pod:
+      - name: rx:nginx
+      - name: rx:.*-telemetry
+      - name: rx:prometheus-.*
+        codes:
+          - 106
+          - 107
+          - 103
+    # Exclude any service containing -dash in their name.
+    v1/service:
+      - name: rx:.*-dash
+    container:
+      - name: rx:wait-for-service
+      - name: initContainerStatuses
+      - name: containerStatuses
+      - name: initContainers
+    apps/v1/deployment:
+      - name: rx:prometheus-.*
+        codes:
+          - 106
+          - 107
+          - 103
+    apps/v1/daemonsets:
+      - name: rx:prometheus-.*
+        codes:
+          - 106
+          - 107
+          - 103
+  # Configure node resources.
+  node:
+    # Limits set a cpu/mem threshold in % ie if cpu|mem > limit a lint warning is triggered.
+    limits:
+      # CPU checks if current CPU utilization on a node is greater than 90%.
+      cpu: 90
+      # Memory checks if current Memory utilization on a node is greater than 80%.
+      memory: 80
+
+  # Configure pod resources
+  pod:
+    # Restarts check the restarts count and triggers a lint warning if above threshold.
+    restarts:
+      3
+    # Check container resource utilization in percent.
+    # Issues a lint warning if about these threshold.
+    limits:
+      cpu: 80
+      memory: 75
+
+  # Code specifies a custom severity level ie critical=3, warn=2, info=1
+  codes:
+    # [POP-106] No resources requests/limits defined.
+    106:
+      severity: 1
+    # [POP-109] CPU Current/Request (667m/500m) reached user 80% threshold (133%)
+    109:
+      severity: 1
+    # [POP-110] Memory Current/Request (334Mi/400Mi) reached user 75% threshold (83%)
+    110:
+      severity: 1
+    # [POP-107] No resource limits defined.
+    107:
+      severity: 1
+    # [POP-103] No liveness probe.
+    103:
+      severity: 1
+    # [POP-205] Pod was restarted (10) times
+    205:
+      severity: 1
+    # [POP-306] Container could be running as root user. Check SecurityContext/Image.
+    306:
+      severity: 1
+    # [POP-302] Pod could be running as root user. Check SecurityContext/image.
+    302:
+      severity: 1
+    # [POP-300] Using "default" ServiceAccount.
+    300:
+      severity: 1
+    # [POP-301] Connects to API Server? ServiceAccount token is mounted.
+    301:
+      severity: 1
+    # [POP-102] No probes defined.
+    102:
+      severity: 1
+    # [POP-101] Image tagged "latest" in use.
+    101:
+      severity: 1
+    # [POP-403] Deprecated Ingress API group "extensions/v1beta1". Use "networking.k8s.io/v1beta1" instead
+    403:
+      severity: 1

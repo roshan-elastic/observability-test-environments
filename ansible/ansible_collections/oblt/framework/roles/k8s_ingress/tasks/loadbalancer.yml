@@ -1,0 +1,50 @@
+---
+- name: Get Loadbalancer info
+  block:
+    - name: Import tasks
+      import_tasks: get_ingress_available.yml
+
+    - name: Get Loadbalancer IP
+      vars:
+        type: "{{ ingress_nginx_controller_service.resources[0].spec.type }}"
+      shell: |
+        TYPE='{{ type }}'
+        SVC="lb-ingress-nginx-controller"
+        N="{{ ingress_nginx_namespace }}"
+
+        if [ ${TYPE} = "LoadBalancer"  ]; then
+          kubectl get -n ${N} svc ${SVC} \
+            -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+        elif [ ${TYPE} = "NodePort"  ]; then
+          kubectl get -n ${N} svc ${SVC} \
+            -o jsonpath='{.spec.clusterIP}'
+        else
+          echo "Unknown ingress type ${TYPE}"
+          exit 1
+        fi
+      changed_when: false
+      register: ingress_ip
+      until:
+        - ingress_ip.stdout_lines is defined
+        - ingress_ip.stdout_lines
+      retries: 5
+      delay: 10
+      when:
+        - ingress_available|bool
+
+    - name: Configure loadbalancer variable
+      set_fact:
+        load_balancer_ip: "{{ ingress_ip.stdout }}"
+      when:
+        - ingress_available|bool
+        - ingress_ip is defined
+
+    - name: Set Config fatcs
+      set_fact:
+        ingress_enabled: "{{ ingress_enabled }}"
+  when:
+    - load_balancer_ip is not defined or load_balancer_ip | length == 0
+    - ingress_available|bool or ingress_enabled|bool
+  tags:
+    - ingress
+    - generate_config

@@ -1,0 +1,64 @@
+---
+## Workflow destroys expired clusters
+name: Oblt Cluster destroy expired
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: write
+
+
+jobs:
+  clusters-to-destroy:
+    runs-on: ubuntu-latest
+    outputs:
+      clusters: ${{ steps.process-file.outputs.clusters }}
+      isEmpty: ${{ steps.process-file.outputs.isEmpty }}
+    steps:
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+      - name: "Search for expired clusters"
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        with:
+          command: 'cluster list --all --filter "expire_date=$(date -I)" --output-file ${PWD}/destroy.json || true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set outputs
+        uses: actions/github-script@v7
+        id: process-file
+        with:
+          script: |
+            const path = require('path');
+            const fs = require('fs');
+            const destroyFile = path.join(process.env.GITHUB_WORKSPACE, 'destroy.json');
+            destroy = {items:[]};
+            isEmpty = true;
+            if (fs.existsSync(destroyFile)) {
+              destroy = JSON.parse(fs.readFileSync(destroyFile, 'utf8'));
+              isEmpty = destroy.items.length == 0;
+            }
+            core.setOutput('clusters', JSON.stringify(destroy));
+            core.setOutput('isEmpty', isEmpty);
+            core.info(`Clusters to destroy: ${JSON.stringify(destroy)}`);
+
+  destroy-clusters:
+    if: ${{ needs.clusters-to-destroy.outputs.isEmpty == 'false' }}
+    needs:
+      - clusters-to-destroy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        clusters: ${{ fromJson(needs.clusters-to-destroy.outputs.clusters).items }}
+    steps:
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+      - name: "Destroy cluster"
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        env:
+          CLUSTER_NAME: ${{ matrix.clusters.clusterName }}
+        with:
+          command: 'cluster destroy --cluster-name ${CLUSTER_NAME} --all --force --verbose'
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}

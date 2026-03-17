@@ -1,0 +1,19 @@
+---
+- block:
+  - name: Undeploy Certificate Manager
+    vars:
+      helm_chart:
+        name: "cert-manager"
+        chart: "{{ helm_charts_dir }}/certmanager"
+        version: "0.1.0"
+        namespace: "{{ k8s_default_namespace }}"
+    include_role:
+      name: oblt.framework.k8s_helm
+      tasks_from: undeploy_chart.yml
+    tags:
+      - certmanager
+      - undeploy
+
+  when:
+    - k8s_enabled|bool
+    - certmanager_enabled|bool

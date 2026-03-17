@@ -1,0 +1,8 @@
+---
+- name: Undeploy '{{ feature.name }}'
+  include_role:
+    name: "oblt.framework.feature_{{ feature.name }}"
+    tasks_from: undeploy.yml
+  loop: "{{ features }}"
+  loop_control:
+    loop_var: feature

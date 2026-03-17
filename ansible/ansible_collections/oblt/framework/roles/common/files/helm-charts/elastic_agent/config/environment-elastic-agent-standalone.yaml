@@ -1,0 +1,29 @@
+# {{ required "Elasticsearch access details are needed in standalone mode" .Values.elasticsearch.host }}
+# {{ required "Elasticsearch access details are needed in standalone mode" .Values.elasticsearch.username }}
+- name: ELASTICSEARCH_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.esCreds" . }}
+      key: username
+- name: ELASTICSEARCH_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.esCreds" . }}
+      key: password
+- name: ELASTICSEARCH_HOST
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "elastic-agent.esCreds" . }}
+      key: host
+- name: NODE_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: spec.nodeName
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: METRICS_SERVICE
+  value: {{ .Values.metricsService }}
+- name: STATE_PATH
+  value: "/etc/elastic-agent"

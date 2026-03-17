@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: edge-sec
+golden_cluster: true
+slack_channel: "#observablt-bots"
+create_users: true
+grab_cluster_info: true
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - '{{ deployment_dir }}/bootstrap-license'
+  - "{{ deployment_dir }}/bootstrap-defend"
+features:
+  - name: siem_linux
+    feature_siem_linux_elastic_agent_version: "{{ stack_version }}"
+    feature_siem_linux_name: "siem-linux-{{ cluster_name }}"
+    feature_siem_linux_machine_type: "e2-medium"
+  - name: siem_linux
+    feature_siem_linux_elastic_agent_version: "{{ stack_version }}"
+    feature_siem_linux_name: "siem-linux-{{ cluster_name }}-bis"
+    feature_siem_linux_machine_type: "e2-medium"
+configure_external_snapshots_repo: true
+stack:
+  ess:
+    saml_id: exkypx15mqqKrrm611t7
+    kibana:
+      zones: 3
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.16.0-d84b6899
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-d84b6899
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-d84b6899
+    profiling:
+      image: docker.elastic.co/observability-ci/profiling-agent:8.16.0-d84b6899
+  observability: true
+  mode: ess
+  template: security
+  target: production
+  version: 8.16.0-SNAPSHOT
+  update_channel: unstable
+  update_schedule: tuesday
+updated_at: "2024-08-06T02:17:24Z"

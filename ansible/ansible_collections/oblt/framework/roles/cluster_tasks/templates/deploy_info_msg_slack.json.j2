@@ -1,0 +1,73 @@
+{
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_basic.yml.j2') | replace('\n','\\n') }}"
+      }
+    },
+{% if elasticsearch_type == 'serverless' %}
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_serverless_01.yml.j2') | replace('\n','\\n') }}"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_serverless_02.yml.j2') | replace('\n','\\n') }}"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_serverless_03.yml.j2') | replace('\n','\\n') }}"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_serverless_04.yml.j2') | replace('\n','\\n') }}"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_serverless_05.yml.j2') | replace('\n','\\n') }}"
+      }
+    },
+{% endif %}
+{% if elasticsearch_type == 'ess' %}
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_ess.yml.j2') | replace('\n','\\n') }}"
+      }
+    },
+{% endif %}
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{ lookup('template', '{{ templates_dir }}/deploy_info_msg_commands.yml.j2') | replace('\n','\\n') }}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+---
+name: Notify cluster workflow started
+inputs:
+  slackChannel:
+    description: 'The slack channel to post to.'
+    required: true
+  clusterName:
+    description: 'The cluster name.'
+    required: true
+  gitOps:
+    description: 'The gitops flag.'
+    default: "false"
+  issue:
+    description: 'The issue number.'
+    required: false
+  target:
+    description: 'The target to execute.'
+    required: false
+  slack-bot-token:
+    description: 'The Slack bot token.'
+    required: true
+outputs:
+  thread-timestamp:
+    description: 'The thread timestamp.'
+    value: ${{ steps.slack-thread.outputs.thread-timestamp }}
+
+runs:
+  using: "composite"
+  steps:
+    ## SLACK MESSAGES
+    - name: Send slack message when started
+      continue-on-error: true
+      id: slack-thread
+      uses: elastic/oblt-actions/slack/send@v1
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        channel-id: ${{ inputs.slackChannel }}
+        message: "Cluster ${{ inputs.clusterName }} processing changes - <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|build>"
+
+    ## GITOPS (support only for GitHub issues automation)
+    ## TODO: support for pull-requests in the future if needed.
+    - if: inputs.gitOps && contains(inputs.gitOps, 'true') && inputs.issue && contains(inputs.target, 'create-cluster')
+      continue-on-error: true
+      name: Notify GitHub Issue when started
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🏃 I am now deploying your custom cluster (it takes a few minutes) ([logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))'
+          })
+
+          const result = await github.rest.issues.listLabelsOnIssue({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          })
+          const current_labels = result.data.map((label) => label.name)
+          const hasServerless = current_labels.some(
+            (label) =>
+              label === 'deploy-custom-kibana-serverless',
+          )
+          const labels = ['cluster']
+          if (hasServerless) {
+            labels.push('serverless-cluster')
+          }
+          github.rest.issues.update({
+              issue_number: ${{ inputs.issue }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels
+            })

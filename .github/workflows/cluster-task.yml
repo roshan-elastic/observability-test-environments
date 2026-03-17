@@ -1,0 +1,61 @@
+---
+name: Oblt Cluster Task
+
+on:
+  workflow_dispatch:
+    inputs:
+      cluster-name:
+        description: 'Cluster name'
+        required: true
+        default: 'none-oblt'
+      task:
+        description: 'Task to perform'
+        required: true
+        type: choice
+        default: 'update-cluster'
+        options:
+          - 'update-cluster'
+          - 'recreate-cluster'
+          - 'tasks-stack'
+          - 'tasks-k8s-deployments'
+          - 'tasks-vault-secrets'
+          - 'tasks-features'
+          - 'destroy-cluster'
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+
+# Avoid running if there is already an on-going action running for the same cluster
+concurrency:
+  group: "${{ github.workflow }}-${{ inputs.cluster-name }}"
+
+jobs:
+  perform-task:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read cluster config
+        id: cluster-config
+        uses: ./.github/actions/cluster-read-config
+        with:
+          clusterName: ${{ inputs.cluster-name }}
+
+      - uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Perform task on cluster ${{ inputs.cluster-name }} - ${{ inputs.task }}
+        uses: ./.github/actions/cluster-target
+        with:
+          target: ${{ inputs.task }}
+          clusterConfigFile: ${{ steps.cluster-config.outputs.clusterConfigFile }}
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

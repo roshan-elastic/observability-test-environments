@@ -1,0 +1,62 @@
+---
+# yaml-language-server: $schema=../../../../helm-charts/opbeans_go_standalone/values.schema.json
+opbeans:
+  fullnameOverride: {{ helm_chart.name }}
+  apm:
+    url: "http://{{ helm_chart.name }}-apm:8200"
+{% if apm_apikey is defined and apm_apikey != "" %}
+    apikey: "{{ apm_apikey }}"
+{% elif apm_token is defined and apm_token != "" %}
+    token: "{{ apm_token }}"
+{% endif %}
+    verifyServerCert: "false"
+  serviceAccount:
+    name: {{ helm_chart.name }}-{{ cluster_hash }}
+  loadgen:
+    enabled: true
+    schedule: "{{ opbeans_loaggen_schedule | default('*/2 * * * *') }}"
+    api:
+      enabled: true
+      urls: "{{ helm_chart.name }}:http://{{ helm_chart.name }}:3000"
+      runLength: "{{ helm_chart.name }}:{{ opbeans_loaggen_run_length | default('120') }}"
+      requestMinute: "{{ helm_chart.name }}:{{ opbeans_loaggen_rpms | default('1000') }}"
+    frontend:
+      enabled: false
+      url: "http://{{ helm_chart.name }}:3000"
+    molotov:
+      enabled: false
+      url: "http://{{ helm_chart.name }}:3000"
+      duration: 120
+      tolerance: 75
+  db:
+    enabled: true
+    host: {{ helm_chart.name }}-db
+    name: {{ helm_chart.name }}
+    port: 5432
+    type: postgresql
+    username: elastic
+    password: none
+  redis:
+    url: redis://{{ helm_chart.name }}-redis-master:6379
+redis:
+  fullnameOverride: "{{ helm_chart.name }}-redis"
+postgresql:
+  fullnameOverride: "{{ helm_chart.name }}-db"
+  auth:
+    username: "elastic"
+    existingSecret: "{{ helm_chart.name }}-db-creds"
+  primary:
+    initdb:
+      scriptsConfigMap: {{ helm_chart.name }}-initdb
+apm:
+  enabled: true
+  image:
+    name: docker.elastic.co/apm/apm-server
+    tag: {{ stack_version }}
+    pullPolicy: IfNotPresent
+  args: ["--strict.perms=false", "-e"]
+  elasticsearch:
+    host: {{ elasticsearch_url }}:443
+    username: {{ elasticsearch_username }}
+    password: {{ elasticsearch_password }}
+  secretToken: "{{ apm_token}}"

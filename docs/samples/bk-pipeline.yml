@@ -1,0 +1,47 @@
+env:
+  GITHUB_TOKEN: ${VAULT_GITHUB_TOKEN}
+
+steps:
+  - label: Create cluster
+    key: create-cluster
+    agents:
+      # The GCP provider works out of the box.
+      # If you are using a different provider, you might hit some issues if the image is using the root user.
+      provider: "gcp"
+    plugins:
+      - elastic/oblt-google-auth#v1.0.0: ~
+      - elastic/oblt-cli#v0.1.0: ~
+    command: |
+      # Create a cluster with the specified stack version and store the cluster information in a file
+      oblt-cli cluster create ess --stack-version 8.13.0-SNAPSHOT --cluster-name-prefix my-job --output-file="$${PWD}/cluster-info.json"
+
+      # Extract the cluster name from the cluster information file
+      CLUSTER_NAME=$$(jq -r '.ClusterName' cluster-info.json)
+
+      # Store the cluster name as a meta-data
+      buildkite-agent meta-data set cluster-name "$${CLUSTER_NAME}"
+
+      # Save cluster secrets to a file
+      oblt-cli cluster secrets env --cluster-name="$${CLUSTER_NAME}" --output-file="$${PWD}/env.sh"
+
+      # Source the secrets file
+      source "env.sh"
+
+      # Run integration tests
+      ./integration-tests.sh
+
+  - label: Destroy cluster
+    depends_on: create-cluster
+    allow_dependency_failure: true
+    agents:
+      # The GCP provider works out of the box.
+      # If you are using a different provider, you might hit some issues if the image is using the root user.
+      provider: "gcp"
+    plugins:
+      - elastic/oblt-cli#v0.1.0: ~
+    command: |
+      # Get the cluster name from the meta-data
+      CLUSTER_NAME="$$(buildkite-agent meta-data get cluster-name)"
+
+      # Destroy the cluster
+      oblt-cli cluster destroy --cluster-name "$${CLUSTER_NAME}" --force

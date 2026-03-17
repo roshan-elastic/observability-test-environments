@@ -1,0 +1,9 @@
+---
+- name: Check Cluster created
+  changed_when: false
+  command: "docker ps --filter name={{ cluster_name }} -q"
+  register: kind_cluster_available
+  tags:
+    - check
+    - kind
+    - k8s

@@ -1,0 +1,116 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+# Default values for package-registry.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## @param replicaCount Number of pod replicas
+replicaCount: 1
+
+## @param enabled Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.
+enabled: true
+
+## @section image Docker image settings
+image:
+  ## @param image.name Name of the Docker image (docker.elastic.co/observability-ci/integrations/package-registry).
+  ## @param image.tag Tag of the Docker image (latest).
+  ## @param image.pullPolicy  Docker image pull policy (IfNotPresent|Always|Never)
+  name: docker.elastic.co/observability-ci/integrations/package-registry
+  tag: latest
+  pullPolicy: IfNotPresent
+
+## @section imagePullSecrets Docker secrets used to pull the Docker images.
+imagePullSecrets:
+  ## @param imagePullSecrets[0].name Name of the Docker secret.
+  - name: docker.elastic.co
+
+## @param nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.
+nameOverride: ""
+## @param fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.
+fullnameOverride: ""
+
+## @param annotations Additional annotations to add to the kubernetes deployment.
+annotations: {}
+
+## @section serviceAccount Kubernetes Service Account settings
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a service account should be created
+  ## @param serviceAccount.annotations Annotations to add to the service account
+  ## @param serviceAccount.name The name of the service account to use.
+  ## If not set and create is true, a name is generated using the fullname template
+  create: true
+  annotations: {}
+  name: ""
+
+## Configure Container Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @section securityContext Enabled Apache Server containers' Security Context
+## @skip securityContext
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+## @section service service Service settings
+service:
+  ## @param service.type Service type
+  type: ClusterIP
+  ## @param service.port Service port
+  port: 80
+
+## @section ingress Ingress settings
+ingress:
+  ## @param ingress.enabled Enable or disable the ingress resource.
+  ## @param ingress.certificateIssuer Name of the certificates issuer.
+  ## @param ingress.host Hostname exposed by the ingress resource.
+  ## @param ingress.annotations Additional annotation to the ingress resource.
+  enabled: false
+  certificateIssuer: "letsencrypt-stage"
+  host: package-registry.127.0.0.1.ip.es.io
+  annotations: {}
+    # ingress.kubernetes.io/ssl-redirect: "true"
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # nginx.ingress.kubernetes.io/app-root: /dashboard
+    # nginx.ingress.kubernetes.io/auth-type: basic
+    # nginx.ingress.kubernetes.io/auth-secret: elastic-basic-auth
+    # nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  # hosts:
+  #   - host: chart-example.local
+  #     paths:
+  #       - path: /
+  #         pathType: ImplementationSpecific
+  # tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+## @section resources requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+## @param resources.limits.memory The memory limit for the Opbean
+## @param resources.requests.memory The requested memory for the Opbean
+## @param resources.requests.cpu The requested cpu for the Opbean
+resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 0.1
+      memory: 256Mi
+
+## @param extraEnvVars Array to add extra environment variables
+## @skip extraEnvVars
+extraEnvVars:
+  - name: EPR_LOG_LEVEL
+    value: debug
+  - name: EPR_ADDRESS
+    value: 0.0.0.0:8080
+  - name: EPR_METRICS_ADDRESS
+    value: 0.0.0.0:9000
+
+## @param sharedPVC Name of the shared PVC to use.
+sharedPVC: ""

@@ -1,0 +1,76 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "build_dir": {
+            "type": "string",
+            "description": "The directory where the build is stored",
+            "default": "\"\""
+        },
+        "bin_dir": {
+            "type": "string",
+            "description": "The directory where the binaries are stored",
+            "default": "\"\""
+        },
+        "hermit_enabled": {
+            "type": "boolean",
+            "description": "Enable Hermit to install the tools",
+            "default": true
+        },
+        "k8s_provider": {
+            "type": "string",
+            "description": "The k8s provider name",
+            "default": "\"\""
+        },
+        "k8s_enabled": {
+            "type": "string",
+            "description": "Enable K8s",
+            "default": "\"\""
+        },
+        "save_secrets": {
+            "type": "boolean",
+            "description": "Save the secrets in the build directory",
+            "default": true
+        },
+        "terraform_version": {
+            "type": "string",
+            "description": "The Terraform version to install",
+            "default": "\"\""
+        },
+        "ess_terraform_version": {
+            "type": "string",
+            "description": "Elastic terraform provider version",
+            "default": "\"\""
+        },
+        "build_tf_provider_from_src": {
+            "type": "string",
+            "description": "Build the Terraform provider from source",
+            "default": "\"\""
+        },
+        "use_snapshot_tf_provider": {
+            "type": "string",
+            "description": "Use the snapshot version of the Terraform provider",
+            "default": "\"\""
+        },
+        "gcloud_version": {
+            "type": "string",
+            "description": "The GCloud version to install",
+            "default": "\"\""
+        },
+        "kind_version": {
+            "type": "string",
+            "description": "The Kind version to install",
+            "default": "\"\""
+        },
+        "kubectl_version": {
+            "type": "string",
+            "description": "The Kubectl version to install",
+            "default": "\"\""
+        },
+        "helm_version": {
+            "type": "string",
+            "description": "The Helm version to install",
+            "default": "\"\""
+        }
+    }
+}

@@ -1,0 +1,9 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param gcp_dir [string] The directory where the GCP files are stored
+gcp_dir: "{{ build_dir }}/gcp"
+## @param cluster_context [string] The name of the k8s configuration context to create
+cluster_context: "gke_{{ k8s_project }}_{{ k8s_region }}_{{ gke_cluster_name }}"
+## @param static_ip_region [string] The region to create the static IP
+static_ip_region: us-central1

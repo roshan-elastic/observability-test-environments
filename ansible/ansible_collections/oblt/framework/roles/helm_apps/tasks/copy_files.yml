@@ -1,0 +1,15 @@
+---
+- name: Create a directory if it does not exist
+  file:
+    path: "{{ helm_dir }}/{{ item.name }}"
+    state: directory
+    mode: '0700'
+
+- name: Helm chart config
+  template:
+    src: "{{ item.values_file | default(helm_dir + '/.empty', true) }}"
+    dest: "{{ helm_dir }}/{{ item.name }}/helm-values.yaml"
+    mode: 0600
+  tags:
+    - helm_apps
+    - generate_config

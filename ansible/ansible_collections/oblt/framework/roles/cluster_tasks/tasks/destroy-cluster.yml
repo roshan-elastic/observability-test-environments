@@ -1,0 +1,47 @@
+---
+- name: Destroy k8s cluster (GCP)
+  ignore_errors: true
+  block:
+    - register: _result
+      include_role:
+        name: oblt.framework.k8s_gcp
+        tasks_from: destroy_cluster.yml
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'gcp' or k8s_provider == 'autopilot'
+
+- name: Destroy k8s cluster (Kind)
+  ignore_errors: true
+  block:
+    - register: _result
+      include_role:
+        name: oblt.framework.k8s_kind
+        tasks_from: destroy_cluster.yml
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'
+
+- name: Destroy Elastic Cloud cluster (Terraform)
+  ignore_errors: true
+  block:
+    - register: _result
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: destroy_cluster.yml
+  when:
+    - elasticsearch_enabled|bool
+    - (stack_mode|default(None)) == 'ess'
+
+- name: Destroy Serverless deployment
+  ignore_errors: true
+  block:
+    - register: _result
+      include_role:
+        name: oblt.framework.stack_serverless
+        tasks_from: destroy.yml
+  when:
+    - elasticsearch_enabled|bool
+    - elasticsearch_type == 'serverless'
+
+- name: Include tasks from delete-secrets.yml
+  include_tasks: delete-secrets.yml

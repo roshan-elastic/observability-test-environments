@@ -1,0 +1,69 @@
+---
+- name: Generate Beats auxiliary services config files
+  when: item.enabled
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ build_dir }}/{{ item.file }}"
+    mode: 0600
+  loop:
+    - name: "apache2"
+      file: "helm/apache/helm-values.yml"
+      enabled: "{{ apache_enabled }}"
+    - name: "apache2"
+      file: "k8s/apache/cluster-info-placeholder.yml"
+      enabled: "{{ apache_enabled }}"
+    - name: "haproxy"
+      file: "helm/haproxy/helm-values.yml"
+      enabled: "{{ haproxy_enabled }}"
+  tags:
+    - apache
+    - haproxy
+    - generate_secrets
+
+- name: Deploy HAProxy and Apache httpd resources
+  changed_when: false
+  command: |
+    kubectl apply -R -f "{{ k8s_dir }}/{{ item.app }}"
+  loop:
+    - app: apache
+    - app: haproxy
+  tags:
+    - beats
+    - apache
+    - apache2
+    - haproxy
+    - deploy
+
+- name: "Deploy Apache httpd"
+  vars:
+    helm_chart:
+      chart: "bitnami/apache"
+      version: "{{ apache_version }}"
+      values_file: "{{ helm_dir }}/apache/helm-values.yml"
+      name: "apache"
+      namespace: "{{ k8s_default_namespace }}"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: deploy_chart.yml
+  when:
+    - apache_enabled
+  tags:
+    - apache
+    - deploy
+
+- name: "Deploy HAproxy"
+  vars:
+    helm_chart:
+      chart: "bitnami/haproxy"
+      version: "{{ haproxy_version }}"
+      values_file: "{{ helm_dir }}/haproxy/helm-values.yml"
+      name: "haproxy"
+      namespace: "{{ k8s_default_namespace }}"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: deploy_chart.yml
+  when:
+    - haproxy_enabled
+  tags:
+    - haproxy
+    - deploy

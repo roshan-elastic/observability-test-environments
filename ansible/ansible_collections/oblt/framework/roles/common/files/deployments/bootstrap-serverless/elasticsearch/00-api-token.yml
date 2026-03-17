@@ -1,0 +1,16 @@
+---
+description: Create an API Token
+api: "/_security/oauth2/token"
+method: POST
+register: fleet_api_token_result
+headers:
+  accept: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+retries: 10
+delay: 30
+body: |
+  {
+    "grant_type" : "client_credentials"
+  }

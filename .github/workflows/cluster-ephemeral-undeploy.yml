@@ -1,0 +1,67 @@
+---
+## Workflow to undeploy ephemeral/leftover deployments.
+name: Oblt Cluster Ephemeral-undeploy
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * 6"
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: "${{ github.ref }}-cluster-kibana-undeploy"
+    env:
+      KIBANA_DEPLOY_FOLDER: "environments/users/deploykibana"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+
+      - name: Delete Kibana custom deployments
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        with:
+          command: 'cluster destroy --wipeup --force --username "${OBLT_USERNAME}" --slack-channel "${OBLT_SLACK_CHANNEL}"'
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+        env:
+          OBLT_USERNAME: deploykibana
+          OBLT_SLACK_CHANNEL: '#observablt-bots'
+
+      - name: unlock
+        if: ${{ always()}}
+        run: rm -fr "${HOME}/.oblt-cli/lock" || true
+
+      - name: Delete CI test deployments
+        if: ${{ always()}}
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        with:
+          command: 'cluster destroy --wipeup --force --username "${OBLT_USERNAME}" --slack-channel "${OBLT_SLACK_CHANNEL}"'
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+        env:
+          OBLT_USERNAME: obltmachine
+          OBLT_SLACK_CHANNEL: '#observablt-bots'
+
+      - name: clean ephemeral test clusters
+        if: ${{ always()}}
+        uses: ./.github/actions/make-target
+        with:
+          target: "clean-ephemeral-clusters"
+          baseDir: ".ci"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Notify
+        if: ${{ failure() }}
+        uses: elastic/oblt-actions/slack/send@v1
+        with:
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: '#observablt-bots'
+          message: "Failed to undeploy Kibana custom deployments. <${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|Check the logs>"

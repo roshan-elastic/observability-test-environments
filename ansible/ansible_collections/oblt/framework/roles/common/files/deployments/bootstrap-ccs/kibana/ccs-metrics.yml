@@ -1,0 +1,20 @@
+---
+# Description of what the recipe do.
+description: Configure logs to use CCS
+# Path to the REST API call.
+api: "api/metrics/source/default"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PATCH
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+# The payload to send to the REST API.
+body: |
+  {
+    "metricAlias": "remote_cluster:metricbeat-*,metricbeat-*,remote_cluster:metrics-*,metrics-*"
+  }
+# The expected return code.
+return_code:
+  - 200
+ignore_errors: true

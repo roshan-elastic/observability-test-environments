@@ -1,0 +1,38 @@
+---
+- block:
+  - name: Import tasks
+    import_tasks: copy_files.yml
+
+  - name: Undeploy ingress
+    vars:
+      helm_chart:
+        name: "lb"
+        namespace: "{{ ingress_nginx_namespace }}"
+    include_role:
+      name: oblt.framework.k8s_helm
+      tasks_from: undeploy_chart.yml
+    tags:
+      - ingress
+      - undeploy
+
+  - name: Delete namespace
+    kubernetes.core.k8s:
+      state: absent
+      kind: Namespace
+      name: "{{ ingress_nginx_namespace }}"
+    tags:
+      - ingress
+      - undeploy
+
+  - name: Delete secrets
+    kubernetes.core.k8s:
+      state: absent
+      kind: Secret
+      namespace: "{{ k8s_default_namespace }}"
+      src: "{{ ingress_dir }}/ingress-secret.yaml"
+    tags:
+      - ingress
+      - undeploy
+  when:
+    - k8s_enabled|bool
+    - ingress_enabled

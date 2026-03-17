@@ -1,0 +1,35 @@
+---
+## Workflow to daily update channels.
+name: update-channels
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 1-5"
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  tools:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Setup updatecli"
+        uses: "updatecli/updatecli-action@v2.65.0"
+        with:
+          version: "v0.75.0"
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: 'pip'
+          cache-dependency-path: .ci/requirements.txt
+      - uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+      - run: make -C .ci/update-versions update-channels
+        env:
+          GITHUB_TOKEN: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}

@@ -1,0 +1,45 @@
+---
+- block:
+  - name: Generate EDEN config files
+    vars:
+      docker_secret_name: "elastic-prod-registry"
+      k8s_docker_namespace: "eden-observe"
+    template:
+      src: "{{ item.file_src }}"
+      dest: "{{ item.file_dst }}"
+      mode: 0640
+    loop:
+      - file_src: "{{ helm_deployment_dir }}/eden-observe/helm-values.yml.j2"
+        file_dst: "{{ helm_deployment_dir }}/eden-observe/helm-values.yml"
+      - file_src: "{{ k8s_deployment_dir }}/docker-secret.yml.j2"
+        file_dst: "{{ k8s_deployment_dir }}/eden-observe/templates/docker-secret.yml"
+
+  - name: Clone EDEN demo
+    changed_when: false
+    shell: |
+      cd "{{ build_dir }}"
+      rm -fr demos
+      git clone --depth 1 --single-branch --no-tags https://github.com/elastic/demos.git
+
+  - name: Replace files
+    synchronize:
+      src: "{{ deployment_dir }}/k8s/eden-observe/templates/"
+      dest: "{{ build_dir }}/demos/observe/helm3/templates/"
+    tags:
+      - molecule-idempotence-notest
+
+  - name: Deploy EDEN observe demo
+    vars:
+      helm_chart:
+        chart: "{{ build_dir }}/demos/observe/helm3"
+        version: "0.1.0"
+        values_file: "{{ helm_deployment_dir }}/eden-observe/helm-values.yml"
+        name: "observe-demo"
+        namespace: "eden-observe"
+        extra_args: "--create-namespace"
+    include_role:
+      name: oblt.framework.k8s_helm
+      tasks_from: deploy_chart.yml
+  when:
+    - k8s_enabled|bool
+    - observe_demo_enabled|bool

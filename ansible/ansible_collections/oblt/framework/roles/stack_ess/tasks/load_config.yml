@@ -1,0 +1,52 @@
+---
+- name: load terraform state
+  vars:
+    json: "{{ lookup('file', '{{ ess_tf_dir }}/terraform.tfstate') | from_json | community.general.json_query('resources[0].instances[0]') }}"
+  set_fact:
+    ess_tfstate_attributes: "{{ json.attributes }}"
+  tags:
+    - elasticsearch
+    - generate-config
+
+- name: Configure Elasticsearch variables
+  vars:
+    es_tf: "{{ ess_tfstate_attributes.elasticsearch }}"
+    cloud_id: "{{ es_tf.cloud_id }}"
+    domain: "{{ (cloud_id.split(':')[1] | b64decode).split(':')[0] }}"
+  set_fact:
+    elasticsearch_url: "https://{{ ess_tfstate_attributes.alias }}.es.{{ domain }}:443"
+    elasticsearch_username: "{{ ess_tfstate_attributes.elasticsearch_username }}"
+    elasticsearch_password: "{{ ess_tfstate_attributes.elasticsearch_password }}"
+    ess_cloud_id: "{{ cloud_id }}"
+    ess_deployment_id: "{{ ess_tfstate_attributes.id }}"
+    ess_domain: "{{ domain }}"
+    ess_alias: "{{ ess_tfstate_attributes.alias }}"
+  tags:
+    - elasticsearch
+    - generate-config
+
+- name: ESS Deployment ID
+  debug:
+    msg: "{{ ess_deployment_id }}"
+
+- name: Configure Kibana variables
+  set_fact:
+    kibana_url: "https://{{ ess_alias }}.kb.{{ ess_domain }}:443"
+    kibana_username: "{{ elasticsearch_username }}"
+    kibana_password: "{{ elasticsearch_password }}"
+  when:
+    - kibana_enabled | bool
+  tags:
+    - kibana
+    - generate-config
+
+- name: Configure APM variables
+  set_fact:
+    apm_token: "{{ ess_tfstate_attributes.apm_secret_token | default(None, true) }}"
+    apm_url: "https://{{ ess_alias  }}.apm.{{ ess_domain }}:443"
+    fleet_url: "https://{{ ess_alias }}.fleet.{{ ess_domain }}:443"
+  when:
+    - apm_enabled | bool
+  tags:
+    - apm
+    - generate-config

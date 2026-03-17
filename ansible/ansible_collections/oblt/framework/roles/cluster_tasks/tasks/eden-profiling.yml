@@ -1,0 +1,65 @@
+---
+- block:
+    - name: Generate EDEN config files
+      vars:
+        docker_secret_name: "elastic-prod-registry"
+        k8s_docker_namespace: "eden-profiling"
+      template:
+        src: "{{ item.file_src }}"
+        dest: "{{ item.file_dst }}"
+        mode: 0640
+      loop:
+        - file_src: "{{ helm_deployment_dir }}/eden-profiling/helm-values.yml.j2"
+          file_dst: "{{ helm_deployment_dir }}/eden-profiling/helm-values.yml"
+        - file_src: "{{ k8s_deployment_dir }}/docker-secret.yml.j2"
+          file_dst: "{{ k8s_deployment_dir }}/eden-profiling/templates/docker-secret.yml"
+        - file_src: "{{ helm_deployment_dir }}/eden-profiling/profilling-helm-values.yaml.j2"
+          file_dst: "{{ helm_deployment_dir }}/eden-profiling/profilling-helm-values.yaml"
+
+    - name: Create Namespace
+      changed_when: false
+      shell: |
+        kubectl create namespace universal-profiling
+        kubectl label namespace universal-profiling app=universal-profiling-agent provider=elastic  --overwrite
+
+    - name: Deploy profiler
+      vars:
+        helm_chart:
+          chart: "elastic/pf-host-agent"
+          version: "v3.1.0"
+          values_file: "{{ helm_deployment_dir }}/eden-profiling/profilling-helm-values.yaml"
+          name: "universal-profiling-agent"
+          namespace: "universal-profiling"
+      include_role:
+        name: oblt.framework.k8s_helm
+        tasks_from: deploy_chart.yml
+
+    - name: Clone EDEN demo
+      changed_when: false
+      shell: |
+        cd "{{ build_dir }}"
+        rm -fr demos
+        git clone --depth 1 --single-branch --no-tags https://github.com/elastic/demos.git
+
+    - name: Replace files
+      synchronize:
+        src: "{{ deployment_dir }}/k8s/eden-profiling/templates/"
+        dest: "{{ build_dir }}/demos/profiling/helm3/templates/"
+      tags:
+        - molecule-idempotence-notest
+
+    - name: Deploy EDEN observe demo
+      vars:
+        helm_chart:
+          chart: "{{ build_dir }}/demos/profiling/helm3"
+          version: "0.1.0"
+          values_file: "{{ helm_deployment_dir }}/eden-profiling/helm-values.yml"
+          name: "profiling-demo"
+          namespace: "eden-profiling"
+          extra_args: "--create-namespace"
+      include_role:
+        name: oblt.framework.k8s_helm
+        tasks_from: deploy_chart.yml
+  when:
+    - k8s_enabled|bool
+    - profiling_demo_enabled|bool

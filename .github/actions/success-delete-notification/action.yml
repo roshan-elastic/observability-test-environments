@@ -1,0 +1,34 @@
+---
+name: Notify cluster delete success
+description: 'Notify slack channel about cluster deletion success'
+inputs:
+  gitOps:
+    description: 'The gitops flag.'
+    default: "false"
+  issue:
+    description: 'The issue number.'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - if: inputs.gitOps && contains(inputs.gitOps, 'true') && inputs.issue
+      name: Notify GitHub issue when created
+      continue-on-error: true
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const result = await github.rest.issues.listLabelsOnIssue({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          })
+          const labels = result.data.map((label) => label.name)
+          labels.push('destroyed-cluster')
+          github.rest.issues.update({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'closed',
+            labels: labels
+          })

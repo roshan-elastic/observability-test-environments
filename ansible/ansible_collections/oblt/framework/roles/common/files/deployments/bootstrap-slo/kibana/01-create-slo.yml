@@ -1,0 +1,39 @@
+---
+description: Create an SLO on api-backend-java
+api: "/api/observability/slos"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+register: create_slo_result
+body: |
+  {
+    "id": "api-backend-java",
+    "name": "API backend java Availability",
+    "description": "",
+    "indicator": {
+      "type": "sli.apm.transactionErrorRate",
+      "params": {
+        "service": "api-backend-java",
+        "environment": "*",
+        "transactionType": "*",
+        "transactionName": "*",
+        "filter": "",
+        "index": "metrics-apm*,apm-*"
+      }
+    },
+    "budgetingMethod": "occurrences",
+    "timeWindow": {
+      "duration": "7d",
+      "type": "rolling"
+    },
+    "objective": {
+      "target": 0.795
+    },
+    "tags": ["prod", "api"],
+    "groupBy": "*"
+  }
+return_code:
+  - 200
+  - 409

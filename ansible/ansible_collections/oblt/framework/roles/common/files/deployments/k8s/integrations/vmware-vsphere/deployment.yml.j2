@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmware-vsphere-integration
+  namespace: "default"
+  labels:
+    app: vmware-vsphere-integration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vmware-vsphere-integration
+  template:
+    metadata:
+      labels:
+        app: vmware-vsphere-integration
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: docker.elastic.co
+      volumes:
+        - name: vmware-vsphere-integration-config
+          configMap:
+            name: vmware-vsphere-integration-config
+      containers:
+        - name: vmware-metrics
+          image: vmware/vcsim:latest
+          imagePullPolicy: Always
+          args:
+            - "-l"
+            - "127.0.0.1:8989"
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+        - name: vsphere-log-udp
+          image: docker.elastic.co/observability/stream:v0.7.0
+          imagePullPolicy: Always
+          command: [ "/stream", "log", "--start-signal=SIGHUP", "--delay=5s", "--addr", "localhost:9514", "-p=udp", "/sample_logs/syslog.log" ]
+          volumeMounts:
+            - name: vmware-vsphere-integration-config
+              mountPath: /sample_logs/syslog.log
+              subPath: syslog.log
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+        - name: vsphere-log-tcp
+          image: docker.elastic.co/observability/stream:v0.7.0
+          imagePullPolicy: Always
+          command: [ "/stream", "log", "--start-signal=SIGHUP", "--delay=5s", "--addr", "localhost:9515", "-p=tcp", "/sample_logs/syslog.log" ]
+          volumeMounts:
+            - name: vmware-vsphere-integration-config
+              mountPath: /sample_logs/syslog.log
+              subPath: syslog.log
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+        - name: elastic-agent
+          image: "docker.elastic.co/observability-ci/elastic-agent:{{ stack_version }}"
+          env:
+            - name: FLEET_ENROLL
+              value: "1"
+            - name: FLEET_INSECURE
+              value: "true"
+            - name: FLEET_TOKEN_POLICY_NAME
+              value: "VMware vSphere integration"
+            - name: KIBANA_HOST
+              value: "{{ kibana_url }}"
+            - name: KIBANA_FLEET_USERNAME
+              value: "{{ kibana_username }}"
+            - name: KIBANA_FLEET_PASSWORD
+              value: "{{ kibana_password }}"
+            - name: FLEET_URL
+              value: "{{ fleet_url }}"
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vmware-vsphere-integration-config
+  namespace: "default"
+data:
+  syslog.log: |
+    <14>1 2021-09-06T14:40:05.753710+00:00 vcenter applmgmt-audit - - -  2021-09-06T14:40:05.753: INFO AuthorizationResponse = { authorized=True, method=LOCAL }
+    <14>1 2021-09-06T14:40:05.802908+00:00 vcenter applmgmt-audit - - -  2021-09-06T14:40:05.802: INFO Authorization Result: User=administrator@vsphere.local, priv=ModifyConfiguration, authorized=True
+    <14>1 2021-09-06T14:40:13.263383+00:00 vcenter vpxd 58650 - -  Event [575792] [1-1] [2021-09-06T14:40:13.26309Z] [vim.event.UserLoginSessionEvent] [info] [VSPHERE.LOCAL\Administrator] [] [575792] [User VSPHERE.LOCAL\Administrator@10.100.10.190 logged in as Go-http-client/1.1]
+    <14>1 2021-09-06T14:40:13.289354+00:00 vcenter vpxd 58650 - -  Event [575793] [1-1] [2021-09-06T14:40:13.288346Z] [vim.event.UserLogoutSessionEvent] [info] [VSPHERE.LOCAL\Administrator] [] [575793] [User VSPHERE.LOCAL\Administrator@10.100.10.190 logged out (login time: Monday, 06 September, 2021 02:40:13 PM, number of API invocations: 3, user agent: Go-http-client/1.1)]
+    <13>1 2021-09-06T14:40:48.104208+00:00 vcenter vmon 2120 - -  <vmware-vpostgres-healthcmd> Constructed command: /usr/bin/python /usr/lib/vmware-vmon/vmonApiHealthCmd.py -n vmware-vpostgres -f /dev/shm/vmware-postgres-health-status.xml
+    <13>1 2021-09-06T14:40:48.104463+00:00 vcenter vmon 2120 - -  <vapi-endpoint-healthcmd> Constructed command: /usr/bin/python /usr/lib/vmware-vmon/vmonApiHealthCmd.py -n vapi-endpoint -u /vapiendpoint/health -t 30
+    <14>1 2021-09-06T16:57:25.001086+00:00 vcenter updatemgr - - -  2021-09-06T16:57:25:000Z 'Activation' 140154047530752 INFO  [activationValidator, 368] Leave Validate. Succeeded for integrity.VcIntegrity.retrieveHostIPAddresses on target: Integrity.VcIntegrity
+    <14>1 2022-09-01T06:06:19.084018+02:00 host123 vpxd 24962 - - Event [513220451] [1-1] [2022-09-01T04:05:55.57103Z] [vim.event.UserLoginSessionEvent] [info] [root] [TEST] [513220451] [User root@127.0.0.1 logged in as VMware-client/6.5.0]

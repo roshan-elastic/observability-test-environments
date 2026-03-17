@@ -1,0 +1,24 @@
+---
+- name: Check cluster admin exists
+  changed_when: false
+  ignore_errors: true
+  command: |
+    kubectl get clusterrolebinding cluster-admin-binding
+  register: gcp_clusterrolebinding
+  tags:
+    - k8s
+    - deploy
+    - gcp
+    - check
+
+- name: Create cluster admin
+  changed_when: false
+  command: |
+    kubectl create clusterrolebinding cluster-admin-binding  \
+      --clusterrole cluster-admin --user "{{ gcp_account }}"
+  when:
+    - gcp_clusterrolebinding.rc == 1
+  tags:
+    - k8s
+    - deploy
+    - gcp

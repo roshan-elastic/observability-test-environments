@@ -1,0 +1,38 @@
+---
+image:
+  tag: {{ stack_version }}
+  pullPolicy: Always
+elasticsearch:
+  host: {{ elasticsearch_url |  urlsplit("hostname")}}
+  username: {{ elasticsearch_username }}
+  password: {{ elasticsearch_password }}
+cronjob:
+  args: --from=now-10m --to=now --assume-package-version={{ stack_version }}
+scenarios:
+  - agent_config.ts
+  - distributed_trace.ts
+  - many_services.ts
+  - service_map_oom.ts
+  - aws_lambda.ts
+  - distributed_trace_long.ts
+  - many_transactions_per_service.ts
+  - services_without_transactions.ts
+  - azure_functions.ts
+  - high_throughput.ts
+  - mobile.ts
+  - simple_logs.ts
+  - cloud_services_icons.ts
+  - logs_and_metrics.ts
+  - other_bucket_group.ts
+  - simple_trace.ts
+  - low_throughput.ts
+  - service_map.ts
+  - span_links.ts
+#  - continuous_rollups.ts
+
+resources:
+  limits:
+    memory: 2Gi
+  requests:
+    cpu: 100m
+    memory: 256Mi

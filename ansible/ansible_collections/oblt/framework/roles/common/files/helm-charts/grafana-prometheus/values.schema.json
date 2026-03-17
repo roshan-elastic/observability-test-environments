@@ -1,0 +1,876 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "prometheus_service_url": {
+            "type": "string",
+            "description": "Prometheus service URL",
+            "default": "http://prometheus-server.default.svc.cluster.local"
+        },
+        "prometheus": {
+            "type": "object",
+            "properties": {
+                "alertmanager": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 0.1
+                                        },
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "256Mi"
+                                        }
+                                    }
+                                },
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 0.8
+                                        },
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "512Mi"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "nodeExporter": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 0.1
+                                        },
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "200Mi"
+                                        }
+                                    }
+                                },
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 0.8
+                                        },
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "300Mi"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "pushgateway": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 0.1
+                                        },
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "64Mi"
+                                        }
+                                    }
+                                },
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 0.8
+                                        },
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "128Mi"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "retention": {
+                            "type": "string",
+                            "description": "",
+                            "default": "7d"
+                        }
+                    }
+                },
+                "server": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 0.1
+                                        },
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "256Mi"
+                                        }
+                                    }
+                                },
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "2Gi"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "grafana": {
+            "type": "object",
+            "properties": {
+                "replicas": {
+                    "type": "number",
+                    "description": "",
+                    "default": 1
+                },
+                "podLabels": {
+                    "type": "object",
+                    "properties": {
+                        "app": {
+                            "type": "string",
+                            "description": "",
+                            "default": "grafana"
+                        }
+                    }
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "number",
+                                    "description": "",
+                                    "default": 0.1
+                                },
+                                "memory": {
+                                    "type": "string",
+                                    "description": "",
+                                    "default": "500Mi"
+                                }
+                            }
+                        },
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "number",
+                                    "description": "",
+                                    "default": 0.8
+                                },
+                                "memory": {
+                                    "type": "string",
+                                    "description": "",
+                                    "default": "1Gi"
+                                }
+                            }
+                        }
+                    }
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "",
+                            "default": "ClusterIP"
+                        },
+                        "port": {
+                            "type": "number",
+                            "description": "",
+                            "default": 3000
+                        }
+                    }
+                },
+                "ingress": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "",
+                            "default": true
+                        },
+                        "annotations": {
+                            "type": "object",
+                            "properties": {
+                                "kubernetes": {
+                                    "type": "object",
+                                    "properties": {
+                                        "io/ingress": {
+                                            "type": "object",
+                                            "properties": {
+                                                "class": {
+                                                    "type": "object",
+                                                    "description": "",
+                                                    "default": {
+                                                        "kubernetes.io/ingress.class": "nginx",
+                                                        "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                        "ingress.kubernetes.io/ssl-redirect": "true",
+                                                        "kubernetes.io/tls-acme": "true",
+                                                        "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                        "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                        "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "io/tls-acme": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "true"
+                                        }
+                                    }
+                                },
+                                "cert-manager": {
+                                    "type": "object",
+                                    "properties": {
+                                        "io/cluster-issuer": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "letsencrypt-prod"
+                                        }
+                                    }
+                                },
+                                "ingress": {
+                                    "type": "object",
+                                    "properties": {
+                                        "kubernetes": {
+                                            "type": "object",
+                                            "properties": {
+                                                "io/ssl-redirect": {
+                                                    "type": "object",
+                                                    "description": "",
+                                                    "default": {
+                                                        "kubernetes.io/ingress.class": "nginx",
+                                                        "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                        "ingress.kubernetes.io/ssl-redirect": "true",
+                                                        "kubernetes.io/tls-acme": "true",
+                                                        "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                        "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                        "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "nginx": {
+                                    "type": "object",
+                                    "properties": {
+                                        "ingress": {
+                                            "type": "object",
+                                            "properties": {
+                                                "kubernetes": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "io/auth-type": {
+                                                            "type": "object",
+                                                            "description": "",
+                                                            "default": {
+                                                                "kubernetes.io/ingress.class": "nginx",
+                                                                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                                "ingress.kubernetes.io/ssl-redirect": "true",
+                                                                "kubernetes.io/tls-acme": "true",
+                                                                "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                                "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                                "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                            }
+                                                        },
+                                                        "io/auth-secret": {
+                                                            "type": "object",
+                                                            "description": "",
+                                                            "default": {
+                                                                "kubernetes.io/ingress.class": "nginx",
+                                                                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                                "ingress.kubernetes.io/ssl-redirect": "true",
+                                                                "kubernetes.io/tls-acme": "true",
+                                                                "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                                "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                                "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                            }
+                                                        },
+                                                        "io/auth-realm": {
+                                                            "type": "object",
+                                                            "description": "",
+                                                            "default": {
+                                                                "kubernetes.io/ingress.class": "nginx",
+                                                                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                                "ingress.kubernetes.io/ssl-redirect": "true",
+                                                                "kubernetes.io/tls-acme": "true",
+                                                                "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                                "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                                "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "",
+                            "default": "/"
+                        },
+                        "hosts": {
+                            "type": "array",
+                            "description": "",
+                            "default": [
+                                "grafana.127.0.0.1.ip.es.io"
+                            ],
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "tls": {
+                            "type": "array",
+                            "description": "",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "hosts": {
+                                        "type": "array",
+                                        "description": "",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "secretName": {
+                                        "type": "string",
+                                        "description": ""
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "sidecar": {
+                    "type": "object",
+                    "properties": {
+                        "datasources": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "",
+                                    "default": true
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "description": "",
+                                    "default": "grafana_datasource"
+                                }
+                            }
+                        }
+                    }
+                },
+                "dashboards": {
+                    "type": "object",
+                    "properties": {
+                        "default": {
+                            "type": "object",
+                            "properties": {
+                                "node-exporter": {
+                                    "type": "object",
+                                    "properties": {
+                                        "gnetId": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 1860
+                                        },
+                                        "revision": {
+                                            "type": "number",
+                                            "description": "",
+                                            "default": 14
+                                        },
+                                        "datasource": {
+                                            "type": "string",
+                                            "description": "",
+                                            "default": "Prometheus"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "grafana": {
+                    "type": "object",
+                    "properties": {
+                        "ini": {
+                            "type": "object",
+                            "properties": {
+                                "users": {
+                                    "type": "object",
+                                    "properties": {
+                                        "viewers_can_edit": {
+                                            "type": "object",
+                                            "description": "",
+                                            "default": {
+                                                "enabled": true,
+                                                "replicas": 1,
+                                                "podLabels": {
+                                                    "app": "grafana"
+                                                },
+                                                "resources": {
+                                                    "requests": {
+                                                        "cpu": 0.1,
+                                                        "memory": "500Mi"
+                                                    },
+                                                    "limits": {
+                                                        "cpu": 0.8,
+                                                        "memory": "1Gi"
+                                                    }
+                                                },
+                                                "service": {
+                                                    "type": "ClusterIP",
+                                                    "port": 3000
+                                                },
+                                                "ingress": {
+                                                    "enabled": true,
+                                                    "annotations": {
+                                                        "kubernetes.io/ingress.class": "nginx",
+                                                        "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                        "ingress.kubernetes.io/ssl-redirect": "true",
+                                                        "kubernetes.io/tls-acme": "true",
+                                                        "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                        "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                        "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                    },
+                                                    "path": "/",
+                                                    "hosts": [
+                                                        "grafana.127.0.0.1.ip.es.io"
+                                                    ],
+                                                    "tls": [
+                                                        {
+                                                            "hosts": [
+                                                                "grafana.127.0.0.1.ip.es.io"
+                                                            ],
+                                                            "secretName": "graphana-ingress-tls"
+                                                        }
+                                                    ]
+                                                },
+                                                "sidecar": {
+                                                    "datasources": {
+                                                        "enabled": true,
+                                                        "label": "grafana_datasource"
+                                                    }
+                                                },
+                                                "dashboards": {
+                                                    "default": {
+                                                        "node-exporter": {
+                                                            "gnetId": 1860,
+                                                            "revision": 14,
+                                                            "datasource": "Prometheus"
+                                                        }
+                                                    }
+                                                },
+                                                "grafana.ini": {
+                                                    "users": {
+                                                        "viewers_can_edit": true
+                                                    },
+                                                    "auth": {
+                                                        "disable_login_form": true,
+                                                        "disable_signout_menu": true
+                                                    },
+                                                    "auth.anonymous": {
+                                                        "enabled": true,
+                                                        "org_role": "Admin"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "auth": {
+                                    "type": "object",
+                                    "properties": {
+                                        "disable_login_form": {
+                                            "type": "object",
+                                            "description": "",
+                                            "default": {
+                                                "enabled": true,
+                                                "replicas": 1,
+                                                "podLabels": {
+                                                    "app": "grafana"
+                                                },
+                                                "resources": {
+                                                    "requests": {
+                                                        "cpu": 0.1,
+                                                        "memory": "500Mi"
+                                                    },
+                                                    "limits": {
+                                                        "cpu": 0.8,
+                                                        "memory": "1Gi"
+                                                    }
+                                                },
+                                                "service": {
+                                                    "type": "ClusterIP",
+                                                    "port": 3000
+                                                },
+                                                "ingress": {
+                                                    "enabled": true,
+                                                    "annotations": {
+                                                        "kubernetes.io/ingress.class": "nginx",
+                                                        "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                        "ingress.kubernetes.io/ssl-redirect": "true",
+                                                        "kubernetes.io/tls-acme": "true",
+                                                        "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                        "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                        "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                    },
+                                                    "path": "/",
+                                                    "hosts": [
+                                                        "grafana.127.0.0.1.ip.es.io"
+                                                    ],
+                                                    "tls": [
+                                                        {
+                                                            "hosts": [
+                                                                "grafana.127.0.0.1.ip.es.io"
+                                                            ],
+                                                            "secretName": "graphana-ingress-tls"
+                                                        }
+                                                    ]
+                                                },
+                                                "sidecar": {
+                                                    "datasources": {
+                                                        "enabled": true,
+                                                        "label": "grafana_datasource"
+                                                    }
+                                                },
+                                                "dashboards": {
+                                                    "default": {
+                                                        "node-exporter": {
+                                                            "gnetId": 1860,
+                                                            "revision": 14,
+                                                            "datasource": "Prometheus"
+                                                        }
+                                                    }
+                                                },
+                                                "grafana.ini": {
+                                                    "users": {
+                                                        "viewers_can_edit": true
+                                                    },
+                                                    "auth": {
+                                                        "disable_login_form": true,
+                                                        "disable_signout_menu": true
+                                                    },
+                                                    "auth.anonymous": {
+                                                        "enabled": true,
+                                                        "org_role": "Admin"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "disable_signout_menu": {
+                                            "type": "object",
+                                            "description": "",
+                                            "default": {
+                                                "enabled": true,
+                                                "replicas": 1,
+                                                "podLabels": {
+                                                    "app": "grafana"
+                                                },
+                                                "resources": {
+                                                    "requests": {
+                                                        "cpu": 0.1,
+                                                        "memory": "500Mi"
+                                                    },
+                                                    "limits": {
+                                                        "cpu": 0.8,
+                                                        "memory": "1Gi"
+                                                    }
+                                                },
+                                                "service": {
+                                                    "type": "ClusterIP",
+                                                    "port": 3000
+                                                },
+                                                "ingress": {
+                                                    "enabled": true,
+                                                    "annotations": {
+                                                        "kubernetes.io/ingress.class": "nginx",
+                                                        "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                        "ingress.kubernetes.io/ssl-redirect": "true",
+                                                        "kubernetes.io/tls-acme": "true",
+                                                        "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                        "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                        "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                    },
+                                                    "path": "/",
+                                                    "hosts": [
+                                                        "grafana.127.0.0.1.ip.es.io"
+                                                    ],
+                                                    "tls": [
+                                                        {
+                                                            "hosts": [
+                                                                "grafana.127.0.0.1.ip.es.io"
+                                                            ],
+                                                            "secretName": "graphana-ingress-tls"
+                                                        }
+                                                    ]
+                                                },
+                                                "sidecar": {
+                                                    "datasources": {
+                                                        "enabled": true,
+                                                        "label": "grafana_datasource"
+                                                    }
+                                                },
+                                                "dashboards": {
+                                                    "default": {
+                                                        "node-exporter": {
+                                                            "gnetId": 1860,
+                                                            "revision": 14,
+                                                            "datasource": "Prometheus"
+                                                        }
+                                                    }
+                                                },
+                                                "grafana.ini": {
+                                                    "users": {
+                                                        "viewers_can_edit": true
+                                                    },
+                                                    "auth": {
+                                                        "disable_login_form": true,
+                                                        "disable_signout_menu": true
+                                                    },
+                                                    "auth.anonymous": {
+                                                        "enabled": true,
+                                                        "org_role": "Admin"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "anonymous": {
+                                            "type": "object",
+                                            "properties": {
+                                                "enabled": {
+                                                    "type": "object",
+                                                    "description": "",
+                                                    "default": {
+                                                        "enabled": true,
+                                                        "replicas": 1,
+                                                        "podLabels": {
+                                                            "app": "grafana"
+                                                        },
+                                                        "resources": {
+                                                            "requests": {
+                                                                "cpu": 0.1,
+                                                                "memory": "500Mi"
+                                                            },
+                                                            "limits": {
+                                                                "cpu": 0.8,
+                                                                "memory": "1Gi"
+                                                            }
+                                                        },
+                                                        "service": {
+                                                            "type": "ClusterIP",
+                                                            "port": 3000
+                                                        },
+                                                        "ingress": {
+                                                            "enabled": true,
+                                                            "annotations": {
+                                                                "kubernetes.io/ingress.class": "nginx",
+                                                                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                                "ingress.kubernetes.io/ssl-redirect": "true",
+                                                                "kubernetes.io/tls-acme": "true",
+                                                                "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                                "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                                "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                            },
+                                                            "path": "/",
+                                                            "hosts": [
+                                                                "grafana.127.0.0.1.ip.es.io"
+                                                            ],
+                                                            "tls": [
+                                                                {
+                                                                    "hosts": [
+                                                                        "grafana.127.0.0.1.ip.es.io"
+                                                                    ],
+                                                                    "secretName": "graphana-ingress-tls"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "sidecar": {
+                                                            "datasources": {
+                                                                "enabled": true,
+                                                                "label": "grafana_datasource"
+                                                            }
+                                                        },
+                                                        "dashboards": {
+                                                            "default": {
+                                                                "node-exporter": {
+                                                                    "gnetId": 1860,
+                                                                    "revision": 14,
+                                                                    "datasource": "Prometheus"
+                                                                }
+                                                            }
+                                                        },
+                                                        "grafana.ini": {
+                                                            "users": {
+                                                                "viewers_can_edit": true
+                                                            },
+                                                            "auth": {
+                                                                "disable_login_form": true,
+                                                                "disable_signout_menu": true
+                                                            },
+                                                            "auth.anonymous": {
+                                                                "enabled": true,
+                                                                "org_role": "Admin"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "org_role": {
+                                                    "type": "object",
+                                                    "description": "",
+                                                    "default": {
+                                                        "enabled": true,
+                                                        "replicas": 1,
+                                                        "podLabels": {
+                                                            "app": "grafana"
+                                                        },
+                                                        "resources": {
+                                                            "requests": {
+                                                                "cpu": 0.1,
+                                                                "memory": "500Mi"
+                                                            },
+                                                            "limits": {
+                                                                "cpu": 0.8,
+                                                                "memory": "1Gi"
+                                                            }
+                                                        },
+                                                        "service": {
+                                                            "type": "ClusterIP",
+                                                            "port": 3000
+                                                        },
+                                                        "ingress": {
+                                                            "enabled": true,
+                                                            "annotations": {
+                                                                "kubernetes.io/ingress.class": "nginx",
+                                                                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+                                                                "ingress.kubernetes.io/ssl-redirect": "true",
+                                                                "kubernetes.io/tls-acme": "true",
+                                                                "nginx.ingress.kubernetes.io/auth-type": "basic",
+                                                                "nginx.ingress.kubernetes.io/auth-secret": "elastic-basic-auth",
+                                                                "nginx.ingress.kubernetes.io/auth-realm": "Authentication Required"
+                                                            },
+                                                            "path": "/",
+                                                            "hosts": [
+                                                                "grafana.127.0.0.1.ip.es.io"
+                                                            ],
+                                                            "tls": [
+                                                                {
+                                                                    "hosts": [
+                                                                        "grafana.127.0.0.1.ip.es.io"
+                                                                    ],
+                                                                    "secretName": "graphana-ingress-tls"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "sidecar": {
+                                                            "datasources": {
+                                                                "enabled": true,
+                                                                "label": "grafana_datasource"
+                                                            }
+                                                        },
+                                                        "dashboards": {
+                                                            "default": {
+                                                                "node-exporter": {
+                                                                    "gnetId": 1860,
+                                                                    "revision": 14,
+                                                                    "datasource": "Prometheus"
+                                                                }
+                                                            }
+                                                        },
+                                                        "grafana.ini": {
+                                                            "users": {
+                                                                "viewers_can_edit": true
+                                                            },
+                                                            "auth": {
+                                                                "disable_login_form": true,
+                                                                "disable_signout_menu": true
+                                                            },
+                                                            "auth.anonymous": {
+                                                                "enabled": true,
+                                                                "org_role": "Admin"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

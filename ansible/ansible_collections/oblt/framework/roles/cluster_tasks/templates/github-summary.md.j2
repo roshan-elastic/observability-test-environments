@@ -1,0 +1,35 @@
+### Deployment details
+
+{% if elasticsearch_type == 'serverless' %}
+* cluster name: `{{ cluster_name }}`
+* environment: `{{ stack_target }}`
+* type: `{{ elasticsearch_type }}`
+* template: `{{ stack_template }}`
+* Serverless logs: [Overview][overview-url]
+
+{% if stack_target == 'production' %}
+[overview-url]: https://overview.elastic-cloud.com/app/dashboards#/view/serverless-project-applications-logs?_g=(filters:!(('$state':(store:globalState),meta:(alias:!n,disabled:!f,field:serverless.project.id,index:'serverless.logs-*',type:phrase),query:(match_phrase:(serverless.project.id:{{ serverless_deployment_id }})))),refreshInterval:(pause:!t,value:60000),time:(from:now-1h,to:now))&_a=()
+{% endif %}
+{% if stack_target == 'qa' %}
+[overview-url]: https://overview.qa.cld.elstc.co/app/dashboards#/view/serverless-project-applications-logs?_g=(filters:!(('$state':(store:globalState),meta:(alias:!n,disabled:!f,field:serverless.project.id,index:'serverless.logs-*',type:phrase),query:(match_phrase:(serverless.project.id:{{ serverless_deployment_id }})))),refreshInterval:(pause:!t,value:60000),time:(from:now-1h,to:now))&_a=()
+{% endif %}
+{% if stack_target == 'staging' %}
+[overview-url]: https://overview.aws.staging.foundit.no/app/dashboards#/view/serverless-project-applications-logs?_g=(filters:!(('$state':(store:globalState),meta:(alias:!n,disabled:!f,field:serverless.project.id,index:'serverless.logs-*',type:phrase),query:(match_phrase:(serverless.project.id:{{ serverless_deployment_id }})))),refreshInterval:(pause:!t,value:60000),time:(from:now-1h,to:now))&_a=()
+{% endif %}
+{% endif %}
+
+{% if elasticsearch_type != 'serverless' %}
+* cluster name: `{{ cluster_name }}`
+{% if ess_stack_pack_version is defined %}
+* stack version: `{{ ess_stack_pack_version }}`
+{% endif %}
+{% if ess_ccs_remote_cluster is defined and ess_ccs_remote_cluster != '' %}
+* remote cluster: `{{ ess_ccs_remote_cluster }}`
+{% endif %}
+* template: `{{ stack_template }}`
+* [Elasticsearch logs][elasticsearch-url]
+* [Kibana logs][kibana-url]
+
+[elasticsearch-url]: https://monitoring-oblt.kb.us-west2.gcp.elastic-cloud.com/app/logs/stream?logFilter=%28query:%28language:kuery,query:%27service.name:%22{{ cluster_name }}%22%20and%20event.dataset:%22elasticsearch.server%22%27%29%29
+[kibana-url]: https://monitoring-oblt.kb.us-west2.gcp.elastic-cloud.com/app/logs/stream?logFilter=%28query:%28language:kuery,query:%27service.name:%22{{ cluster_name }}%22%20and%20event.dataset:%22kibana.log%22%27%29%29
+{% endif %}

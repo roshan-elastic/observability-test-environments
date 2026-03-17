@@ -1,0 +1,8 @@
+Cert Manager deployment
+
+It deploy cert-manager in the cluster and create two issuers in the namespace {{ .Release.Namespace }}.
+
+* letsencrypt-staging
+* letsencrypt-prod
+
+The certificates are provided by Let's Encrypt.

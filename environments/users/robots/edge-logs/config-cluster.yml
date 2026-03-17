@@ -1,0 +1,133 @@
+opbeans_dir: "{{ helm_deployment_dir }}/opbeans"
+apm_attacher_dir: "{{ opbeans_dir }}/apm_attacher"
+opbeans_transaction_rate: 0.9
+apps:
+  helm:
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ kube_state_metrics_version }}"
+      namespace: kube-system
+    - chart: '{{ helm_charts_dir }}/elastic_agent'
+      name: elastic-agent-standalone
+      namespace: kube-system
+      values_file: '{{ helm_deployment_dir }}/elastic_agent/standalone/helm-values-logs.yml.j2'
+      version: 0.1.0
+    - name: "apm-attacher"
+      chart: "elastic/apm-attacher"
+      version: "1.0.0"
+      values_file: "{{ apm_attacher_dir }}/helm-values.yml.j2"
+      extra_args: --create-namespace
+      namespace: "elastic-apm"
+    - name: "opbeans-go"
+      chart: "{{ helm_charts_dir }}/opbeans_go"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/go/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-dotnet"
+      chart: "{{ helm_charts_dir }}/opbeans_dotnet"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/dotnet/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-dotnet-frontend"
+      chart: "{{ helm_charts_dir }}/opbeans_frontend"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/dotnet_frontend/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-frontend"
+      chart: "{{ helm_charts_dir }}/opbeans_frontend"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/frontend/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-java"
+      chart: "{{ helm_charts_dir }}/opbeans_java"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/java/helm-values.yml.j2"
+      build_deps: true
+    - name: "opbeans-go-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_go"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/go/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-dotnet-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_dotnet"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/dotnet/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-java-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_java"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/java/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-node-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_node"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/node/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-php-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_php"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/php/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+    - name: "opbeans-python-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_python"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/python/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set "opbeans.apm.enabled=false,elasticsearch.fullnameOverride=opbeans-python-es-01"
+    - name: "opbeans-ruby-logs-only"
+      chart: "{{ helm_charts_dir }}/opbeans_ruby"
+      version: "0.1.0"
+      values_file: "{{ opbeans_dir }}/ruby/helm-values.yml.j2"
+      build_deps: true
+      extra_args: --set opbeans.apm.enabled=false
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - '{{ deployment_dir }}/bootstrap-ilm'
+  - '{{ deployment_dir }}/bootstrap-license'
+  - '{{ deployment_dir }}/bootstrap-fleet-v2'
+  - '{{ deployment_dir }}/bootstrap-slo'
+cluster_name: edge-logs
+configure_external_snapshots_repo: true
+create_ilm: true
+create_users: true
+golden_cluster: true
+grab_cluster_info: true
+k8s:
+  machine_type: e2-highcpu-4
+  max_node_count: 20
+  provider: gcp
+  static_ip: true
+oblt_username: robots
+slack_channel: '#observablt-bots'
+stack:
+  ess:
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-d84b6899
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-d84b6899
+      mem: 4
+      zones: 3
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.16.0-d84b6899
+      mem: 8
+      open_ai_secret: openai-azureopenai
+      zones: 3
+    profiling:
+      enabled: true
+      image: docker.elastic.co/observability-ci/profiling-agent:8.16.0-d84b6899
+    saml_id: exkz7oxv6m9v7QJ6T1t7
+    template: gcp-storage-optimized
+  mode: ess
+  observability: true
+  reset_password: true
+  target: production
+  template: observability
+  update_channel: unstable
+  update_schedule: daily
+  version: 8.16.0-SNAPSHOT
+updated_at: "2024-08-06T02:17:27Z"

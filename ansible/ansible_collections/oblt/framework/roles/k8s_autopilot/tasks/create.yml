@@ -1,0 +1,41 @@
+---
+- name: Create k8s cluster
+  block:
+    - name: create a network
+      google.cloud.gcp_compute_network:
+        name: "{{ gcp_default_network }}"
+        auto_create_subnetworks: 'true'
+        state: present
+      when:
+        - gcp_default_network is defined
+        - gcp_default_network != "oblt-clusters-vpc"
+        - gcp_default_network != "oblt-clusters-test-vpc"
+        - gcp_default_network != "oblt-clusters-vm-vpc"
+        - gcp_default_network != "oblt-clusters-test-vm-vpc"
+    - name: Create Autopilot cluster
+      changed_when: false
+      shell: |
+        gcloud auth list
+        gcloud container clusters create-auto "{{ gke_cluster_name }}" \
+          --region "{{ k8s_region }}" \
+          --project "{{ k8s_project }}" \
+          --release-channel "{{ k8s_autopilot_channel }}" \
+          --cluster-version "{{ k8s_autopilot_version }}" \
+          --network "{{ gcp_default_network }}"
+
+        gcloud container clusters update "{{ gke_cluster_name }}" \
+          --region "{{ k8s_region }}" \
+          --project "{{ k8s_project }}" \
+          --update-labels="{{ k8s_autopilot_labels }}"
+      when:
+        - cluster_created is false
+
+    - name: Create static IP
+      import_role:
+        name: k8s_gcp
+        tasks_from: create_static_ip.yml
+      when:
+        - static_ip is defined
+        - static_ip
+  when:
+    - gke_create_cluster|bool

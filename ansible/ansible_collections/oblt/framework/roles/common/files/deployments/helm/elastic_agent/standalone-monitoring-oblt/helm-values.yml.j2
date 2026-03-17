@@ -1,0 +1,42 @@
+#{% set monitoring_cluster_state = (lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_monitoring-oblt_cluster-state')|safe()|from_yaml) %}
+# Default values for elastic-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/observability-ci/elastic-agent
+  # -- Tag for the Docker image.
+  tag: "{{ stack_version }}"
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - name: docker.elastic.co
+
+# -- Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: standalone
+
+# -- Elastic Common Schema versions.
+ecsVersion: 1.9.0
+
+# -- Elasticsearch settings.
+elasticsearch:
+  # -- URL of the Elasticsearch (e.g. https://elasticsearch:9200).
+  host: "https://{{ monitoring_cluster_state.elasticsearch_url | urlsplit('hostname') }}:443"
+  # -- Elasticsearch username.
+  username: "{{ monitoring_cluster_state.elasticsearch_username }}"
+  # -- Elasticsearch password.
+  password: "{{ monitoring_cluster_state.elasticsearch_password }}"
+  apiToken: "{{ monitoring_cluster_state.fleet_api_token }}"
+
+fullnameOverride: "{{ helm_chart.name }}"
+
+extraEnvs:
+  - name: DEPLOY_TIMESTAMP
+    value: "{{ deploy_timestamp }}"
+
+serviceAccount:
+  name: {{ helm_chart.name }}-{{ cluster_hash }}

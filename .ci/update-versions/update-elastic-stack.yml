@@ -1,0 +1,115 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update Elastic Stack {{ requiredEnv "CLUSTER_NAME" }}
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  elasticStack:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      mergemethod: squash
+      title: '[updatecli][{{ requiredEnv "CLUSTER_NAME" }}] Update Elastic Stack'
+      description: '[updatecli][{{ requiredEnv "CLUSTER_NAME" }}] Update Elastic Stack'
+      labels:
+        - "dependencies"
+        - '{{ requiredEnv "CLUSTER_NAME" }}'
+        - "elasticStack"
+        - "automerge"
+sources:
+  lastVersion:
+    name: "Check Elastic Stack version"
+    kind: json
+    spec:
+      file: 'update_channels.json'
+      key: '.{{ requiredEnv "UPDATE_CHANNEL" }}.version'
+  lastBuild:
+    name: "Check Elastic Stack version"
+    kind: json
+    spec:
+      file: 'update_channels.json'
+      key: '.{{ requiredEnv "UPDATE_CHANNEL" }}.build'
+  lastElasticsearchDockerImage:
+    name: "Check Elasticsearch Docker image"
+    kind: json
+    spec:
+      file: 'update_channels.json'
+      key: '.{{ requiredEnv "UPDATE_CHANNEL" }}.docker.elasticsearch'
+  lastKibanaDockerImage:
+    name: "Check Kibana  Docker image"
+    kind: json
+    spec:
+      file: 'update_channels.json'
+      key: '.{{ requiredEnv "UPDATE_CHANNEL" }}.docker.kibana'
+  lastElasticAgentDockerImage:
+    name: "Check Elastic Agent Docker image"
+    kind: json
+    spec:
+      file: 'update_channels.json'
+      key: '.{{ requiredEnv "UPDATE_CHANNEL" }}.docker.fleet'
+  lastProfilingAgentDockerImage:
+    name: "Check Profiling Agent Docker image"
+    kind: json
+    spec:
+      file: 'update_channels.json'
+      key: '.{{ requiredEnv "UPDATE_CHANNEL" }}.docker.profiling'
+  nowDate:
+    name: "Check now date"
+    kind: shell
+    spec:
+      command: date -u +"%Y-%m-%dT%H:%M:%SZ"
+      environments:
+        - name: PATH
+conditions:
+  is-upgrade:
+    name: Check if the version to update to it is not a downgrade
+    kind: shell
+    sourceid: lastBuild
+    spec:
+      command: 'make "is-upgrade-version-${UPDATE_CHANNEL}" # ignore params '
+      environments:
+        - name: PATH
+        - name: TO_VERSION
+          value: '{{ source "lastBuild" }}'
+        - name: CLUSTER_CONFIG_FILE
+          value: '{{ requiredEnv "CLUSTER_CONFIG_FILE" }}'
+        - name: UPDATE_CHANNEL
+          value: '{{ requiredEnv "UPDATE_CHANNEL" }}'
+targets:
+  updateVersion:
+    name: "Update Elastic Stack version"
+    scmid: githubConfig
+    kind: shell
+    disablesourceinput: true
+    spec:
+      changedif:
+        kind: file/checksum
+        spec:
+          files:
+            - 'environments/{{ requiredEnv "CLUSTER_CONFIG_FILE" }}'
+      command: 'make -C .ci/update-versions update-cluster-config'
+      environments:
+        - name: FILE
+          value: 'environments/{{ requiredEnv "CLUSTER_CONFIG_FILE" }}'
+        - name: STACK_VERSION
+          value: '{{ source "lastVersion" }}'
+        - name: ELASTICSEARCH_IMAGE
+          value: '{{ source "lastElasticsearchDockerImage" }}'
+        - name: KIBANA_IMAGE
+          value: '{{ source "lastKibanaDockerImage" }}'
+        - name: INTEGRATIONS_IMAGE
+          value: '{{ source "lastElasticAgentDockerImage" }}'
+        - name: PROFILING_IMAGE
+          value: '{{ source "lastProfilingAgentDockerImage" }}'
+        - name: UPDATE_AT
+          value: '{{ source "nowDate" }}'
+        - name: PATH

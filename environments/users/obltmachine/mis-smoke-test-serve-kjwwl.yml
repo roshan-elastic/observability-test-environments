@@ -1,0 +1,29 @@
+---
+template_name: serverless-mis
+template_description: |
+  Serverless template configures an observability cluster that runs on Elastic Stack serverless on your target environment.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#serverless)
+slack_channel: "#observablt-bots"
+oblt_username: "obltmachine"
+ephemeral_cluster: true
+grab_cluster_info: false
+create_ilm: false
+create_users: false
+cluster_name: "mis-smoke-test-serve-kjwwl"
+expire_date: '2024-08-09'
+k8s:
+  provider: gcp
+  shared: "serverless-k8s"
+  ingress: false
+  certmanager: false
+  default_namespace: "mis-smoke-test-serve-kjwwl-default"
+  kube_system_namespace: "mis-smoke-test-serve-kjwwl-kube-system"
+stack:
+  mode: "serverless"
+  template: "observability"
+  target: "qa"
+  serverless:
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ deployment_dir }}/bootstrap-serverless"
+  - "{{ deployment_dir }}/bootstrap-api-key-api"

@@ -1,0 +1,21 @@
+---
+- name: Generate configuration files for a k8s cluster
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    update_k8s: "{{ lookup('env','UPDATE_K8S') | default(false, true) }}"
+    destroy_cluster: false
+  vars_files:
+    - "{{ lookup('env','CLUSTER_CONFIG_FILE') | mandatory }}"
+  environment:
+    HOME: "{{ playbook_dir }}/build"
+    PATH: "{{ playbook_dir }}/build/bin:{{ playbook_dir }}/build/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.tools
+    - role: oblt.framework.common
+  tasks:
+    - name: Update Cluster
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: cluster-update.yml

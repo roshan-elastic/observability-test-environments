@@ -1,0 +1,13 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+    hermit_enabled: false
+    save_secrets: false
+  environment:
+    PATH: "{{ build_dir }}/bin:{{ build_dir }}/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.tools

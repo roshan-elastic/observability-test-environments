@@ -1,0 +1,34 @@
+---
+fullnameOverride: apache
+replicaCount: 2
+service:
+  type: ClusterIP
+
+extraVolumeMounts:
+  # - name: config
+  #   mountPath: /usr/bitnami/apache2/conf/httpd.conf
+  #   readOnly: true
+  #   subPath: httpd.conf
+  - name: cluster-info
+    mountPath: /opt/bitnami/apache/htdocs/index.html
+    subPath: index.html
+
+extraVolumes:
+  # - name: config
+  #   configMap:
+  #     defaultMode: 0666
+  #     name: apache-config
+  - name: cluster-info
+    configMap:
+      defaultMode: 0666
+      name: apache-cluster-info
+
+ingress:
+  enabled: false
+
+resources:
+  requests:
+    memory: 128Mi
+    cpu: 0.05
+  limits:
+    memory: 256Mi

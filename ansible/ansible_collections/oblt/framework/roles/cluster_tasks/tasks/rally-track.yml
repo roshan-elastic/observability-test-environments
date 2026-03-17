@@ -1,0 +1,35 @@
+---
+- name: Install Esrally
+  include_tasks: rally-track-install.yml
+
+- name: "Create {{ rally_track | mandatory }} Rally track"
+  changed_when: false
+  vars:
+    isodate: "{{ ansible_date_time.iso8601_basic_short }}"
+    track_dir: "{{ rally_track | mandatory }}-track"
+  environment:
+    ELASTICSEARCH_HOST: "{{ elasticsearch_url }}"
+    ELASTICSEARCH_USERNAME: "{{ elasticsearch_username }}"
+    ELASTICSEARCH_PASSWORD: "{{ elasticsearch_password }}"
+    TRACK_DIR: "{{ track_dir }}"
+    TRACK_NAME: "{{ rally_track }}"
+    TRACK_INDICES: "{{ rally_track_indices | default('') }}"
+    DATA_STREAMS: "{{ rally_track_data_streams | default('') }}"
+    ISODATE: "{{ isodate }}"
+    LOCAL_FOLDER: "{{ lookup('env','GCS_FOLDER') | default(build_dir, true) }}"
+    REMOTE_FOLDER: "rally-tracks/{{ track_dir }}/{{ isodate }}"
+  shell: |
+    set -e
+    echo "${REMOTE_FOLDER}" > "{{ build_dir }}/remote_folder.txt"
+    mkdir -p "${LOCAL_FOLDER}/${REMOTE_FOLDER}"
+    if [ -z "${TRACK_INDICES}" ]; then
+      TRACK_SOURCE="--data-streams=${DATA_STREAMS}"
+    else
+      TRACK_SOURCE="--indices=${TRACK_INDICES}"
+    fi
+    esrally create-track \
+        --track="${TRACK_NAME}" \
+        --target-hosts="${ELASTICSEARCH_HOST}" \
+        --client-options="basic_auth_user:'${ELASTICSEARCH_USERNAME}',basic_auth_password:'${ELASTICSEARCH_PASSWORD}'" \
+        "${TRACK_SOURCE}" \
+        --output-path="${LOCAL_FOLDER}/${REMOTE_FOLDER}"

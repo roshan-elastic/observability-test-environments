@@ -1,0 +1,113 @@
+---
+# yaml-language-server: $schema=../../docs/cluster-config-schema.json
+# last update {{ .Date }}
+template_name: apm-soak
+template_description: |
+  Apm Soak template configure a oblt cluster that runs on Elastic Stack serverless on the selected environment.
+  Apm Soak template deploys the APM Soak testing on a k8s cluster and run the selected scenario.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#apm-soak)
+
+#{{ $template := "observability" }}
+#{{- if .ProjectType }}
+#{{ $template = .ProjectType }}
+#{{- end }}
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+#{{- $target := "qa" }}
+#{{- if .Target }}
+#{{ $target = .Target }}
+#{{- end }}
+#{{- $apmScenario := "qa" }}
+#{{- if .ApmScenario }}
+#{{ $apmScenario = .ApmScenario }}
+#{{- end }}
+#{{- $apm_perf_image := "docker.elastic.co/observability-ci/apm-perf:latest-1695914783-e98c86d" }}
+#{{- if .ApmPerfImage }}
+#{{ $apm_perf_image = .ApmPerfImage }}
+#{{- end }}
+
+slack_channel: "{{ .SlackChannel }}"
+oblt_username: "{{ $username }}"
+#{{- if .EphemeralCluster }}
+ephemeral_cluster: "{{ .EphemeralCluster }}"
+#{{- end }}
+grab_cluster_info: false
+create_ilm: false
+create_users: false
+cluster_name: "{{ .ClusterName }}"
+apm_scenario: "{{ $apmScenario }}"
+apm_perf_image: "{{ $apm_perf_image }}"
+expire_date: '{{ now | mustDateModify "+72h" | date "2006-01-02" }}'
+
+k8s:
+  provider: gcp
+  ingress: false
+  certmanager: false
+  machine_type: n2d-highmem-4
+  max_node_count: 10
+
+stack:
+  mode: "serverless"
+  template: "{{ $template }}"
+  target: "{{ $target }}"
+  serverless:
+#{{- if .MKICluster }}
+    cluster: "{{ .MKICluster }}"
+#{{- end }}
+#{{- if .ElasticsearchDockerImage }}
+    elasticsearch:
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- if .KibanaDockerImage }}
+    kibana:
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .FleetDockerImage }}
+    fleet:
+      image: "{{ .FleetDockerImage }}"
+#{{- end }}
+
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ `{{ deployment_dir }}` }}/bootstrap-serverless"
+
+apps:
+    helm:
+    - name: ksm-{{ .ClusterName }}
+      chart: "prometheus-community/kube-state-metrics"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      version: "{{ `{{ kube_state_metrics_version }}` }}"
+    - name: k8s-int-{{ .ClusterName }}
+      values_file: '{{ `{{ helm_deployment_dir }}` }}/elastic_agent/standalone/helm-values.yml.j2'
+      chart: '{{ `{{ helm_charts_dir }}` }}/elastic_agent'
+      version: 0.1.0
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      extra_args: "--set metricsService=ksm-{{ .ClusterName }}-kube-state-metrics:8080"
+    k8s:
+      - name: apm-soak
+        src: "{{ `{{ k8s_deployment_dir }}` }}/apm-soak"
+
+#{{- if .GitOps }}
+gitops:
+  enabled: "{{ .GitOps }}"
+#{{- if .GitHubCommit }}
+  commit: "{{ .GitHubCommit }}"
+#{{- end }}
+#{{- if .GitHubIssue }}
+  issue: "{{ .GitHubIssue }}"
+#{{- end }}
+#{{- if .GitHubPullRequest }}
+  pull_request: "{{ .GitHubPullRequest }}"
+#{{- end }}
+#{{- if .GitHubRepository }}
+  repository: "{{ .GitHubRepository }}"
+#{{- end }}
+#{{- if .GitHubCommentId }}
+  comment_id: "{{ .GitHubCommentId }}"
+#{{- end }}
+#{{- end }}

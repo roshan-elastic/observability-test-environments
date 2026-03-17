@@ -1,0 +1,8 @@
+---
+- name: Copy k8s files to the build dir
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - generate_config
+    - molecule-idempotence-notest

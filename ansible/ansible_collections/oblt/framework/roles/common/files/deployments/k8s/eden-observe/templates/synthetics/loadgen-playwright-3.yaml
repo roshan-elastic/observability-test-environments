@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen-playwright-3
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: loadgen-playwright-3
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: loadgen-playwright-3
+  template:
+    metadata:
+      labels:
+        app: loadgen-playwright-3
+      annotations:
+        eden.core_infra: "false"
+    spec:
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: loadgen-playwright-3
+        image: docker.elastic.co/{{ .Values.docker_namespace }}/{{ .Chart.Name }}-loadgen-playwright:{{ .Values.es_version }}-{{ .Values.build_num }}
+        imagePullPolicy: Always
+        #command: ["node"]
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do node --unhandled-rejections=strict /etc/task.js; sleep 1; done;" ]
+        #args: ["/etc/task.js"]
+        resources:
+          limits:
+           memory: 500Mi
+          requests:
+           cpu: 0.05
+           memory: 300Mi
+        env:
+        - name: DOMAIN
+          value: "http://frontend-js:3000"
+        - name: IPRANGE
+          value: "128"
+        - name: LATENCY
+          value: "50"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/task.js
+          readOnly: true
+          subPath: task-3.js
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0777
+          name: loadgenerator-config-playwright-3
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  loadgenerator-config-playwright-3
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    k8s-app: loadgenerator
+data:
+{{- (.Files.Glob "files/loadgen-playwright/*").AsConfig | nindent 4 }}

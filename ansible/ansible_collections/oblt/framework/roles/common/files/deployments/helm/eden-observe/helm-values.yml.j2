@@ -1,0 +1,48 @@
+---
+#{% set es_version = '8.5.0' %}
+
+# It is part of the namespace to deploy "namespace: { .Chart.Name } -{ .Values.username }"
+username: "eden"
+# These variables compose the tag in the Docker images
+# it is used as suffix for the Docker images
+build_num: "1"
+stack_version: "{{ es_version }}"
+es_version: "{{ es_version }}"
+
+## @section ingress Ingress settings
+## @param ingress.certificateIssuer Name of the issuer to use for the certificate
+## @param ingress.domain Domain to use for the ingress
+ingress:
+  certificateIssuer: "{{ certificate_issuer }}"
+  domain: "{{ load_balancer_ip }}.{{ k8s_domain }}"
+
+## @param elasticsearch_username Username to use for Elasticsearch
+## @param elasticsearch_password Password to use for Elasticsearch
+## @param elasticsearch_url URL to use for Elasticsearch
+elasticsearch_username: "{{ elasticsearch_username }}"
+elasticsearch_password: "{{ elasticsearch_password }}"
+elasticsearch_url: "{{ elasticsearch_url }}"
+
+## @param kibana_username Username to use for Kibana
+## @param kibana_password Password to use for Kibana
+## @param kibana_url URL to use for Kibana
+kibana_username: "{{ kibana_username }}"
+kibana_password: "{{ kibana_password }}"
+kibana_url: "{{ kibana_url }}"
+
+## @param apm_url URL to use for APM Server
+## @param apm_token Token to use for APM
+## @param fleet_url URL to use for Fleet Server
+apm_url: "{{ apm_url }}"
+apm_token: "{{ apm_token }}"
+fleet_url: "{{ fleet_url }}"
+
+## @param docker_namespace Namespace in the docker.elstic.co repository to use for pull Docker images
+## @param docker_namespace_beats Namespace in the docker.elstic.co repository to use for pull Beats Docker images
+docker_namespace: "sa"
+docker_namespace_beats: "beats"
+
+obltCluster: true
+
+annotations:
+  deployed-at: "{{ deploy_timestamp | replace(':','')| replace(' ','_') }}"

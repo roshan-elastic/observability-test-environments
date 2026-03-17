@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=../../../../helm-charts/integrations/values.schema.json
+
+imagePullSecrets:
+  - name: docker.elastic.co
+
+stackVersion: {{ stack_version | default(None) }}
+kibana:
+  url: {{ kibana_url }}
+  username: {{ kibana_username }}
+  password: {{ kibana_password }}
+fleet:
+  url: {{ fleet_url }}
+# FIXME hardcoded integration name
+  policy: {{ _integration_name }} Policy
+elasticsearch:
+  url: {{ elasticsearch_url }}
+  username: {{ elasticsearch_username }}
+  password: {{ elasticsearch_password }}
+elasticAgent:
+  enabled: {{ stack_mode != 'none' }}
+
+integration:
+  name: {{ _integration_name }}
+  branch: main
+  repository: elastic/integrations
+
+extraEnvs:
+  - name: SERVICE_LOGS_DIR
+    value: /usr/shared/data/logs
+
+resources: {}
+
+labels:
+  integration: {{ _integration_name }}
+
+#{% if (ess_stack_pack_version | default(default_stack_version)) is version('8.8.0', '<') %}
+#{% set lb = (load_balancer_ip | default('lb-no-available')) %}
+#{% set registry_host = "package-registry-" + cluster_hash + "." + lb + "." + k8s_domain %}
+packageRegistry:
+  enabled: true
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "{{ certificate_issuer }}"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/issue-temporary-certificate: "true"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - host: {{ registry_host }}
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+   - secretName: package-registry-tls
+     hosts:
+      - {{ registry_host }}
+#{% else %}
+
+packageRegistry:
+  enabled: false
+#{% endif %}
+
+serviceAccount:
+  create: true
+  name: "{{ _integration_name_fqdn }}-{{ cluster_hash }}"
+
+workspace:
+  enabled: false

@@ -1,0 +1,22 @@
+---
+- name: Pre-tasks with snapshot repo
+  ignore_errors: true
+  vars:
+    snap_repo: "{{ SNAP_REPO_NAME | default('external_gcs_repository', true) }}"
+    url: "{{ elasticsearch_url }}"
+    requests_list:
+      - url: "_snapshot/{{ snap_repo }}"
+        method: "DELETE"
+  uri:
+    url: "{{ url }}/{{ item.url }}"
+    method: "{{ item.method }}"
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    status_code: [200, 410]
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+  register: _result_es
+  loop: "{{ requests_list }}"

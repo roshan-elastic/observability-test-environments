@@ -1,0 +1,15 @@
+---
+description: Get the Profiling Token form Kibana
+api: "/api/fleet/agent_policies/policy-elastic-agent-on-cloud"
+method: GET
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 202
+ignore_errors: true
+register: _result_profiling_token
+retries: 5
+delay: 30
+body: ""

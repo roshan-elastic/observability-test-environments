@@ -1,0 +1,9 @@
+---
+- name: Deploy Local storage
+  changed_when: false
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ build_dir }}/kind/local-path-storage.yaml"
+  tags:
+    - kind
+    - deploy

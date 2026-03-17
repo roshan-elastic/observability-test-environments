@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section vm_gcp Role to create a GCP VM
+## @param vm_gcp_machine_type The machine type to use for the instance.
+vm_gcp_machine_type: "e2-micro"
+## @param vm_gcp_name The name of the instance.
+vm_gcp_name: "test-instance"
+## @param vm_gcp_image The image to use for the instance.
+vm_gcp_image: "debian-cloud/debian-11"
+## @param vm_gcp_vpc_name The name of the instance.
+vm_gcp_vpc_name: "oblt-clusters-vm-vpc"
+## @param vm_gcp_terradorm_dir The directory where the terraform files are located.
+vm_gcp_terradorm_dir: "{{ build_dir }}/terraform/gcp/{{ vm_gcp_name }}"
+## @param vm_gcp_bucket The name of the bucket to use for the Terraform state.
+vm_gcp_bucket: "oblt-clusters"
+## @param vm_gcp_bucket_prefix The prefix to use for the Terraform state in the bucket.
+vm_gcp_bucket_prefix: "terraform/gcp/{{ vm_gcp_name }}"
+## @param vm_gcp_user The user to access the instance.
+vm_gcp_user: "admin"
+## @param vm_gcp_ssh_private_key The path to the private key to use for SSH access.
+vm_gcp_ssh_private_key: "{{ private_key_file | default('~/.ssh/google_compute_engine') }}"
+## @param vm_gcp_ssh_public_key The path to the public key to use for SSH access.
+vm_gcp_ssh_public_key: "{{ vm_gcp_ssh_private_key }}.pub"
+## @param vm_gcp_scripts The list of scripts to run on the instance.
+vm_gcp_scripts:
+  - "{{ vm_gcp_terradorm_dir }}/script.sh"
+## @param vm_gcp_open_ports The list of ports to open on the instance.
+vm_gcp_open_ports:
+  - "22"
+## @param vm_gcp_project The GCP project to use.
+vm_gcp_project: "{{ gcp_project | mandatory }}"
+## @param vm_gcp_zone The GCP zone to use.
+vm_gcp_zone: "{{ gcp_zone | mandatory }}"
+## @param vm_gcp_cluster_name The name of the GCP cluster.
+vm_gcp_cluster_name: "{{ cluster_name | mandatory }}"
+## @param vm_gcp_oblt_username The username owner of the project.
+vm_gcp_oblt_username: "{{ oblt_username | mandatory }}"
+## @param vm_gcp_windows_startup_script The path to the Windows startup script.
+vm_gcp_windows_startup_script: "{{ vm_gcp_terradorm_dir }}/windows-startup-script.cmd"
+## @param vm_gcp_os The operating system of the instance.
+vm_gcp_os: "linux"
+## @param gcp_vm_upload_files The list of files to upload to the instance.
+gcp_vm_upload_files: []
+## @param vm_gcp_startup_script Script to run on startup (e.g. "echo 'Hello, World!' > /tmp/hello.txt")
+vm_gcp_startup_script: ""

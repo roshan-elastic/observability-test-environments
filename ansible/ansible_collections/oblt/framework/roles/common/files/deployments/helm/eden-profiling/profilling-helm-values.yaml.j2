@@ -1,0 +1,11 @@
+---
+{% if stack_version is  version('8.8.0', '>=') %}
+version: v3
+{% endif %}
+projectID: 1
+secretToken: "{{ profiling_token | default('NotSet') }}"
+collectionAgentHostPort: "{{ profiling_url | default('NotSet') | replace('https://', '') }}"
+image:
+  baseUrl: docker.elastic.co
+  repository: observability
+  name: profiling-agent

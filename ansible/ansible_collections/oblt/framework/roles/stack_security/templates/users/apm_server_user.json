@@ -1,0 +1,9 @@
+{
+  "username" : "apm_server_user",
+  "password" : "{{ elasticsearch_password }}",
+  "roles" : [
+    "apm_server",
+    "apm_system",
+    "ingest_admin"
+  ]
+}

@@ -1,0 +1,56 @@
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "integrations.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+
+
+Package registry
+----------------
+URL: {{ .Values.ingress.hosts }}
+
+export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "integrations.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+export CONTAINER=package-registry
+
+To enter the container:
+kubectl attach ${POD_NAME} -c ${CONTAINER} -i -t
+
+To connect to VS Code:
+
+echo "Visit http://127.0.0.1:3000 to use VS Code"
+kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 3000:3000
+
+
+Service
+-------
+
+{{- if .Values.integration.name }}
+Name: {{ .Values.integration.name }}
+{{- end }}
+{{- if .Values.integration.version }}
+version: {{ .Values.integration.version }}
+{{- end }}
+Port:
+{{- with .Values.integration.ports }}
+  - {{ . }}
+{{- end}}
+
+Elastic Stack
+-------------
+
+Version: {{ .Values.stack_version }}
+
+
+Elastic Agent
+-------------
+
+Version: {{ .Values.stack_version }}
+
+Kibana
+------
+
+URL: {{ .Values.kibana.url }}
+
+Fleet
+-----
+
+URL: {{ .Values.fleet.url }}

@@ -1,0 +1,38 @@
+{{ if .Values.ingress.enabled -}}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lb
+  namespace: argocd
+spec:
+  project: {{ .Values.projectName }}
+  source:
+    chart: ingress-nginx
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    targetRevision: {{ .Values.ingress.version }}
+    helm:
+      releaseName: lb
+      valuesObject:
+        rbac:
+          create: true
+        defaultBackend:
+          enabled: true
+        controller:
+          service:
+            type: {{ .Values.ingress.type }}
+            replicaCount: 3
+            externalTrafficPolicy: Local
+            enableHttp: true
+            enableHttps: true
+            loadBalancerIP: {{ .Values.ingress.ip }}
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: {{ .Values.ingress.namespace }}
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true
+{{- end }}

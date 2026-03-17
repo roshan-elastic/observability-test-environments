@@ -1,0 +1,44 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.tools
+
+    - role: oblt.framework.common
+  tasks:
+    - name: Get Deployment info
+      no_log: true
+      include_role:
+        name: oblt.framework.stack_ess
+        tasks_from: get_deployment_info.yml
+
+    - name: check Elasticsearch deployed
+      fail:
+        msg: "Error: Elasticsearch is not deployed"
+      when:
+        - elasticsearch_enabled|bool
+        - _deployment_info.json.resources.elasticsearch.hot is defined
+
+    - name: check Kibana deployed
+      fail:
+        msg: "Error: Kibana is not deployed"
+      when:
+        - kibana_enabled|bool
+        - _deployment_info.json.resources.kibana == "null"
+
+    - name: check APM deployed
+      vars:
+        _apm: "{{ _deployment_info.json.resources.apm | default({}, true) }}"
+        _integrations_server: "{{ _deployment_info.json.resources.integrations_server | default({}, true) }}"
+      fail:
+        msg: "Error: APM is not deployed"
+      when:
+        - apm_enabled|bool
+        - ((_apm | length) != 0 and _apm == "null") or ((_integrations_server | length) != 0 and _integrations_server == "null")

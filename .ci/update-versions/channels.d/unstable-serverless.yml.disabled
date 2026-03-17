@@ -1,0 +1,80 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update update channels unstable serverless
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  elasticStack:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      mergemethod: squash
+      title: '[updatecli] Update channels unstable serverless'
+      description: 'Update channels Elastic Stack new versions.'
+      labels:
+        - "dependencies"
+        - "update-channels"
+        - "elasticStack"
+        - "automerge"
+        - "unstable"
+        - "serverless"
+sources:
+  kibana:
+    name: 'Check unstable channel'
+    # This implementation does not get the latest docker image
+    # the latest tag does not point to the latest image
+    # kind: dockerimage
+    # spec:
+    #   image: "docker.elastic.co/kibana-ci/kibana-serverless"
+    #   architecture: "linux/arm64"
+    #   versionfilter:
+    #     kind: regex
+    #     pattern: "^git-.*"
+    kind: shell
+    spec:
+      command: ../scripts/latest-kibana-docker-image.sh
+      environments:
+        - name: GITHUB_TOKEN
+        - name: DOCKER_USERNAME
+        - name: DOCKER_PASSWORD
+  nowDate:
+    name: "Check now date"
+    kind: shell
+    spec:
+      command: date -u +"%Y-%m-%dT%H:%M:%SZ"
+      environments:
+        - name: PATH
+targets:
+  updatekibanaDockerImage:
+    name: Set Kibana Docker image
+    kind: json
+    sourceid: kibana
+    scmid: githubConfig
+    spec:
+      file: .ci/update-versions/update_channels.json
+      key: .unstable-serverless.docker.kibana-serverless
+  updateBuildDockerImage:
+    name: Set Kibana Docker image
+    kind: json
+    sourceid: nowDate
+    scmid: githubConfig
+    spec:
+      file: .ci/update-versions/update_channels.json
+      key: .unstable-serverless.build
+  updateDate:
+    name: Set date
+    kind: json
+    sourceid: nowDate
+    scmid: githubConfig
+    spec:
+      file: .ci/update-versions/update_channels.json
+      key: .unstable-serverless.date

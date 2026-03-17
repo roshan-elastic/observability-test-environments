@@ -1,0 +1,68 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+# Default values for certmanager.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## @param enabled Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.
+enabled: true
+
+## @param nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.
+nameOverride: ""
+## @param fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.
+fullnameOverride: ""
+
+## @section cert-manager Configuration parameters for cert-manager
+cert-manager:
+  ## @section cert-manager.global global configuration for cert-manager
+  global:
+    ## @param cert-manager.global.leaderElection.namespace namespace to use for leader election
+    leaderElection:
+      namespace: "default"
+  ## @param cert-manager.startupapicheck.startupapicheck time to wait for the webhook to be ready
+  startupapicheck:
+    startupapicheck: 5m
+  ## @param cert-manager.installCRDs install CRDs
+  installCRDs: true
+  ## @param cert-manager.ingressShim.defaultIssuerName name of the default issuer
+  ## @param cert-manager.ingressShim.defaultIssuerKind kind of the default issuer
+  ingressShim:
+    defaultIssuerName: "letsencrypt-staging"
+    defaultIssuerKind: ClusterIssuer
+  ## @section cert-manager.resources requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param cert-manager.resources.limits.memory The memory limit for the Opbean
+  ## @param cert-manager.resources.requests.memory The requested memory for the Opbean
+  ## @param cert-manager.resources.requests.cpu The requested cpu for the Opbean
+  resources:
+    requests:
+      cpu: 0.1
+      memory: "64Mi"
+    limits:
+      memory: "128Mi"
+  ## @section cert-manager.webhook Configuration parameters for cert-manager webhook
+  webhook:
+    ## @section cert-manager.webhook.resources requests and limits
+    ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+    ## @param cert-manager.webhook.resources.limits.memory The memory limit for the Opbean
+    ## @param cert-manager.webhook.resources.requests.memory The requested memory for the Opbean
+    ## @param cert-manager.webhook.resources.requests.cpu The requested cpu for the Opbean
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "64Mi"
+      limits:
+        memory: "128Mi"
+  ## @section cert-manager.cainjector Configuration parameters for cert-manager cainjector
+  cainjector:
+    ## @section cert-manager.cainjector.resources requests and limits
+    ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+    ## @param cert-manager.cainjector.resources.limits.memory The memory limit for the Opbean
+    ## @param cert-manager.cainjector.resources.requests.memory The requested memory for the Opbean
+    ## @param cert-manager.cainjector.resources.requests.cpu The requested cpu for the Opbean
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "64Mi"
+      limits:
+        memory: "256Mi"

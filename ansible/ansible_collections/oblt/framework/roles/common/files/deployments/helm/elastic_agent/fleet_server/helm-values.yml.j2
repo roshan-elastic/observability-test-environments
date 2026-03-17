@@ -1,0 +1,58 @@
+# minimal helm values for a deployment
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/observability-ci/elastic-agent
+  # -- Tag for the Docker image.
+  tag: "{{ stack_version }}"
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - name: docker.elastic.co
+
+# -- Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: deployment
+
+# -- Fleet server settings
+fleetServer:
+  # -- set to true enables bootstrapping of Fleet Server inside Elastic Agent (forces `fleet.enroll` enabled).
+  enabled: true
+  # -- expose Fleet Server over HTTP (not recommended; insecure).
+  insecureHttp: true
+  # -- binding host for Fleet Server HTTP (overrides the policy). By default this is 0.0.0.0.
+  host: 0.0.0.0
+  # -- binding port for Fleet Server HTTP (overrides the policy).
+  port: 8220
+  # -- service token to use for communication with elasticsearch.
+  serviceToken: "{{ fleet_server_token }}"
+  # -- policy ID for Fleet Server to use for itself ("Default Fleet Server policy" used when undefined).
+  policyId: "fleet-server-policy"
+  # service:
+  #   type: LoadBalancer
+  # ingress:
+  #   annotations:
+  #     cert-manager.io/cluster-issuer: "{{ certificate_issuer }}"
+  #     ingress.kubernetes.io/ssl-redirect: "true"
+  #     kubernetes.io/tls-acme: "true"
+  #   hosts:
+  #     - name: "fleet.{-{ load_balancer_ip }-}.{{ k8s.domain }}"
+  #       secret: {{ helm_chart.name }}-tls
+
+# -- Elasticsearch settings.
+elasticsearch:
+  # -- URL of the Elasticsearch (e.g. https://elasticsearch:9200).
+  host: "{{ elasticsearch_url }}"
+  # -- Elasticsearch username.
+  username: "{{ kibana_username }}"
+  # -- Elasticsearch password.
+  password: "{{ kibana_password }}"
+  apiToken: "{{ fleet_api_token }}"
+
+fullnameOverride: "{{ helm_chart.name }}"
+
+extraEnvs:
+  - name: DEPLOY_TIMESTAMP
+    value: "{{ deploy_timestamp }}"

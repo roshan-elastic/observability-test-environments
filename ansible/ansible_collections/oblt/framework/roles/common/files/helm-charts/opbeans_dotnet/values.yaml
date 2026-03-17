@@ -1,0 +1,82 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+## @section opbeans Opbeans .Net Helm chart configuration
+opbeans:
+  ## @param opbeans.enabled Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.
+  enabled: true
+  ## @param opbeans.nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.
+  nameOverride: ""
+  ## @param opbeans.fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.
+  fullnameOverride: ""
+  ## @section opbeans.image Docker image settings
+  image:
+    ## @param opbeans.image.name Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).
+    ## @param opbeans.image.tag Tag of the Docker image (latest).
+    ## @param opbeans.image.pullPolicy Docker image pull policy (IfNotPresent|Always|Never)
+    name: docker.elastic.co/observability-ci/opbeans-dotnet
+    tag: daily
+    pullPolicy: IfNotPresent
+  ## @param opbeans.command Override default container command (useful when using custom images)
+  command: ["dotnet"]
+  ## @param opbeans.args Override default container args (useful when using custom images)
+  args: [
+        "opbeans-dotnet.dll",
+        "--urls=http://*:$(OPBEANS_SERVER_PORT)"
+        ]
+  ## @section apm APM configuration settings.
+  apm:
+    ## @param opbeans.apm.type Type of reporting API [apm|otel|annotations]
+    ## @param opbeans.apm.url URL to the APM service.
+    ## @param opbeans.apm.token Token to authenticate against the APM service.
+    ## @param opbeans.apm.verifyServerCert Enable Certificates verification on TLS connections.
+    ## @param opbeans.apm.serviceName Name of the service deploy for the Helm chart (APM spans).
+    ## @param opbeans.apm.serviceVersion Version of the service deploy for the Helm chart (APM spans).
+    ## @param opbeans.apm.logLevel Level of debug.
+    ## @param opbeans.apm.logFile File to debug to.
+    ## @param opbeans.apm.inferredSpans Enable inferred spans.
+    ## @param opbeans.apm.logCorrelation Enable log correlation.
+    ## @param opbeans.apm.transactionRate Configure the APM transaction rate (0.9).
+    ## @param opbeans.apm.environment Environment where the service is deployed.
+    ## @param opbeans.apm.enabled [boolean,nullable] Enable to send data to the APM service.
+    enabled: true
+    type: apm
+    url: "https://apm.127.0.0.1.ip.es.io"
+    token: "SuP3RSeCr3T"
+    verifyServerCert: "true"
+    serviceName: "opbeans-dotnet"
+    serviceVersion: "1.0"
+    logLevel: "debug"
+    logFile: "stderr"
+    inferredSpans: "true"
+    logCorrelation: "true"
+    transactionRate: "0.9"
+    environment: "opbeans"
+  ## @section ingress Ingress settings
+  ingress:
+    ## @param opbeans.ingress.enabled Enable or disable the ingress resource.
+    ## @param opbeans.ingress.certificateIssuer Name of the certificates issuer.
+    ## @param opbeans.ingress.host Hostname exposed by the ingress resource.
+    ## @param opbeans.ingress.annotations Additional annotation to the ingress resource.
+    enabled: false
+    certificateIssuer: "letsencrypt-stage"
+    host: opbeans-dotnet.127.0.0.1.ip.es.io
+    ## @skip opbeans.ingress.annotations
+    annotations:
+      ingress.kubernetes.io/ssl-redirect: "true"
+      kubernetes.io/ingress.class: nginx
+      kubernetes.io/tls-acme: "true"
+      nginx.ingress.kubernetes.io/app-root: /dashboard
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: elastic-basic-auth
+      nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+  ## @section opbeans.resources requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param opbeans.resources.limits.memory The memory limit for the Opbean
+  ## @param opbeans.resources.requests.memory The requested memory for the Opbean
+  ## @param opbeans.resources.requests.cpu The requested cpu for the Opbean
+  resources:
+      limits:
+        memory: 1.5Gi
+      requests:
+        cpu: 0.1
+        memory: 256Mi

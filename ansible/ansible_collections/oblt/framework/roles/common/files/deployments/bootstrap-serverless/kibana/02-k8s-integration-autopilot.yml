@@ -1,0 +1,25 @@
+---
+description: Create a Autopilot package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+retries: 3
+delay: 30
+body: |
+  {
+    "policy_id": "k8s-integration-autopilot",
+    "package": {
+      "name": "kubernetes",
+      "version": "{{ packages_result.json | json_query('[?name==`kubernetes`].version') | first }}"
+    },
+    "name": "autopilot_policy",
+    "id": "autopilot_policy",
+    "description": "",
+    "namespace": "default"
+  }

@@ -1,0 +1,29 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+    cluster_name: "vm-gcp-{{ cluster_seed }}"
+    ephemeral_cluster: true
+    cluster_state_local: "{{ lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_edge-lite-oblt_cluster-state')|safe()|from_yaml }}"
+    feature_siem_linux_name: "test-instance-vm-gcp-{{ cluster_seed }}"
+    feature_siem_linux_user: "admin"
+    feature_siem_linux_fleet_url: "{{ cluster_state_local.fleet_url | mandatory }}"
+    feature_siem_linux_kibana_url: "{{ cluster_state_local.kibana_url | mandatory }}"
+    feature_siem_linux_kibana_username: "{{ cluster_state_local.kibana_username | mandatory }}"
+    feature_siem_linux_kibana_password: "{{ cluster_state_local.kibana_password | mandatory }}"
+    feature_siem_linux_elastic_agent_version: "8.13.0"
+  environment:
+    PATH: "{{ build_dir }}/bin:{{ build_dir }}/bin/google-cloud-sdk/bin:{{ lookup('env','PATH') }}"
+  roles:
+    - role: oblt.framework.common
+    - role: feature_siem_linux
+  tasks:
+    - name: Save IP address to a file
+      copy:
+        content: "{{ hostvars[feature_siem_linux_name].ansible_host }}"
+        dest: "{{ build_dir }}/vm_gcp_ip"
+  tags:
+    - molecule-idempotence-notest

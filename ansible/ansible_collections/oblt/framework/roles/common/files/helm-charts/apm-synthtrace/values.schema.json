@@ -1,0 +1,170 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "replicaCount": {
+            "type": "number",
+            "description": "Number of replicas",
+            "default": 1
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "repository": {
+                    "type": "string",
+                    "description": "Image repository",
+                    "default": "docker.elastic.co/observability-ci/apm-synthtrace"
+                },
+                "pullPolicy": {
+                    "type": "string",
+                    "description": "Image pull policy",
+                    "default": "IfNotPresent"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Image tag",
+                    "default": "1.0.1"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "type": "array",
+            "description": "Name of the Docker secret.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the Docker secret."
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "podAnnotations": {
+            "type": "object",
+            "description": "Additional annotations to add to the kubernetes deployment.",
+            "default": {}
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a service account should be created",
+                    "default": true
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Annotations to add to the service account",
+                    "default": {}
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the service account to use.",
+                    "default": ""
+                }
+            }
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "properties": {
+                "fsGroup": {
+                    "type": "number",
+                    "description": "",
+                    "default": 1000
+                },
+                "runAsUser": {
+                    "type": "number",
+                    "description": "",
+                    "default": 1000
+                },
+                "runAsGroup": {
+                    "type": "number",
+                    "description": "",
+                    "default": 0
+                }
+            }
+        },
+        "securityContext": {
+            "type": "object",
+            "description": "Enabled containers' Security Context",
+            "default": {}
+        },
+        "resources": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "The memory limit for the Opbean",
+                            "default": "2Gi"
+                        }
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "The requested memory for the Opbean",
+                            "default": "1Gi"
+                        },
+                        "cpu": {
+                            "type": "string",
+                            "description": "The requested cpu for the Opbean",
+                            "default": "200m"
+                        }
+                    }
+                }
+            }
+        },
+        "scenarios": {
+            "type": "array",
+            "description": "List of scenarios to run see https://github.com/elastic/kibana/tree/main/packages/kbn-apm-synthtrace/src/scenarios",
+            "default": [
+                "simple_logs.ts",
+                "simple_trace.ts"
+            ],
+            "items": {
+                "type": "string"
+            }
+        },
+        "cmdOpts": {
+            "type": "string",
+            "description": "Additional command line options to pass to the synthtrace command",
+            "default": "--live"
+        },
+        "elasticsearch": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "URL of the Elasticsearch (e.g. elasticsearch:9200).",
+                    "default": "elasticsearch:9200"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Elasticsearch username.",
+                    "default": "elastic"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Elasticsearch password.",
+                    "default": "changeme"
+                }
+            }
+        }
+    }
+}

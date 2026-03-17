@@ -1,0 +1,63 @@
+---
+- name: Set facts
+  set_fact:
+    es_url: "{{ elasticsearch_url }}"
+    api_endpoint: "{{ ess_endpoint }}"
+    payload_repo:
+      type: "gcs"
+      settings:
+        bucket: "oblt-clusters"
+        client: "external"
+        base_path: "{{ cluster_name }}"
+        compress: true
+    payload_policy:
+        name: "<external-snapshots-{now/d}>"
+        schedule: "0 0 22 * * ?"
+        repository: "external_gcs_repository"
+        config:
+          ignore_unavailable: true
+        retention:
+          expire_after: "5d"
+          min_count: 1
+          max_count: 5
+
+- name: Include tasks from gcs-plugin-credentials.yml
+  include_tasks: gcs-plugin-credentials.yml
+
+- name: Create Snapshot Repository
+  ignore_errors: true
+  uri:
+    url: "{{ es_url }}/_snapshot/external_gcs_repository"
+    method: PUT
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: "{{ payload_repo | to_nice_json }}"
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 3
+  delay: 10
+
+- name: Create Snapshot Policy
+  ignore_errors: true
+  uri:
+    url: "{{ es_url }}/_slm/policy/external-snapshots"
+    method: PUT
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: "{{ payload_policy | to_nice_json }}"
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 3
+  delay: 10

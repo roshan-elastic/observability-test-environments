@@ -1,0 +1,200 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+## @section opbeans-go Opbeans Go Helm chart configuration
+opbeans:
+  ## @param opbeans.enabled Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.
+  enabled: true
+  ## @param opbeans.nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.
+  nameOverride: ""
+  ## @param opbeans.fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.
+  fullnameOverride: "opbeans-go-standalone"
+  ## @section opbeans.image Docker image settings
+  image:
+    ## @param opbeans.image.name Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).
+    ## @param opbeans.image.tag Tag of the Docker image (latest).
+    ## @param opbeans.image.pullPolicy Docker image pull policy (IfNotPresent|Always|Never)
+    name: docker.elastic.co/observability-ci/opbeans-go
+    tag: daily
+    pullPolicy: IfNotPresent
+  ## @param opbeans.command Override default container command (useful when using custom images)
+  command: ["/opbeans-go"]
+  ## @param opbeans.args Override default container args (useful when using custom images)
+  args: [
+        "-log-level", "debug",
+        "-log-json",
+        "-listen=:$(OPBEANS_SERVER_PORT)",
+        "-frontend=/opbeans-frontend",
+        "-db=postgres:",
+        "-cache=$(REDIS_URL)"
+        ]
+  ## @param opbeans.extraEnvVars Array to add extra environment variables
+  extraEnvVars:
+    ## @skip opbeans.extraEnvVars
+    - name: PGSSLMODE
+      value: "disable"
+  ## @section apm APM configuration settings.
+  apm:
+    ## @param opbeans.apm.type Type of reporting API [apm|otel|annotations]
+    ## @param opbeans.apm.url URL to the APM service.
+    ## @param opbeans.apm.token Token to authenticate against the APM service.
+    ## @param opbeans.apm.verifyServerCert Enable Certificates verification on TLS connections.
+    ## @param opbeans.apm.serviceName Name of the service deploy for the Helm chart (APM spans).
+    ## @param opbeans.apm.serviceVersion Version of the service deploy for the Helm chart (APM spans).
+    ## @param opbeans.apm.logLevel Level of debug.
+    ## @param opbeans.apm.logFile File to debug to.
+    ## @param opbeans.apm.inferredSpans Enable inferred spans.
+    ## @param opbeans.apm.logCorrelation Enable log correlation.
+    ## @param opbeans.apm.transactionRate Configure the APM transaction rate (0.9).
+    ## @param opbeans.apm.environment Environment where the service is deployed.
+    type: apm
+    url: "http://opbeans-go-standalone-apm:8200"
+    token: "SuP3RSeCr3T"
+    verifyServerCert: "true"
+    serviceName: "opbeans-go-standalone"
+    serviceVersion: "1.0"
+    logLevel: "debug"
+    logFile: "stderr"
+    inferredSpans: "true"
+    logCorrelation: "true"
+    transactionRate: "0.9"
+    environment: "opbeans"
+  ## @section db Database settings.
+  db:
+    ## @param opbeans.db.enabled Enable the database service deploy.
+    ## @param opbeans.db.host Database host.
+    ## @param opbeans.db.name Database name.
+    ## @param opbeans.db.port Database port.
+    ## @param opbeans.db.type Database type [mysql|postgresql]
+    ## @param opbeans.db.username Database Username.
+    ## @param opbeans.db.password Database Password.
+    enabled: true
+    host: opbeans-go-standalone-db
+    name: opbeans-go-standalone
+    port: 5432
+    type: postgresql
+    username: elastic
+    password: none
+  ## @section ingress Ingress settings
+  ## @skip opbeans.ingress
+  ingress:
+    enabled: false
+  ## @section opbeans.redis Redis settings.
+  redis:
+    ## @param opbeans.redis.url Redis URL.
+    url: redis://opbeans-go-standalone-redis-master:6379
+
+## @section postgresql PostgreSQL Helm chart configuration
+postgresql:
+  ## @param postgresql.fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.
+  fullnameOverride: "opbeans-go-standalone-db"
+  ## @section postgresql.auth PostgreSQL authentication settings
+  auth:
+    ## @param postgresql.auth.username Name for a custom user to create
+    username: "elastic"
+    ## @param postgresql.auth.existingSecret Name of existing secret to use for PostgreSQL credentials. `auth.postgresPassword`, `auth.password`, and `auth.replicationPassword` will be ignored and picked up from this secret. The secret might also contains the key `ldap-password` if LDAP is enabled. `ldap.bind_password` will be ignored and picked from this secret in this case.
+    existingSecret: "opbeans-go-standalone-db-creds"
+  ## @section postgresql.primary
+  primary:
+    ## @param postgresql.primary.persistence.enabled Enable persistence using PVC
+    persistence:
+      enabled: false
+    ## @section postgresql.primary.initdb Scripts to run at first boot.
+    initdb:
+      ## @param postgresql.primary.initdb.scriptsConfigMap Name of existing ConfigMap containing the initdb scripts.
+      scriptsConfigMap: opbeans-go-standalone-initdb
+## @section redis Redis Helm chart configuration
+redis:
+  ## @param redis.fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeanst`.
+  fullnameOverride: "opbeans-go-standalone-redis"
+  ## @param redis.auth.enabled Enable password authentication
+  auth:
+    enabled: false
+  ## @section redis.master Redis master settings
+  master:
+    ## @section redis.master.resources requests and limits
+    ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+    ## @param redis.master.resources.limits.memory The memory limit for the Opbean
+    ## @param redis.master.resources.requests.memory The requested memory for the Opbean
+    ## @param redis.master.resources.requests.cpu The requested cpu for the Opbean
+    resources:
+      requests:
+        cpu: 0.1
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    ## @section redis.master.persistence Redis replica persistence settings
+    persistence:
+      ## @param redis.master.persistence.enabled Enable persistence using PVC
+      enabled: false
+  ## @section redis.replica Redis replica settings
+  replica:
+    ## @param redis.replica.replicaCount Number of replicas to deploy
+    replicaCount: 1
+    ## @section redis.replica.resources requests and limits
+    ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+    ## @param redis.replica.resources.limits.memory The memory limit for the Opbean
+    ## @param redis.replica.resources.requests.memory The requested memory for the Opbean
+    ## @param redis.replica.resources.requests.cpu The requested cpu for the Opbean
+    resources:
+      requests:
+        cpu: 0.1
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    ## @section redis.replica.persistence Redis replica persistence settings
+    persistence:
+      ## @param redis.replica.persistence.enabled Enable persistence using PVC
+      enabled: false
+
+## @section serviceAccount Service Account settings
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a ServiceAccount should be created
+  create: true
+  ## @param serviceAccount.name The name of the ServiceAccount to use.
+  name: opbeans-go-standalone
+
+## @section apm APM Server settings
+apm:
+  ## @param apm.enabled Enable the APM Server deploy.
+  enabled: true
+  ## @section apm.image Docker image to deploy.
+  image:
+    ## @param apm.image.name Docker image name.
+    name: docker.elastic.co/apm/apm-server
+    ## @param apm.image.tag Docker image tag.
+    tag: 8.8.1
+    ## @param apm.image.pullPolicy Docker image pull policy.
+    pullPolicy: IfNotPresent
+  ## @section apm.command Command to run.
+  # command: ["/bin/sh", "-c"]
+  ## @param apm.args Arguments to run.
+  args: ["--strict.perms=false", "-e"]
+  ## @section apm.elasticsearch Elasticsearch settings.
+  elasticsearch:
+    ## @param apm.elasticsearch.host Elasticsearch hosts.
+    host: https://elasticsearch.example.com
+    ## @param apm.elasticsearch.username Elasticsearch username.
+    username: elastic
+    ## @param apm.elasticsearch.password Elasticsearch password.
+    password: changeme
+  ## @param apm.secretToken APM Server secret token.
+  secretToken: "SuP3RSeCr3T"
+  ## @section apm.service Kubernetes service settings.
+  service:
+    ## @param apm.service.type Kubernetes service type.
+    type: ClusterIP
+    ## @param apm.service.port Kubernetes service port.
+    port: 8200
+  ## @param apm.podSecurityContext Security context policies to add to the APM Server pods.
+  podSecurityContext: {}
+  ## @param apm.containerSecurityContext Security context policies to add to the APM Server containers.
+  containerSecurityContext: {}
+  ## @param apm.extraEnvVars Extra environment variables to add to the APM Server pods.
+  extraEnvVars: []
+  ## @section apm.resources requests and limits
+  ## @skip apm.resources
+  resources: {}
+  ## @section apm.imagePullSecrets Docker secrets used to pull the Docker images.
+  imagePullSecrets:
+    ## @param apm.imagePullSecrets[0].name Name of the Docker secret.
+    - name: docker.elastic.co

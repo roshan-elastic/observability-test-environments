@@ -1,0 +1,25 @@
+---
+description: Create an API key API
+api: "/_security/api_key"
+method: POST
+register: bootstrap_elasticsearch_apikey_result
+headers:
+  accept: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+body: |
+  {
+    "name": "my-api-key",
+    "role_descriptors": {
+      "role-a": {
+        "cluster": ["all"],
+        "index": [
+          {
+            "names": ["*"],
+            "privileges": ["all"]
+          }
+        ]
+      }
+    }
+  }

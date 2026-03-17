@@ -1,0 +1,31 @@
+---
+- name: Select Payload
+  set_fact:
+    serverless_payload: |
+      {{ if stack_template == 'elasticsearch' }}
+      {{ lookup('ansible.builtin.template', 'serverless/elasticsearch.json.j2') | to_json }}
+      {{ elif stack_template == 'observability' }}
+      {{ lookup('ansible.builtin.template', 'serverless/observability.json.j2') | to_json }}
+      {{ elif stack_template == 'security' }}
+      {{ lookup('ansible.builtin.template', 'serverless/security.json.j2') | to_json }}
+      {{ endif }}}
+
+- name: Resume serverless
+  uri:
+    url: "{{ serverless_endpoint }}/api/v1/serverless/projects/{{ stack_template }}/{{ serverless_deployment_id }}/_resume"
+    method: POST
+    headers:
+      Content-Type: application/json
+      Authorization: "ApiKey {{ serverless_apikey }}"
+    body_format: json
+    body: "{{ serverless_payload | to_json }}"
+    status_code: [200, 201, 302]
+  register: _result
+  retries: 5
+  delay: 10
+  until: (_result.json.id | default(None)) is defined
+  when: cluster_created is true
+
+- name: Show Cluster ID
+  debug:
+    msg: "Cluster ID: {{ serverless_deployment_id }}"

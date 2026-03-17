@@ -1,0 +1,32 @@
+opbeans:
+  apm:
+    enabled: {{ (opbeans_apm_enabled | default(true)) | bool }}
+  image:
+    name: docker.elastic.co/observability-ci/opbeans-frontend
+    tag: "20230124-02"
+  ingress:
+    enabled: false
+    tls: {{ certmanager_available }}
+    certificateIssuer: "letsencrypt-prod"
+    host: "{{ helm_chart.name }}.{{ load_balancer_ip | default('not-defined') }}.{{ k8s_domain }}"
+  loadgen:
+    enabled: true
+    schedule: "{{ opbeans_loaggen_schedule | default('*/2 * * * *') }}"
+    api:
+      urls: "{{ helm_chart.name }}:http://{{ helm_chart.name }}:3000"
+      runLength: "{{ helm_chart.name }}:{{ opbeans_loaggen_run_length | default('120') }}"
+      requestMinute: "{{ helm_chart.name }}:{{ opbeans_loaggen_rpms | default('1000') }}"
+    frontend:
+      enabled: false
+      url: "http://{{ helm_chart.name }}-frontend:3000"
+  extraEnvVars:
+    - name: ELASTIC_OPBEANS_API_SERVER
+      value: "http://{{ helm_chart.name }}:3000"
+    - name: ELASTIC_APM_SERVICE_NAME
+      value: '{{ helm_chart.name }}-frontend'
+    - name: ELASTIC_APM_ENVIRONMENT
+      value: "opbeans"
+  annotations:
+    deployed-at: "{{ deploy_timestamp | replace(':','')| replace(' ','_') }}"
+  serviceAccount:
+    name: {{ helm_chart.name }}-frontend-{{ cluster_hash }}

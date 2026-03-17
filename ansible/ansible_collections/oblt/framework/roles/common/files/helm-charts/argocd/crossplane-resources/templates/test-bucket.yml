@@ -1,0 +1,28 @@
+---
+# https://marketplace.upbound.io/providers/upbound/provider-gcp-storage
+apiVersion: storage.gcp.upbound.io/v1beta1
+kind: Bucket
+metadata:
+  annotations:
+    meta.upbound.io/example-id: storage/v1beta1/notification
+  labels:
+    name: {{ .Values.gcp.clusterName }}
+    owner: oblt-robots
+    division: engineering
+    org: obs
+    team: observability
+    project: oblt-clusters
+  name: oblt-bucket-test-crossplane
+spec:
+  forProvider:
+    location: US-CENTRAL1
+  providerConfigRef:
+    name: workload-id-providerconfig
+  initProvider:
+    labels:
+      name: {{ .Values.gcp.clusterName }}
+      owner: oblt-robots
+      division: engineering
+      org: obs
+      team: observability
+      project: oblt-clusters

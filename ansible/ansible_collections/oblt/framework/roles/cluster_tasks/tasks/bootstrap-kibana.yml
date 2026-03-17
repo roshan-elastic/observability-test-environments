@@ -1,0 +1,30 @@
+- name: Processing {{ item }}
+  set_fact:
+    bootstrap_api: "{{ lookup('ansible.builtin.template', '{{ item }}') | from_yaml }}"
+
+- name: Bootstrap a Kibana using the API
+  vars:
+    return_codes: "{{ ([bootstrap_api.return_code] | default([200])) | map('int') | list }}"
+  uri:
+    url: "{{ kibana_url }}{{ bootstrap_api.api }}"
+    method: "{{ bootstrap_api.method }}"
+    validate_certs: false
+    user: "{{ bootstrap_username }}"
+    password: "{{ bootstrap_password }}"
+    force_basic_auth: true
+    headers: "{{ bootstrap_api.headers }}"
+    body_format: "{{ bootstrap_api.body_format | default('json') }}"
+    body: "{{ bootstrap_api.body }}"
+    status_code: "{{ bootstrap_api.return_code }}"
+  register: bootstrap_kbn_result
+  ignore_errors: "{{ bootstrap_api.ignore_errors | default(false) }}"
+  retries: "{{ bootstrap_api.retries | default(3) | int }}"
+  delay: "{{ bootstrap_api.delay | default(10) | int }}"
+  until: bootstrap_kbn_result.status in bootstrap_api.return_code
+
+- name: Set facts for {{ bootstrap_api.description | default(bootstrap_api.api) }}
+  set_fact:
+    "{{ bootstrap_api.register }}": "{{ bootstrap_kbn_result }}"
+  when:
+    - bootstrap_kbn_result is defined
+    - bootstrap_api.register is defined

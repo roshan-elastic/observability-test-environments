@@ -1,0 +1,7 @@
+---
+- name: Deploy feature {{ role_name }}
+  vars:
+    _dummy_version: "{{ role_parameters.dummy_version | default(dummy_version) }}"
+    _dummy_name: "{{ role_parameters.name | default(role_name) }}"
+  debug:
+    msg: "Deploying feature {{ role_name }} - {{ _dummy_name }} {{ _dummy_version }}"

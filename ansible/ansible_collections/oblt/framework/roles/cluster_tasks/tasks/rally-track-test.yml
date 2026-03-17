@@ -1,0 +1,32 @@
+---
+- name: Install Esrally
+  include_tasks: rally-track-install.yml
+
+- name: Run Rally track test
+  changed_when: false
+  environment:
+    ELASTICSEARCH_HOST: "{{ elasticsearch_url }}"
+    ELASTICSEARCH_USERNAME: "{{ elasticsearch_username }}"
+    ELASTICSEARCH_PASSWORD: "{{ elasticsearch_password }}"
+    LOCAL_FOLDER: "{{ lookup('env','TRACK_PATH') | mandatory}}"
+    ESRALLY_ON_ERROR: "{{ lookup('env','ESRALLY_ON_ERROR') | default('continue',true) }}"
+  shell: |
+    # TODO preserve ~/.rally
+    set -e
+
+    TELEMETRY_OPTS="ingest-pipeline-stats,data-stream-stats,shard-stats,transform-stats,recovery-stats,node-stats"
+    if [ "${DISABLE_DISK_USAGE_STATS}" != "true" ]; then
+        TELEMETRY_OPTS="${TELEMETRY_OPTS},disk-usage-stats"
+    fi
+
+    esrally race \
+        --track-path "${LOCAL_FOLDER}" \
+        --target-hosts "${ELASTICSEARCH_HOST}" \
+        --client-options "basic_auth_user:'${ELASTICSEARCH_USERNAME}',basic_auth_password:'${ELASTICSEARCH_PASSWORD}'" \
+        --pipeline benchmark-only \
+        --on-error=${ESRALLY_ON_ERROR} \
+        --report-file "{{ build_dir }}/rally-report.md" \
+        --report-format markdown \
+        --cluster-name "{{ cluster_name }}" \
+        --user-tags='{"cluster_name": "{{ cluster_name }}", "type": "{{ stack_mode }}"}' \
+        --telemetry ${TELEMETRY_OPTS}

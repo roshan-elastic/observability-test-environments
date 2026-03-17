@@ -1,0 +1,10 @@
+---
+description: Get the Anomaly detection jobs
+api: "/internal/apm/settings/anomaly-detection/jobs"
+method: GET
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+body: ""
+return_code:
+  - 200

@@ -1,0 +1,29 @@
+---
+- name: Configure VM
+  include_tasks: copy_files.yml
+  tags:
+    - configure
+
+- name: "Create/update VM {{ vm_gcp_name }}"
+  no_log: false
+  environment:
+    TF_LOG_PATH: "{{ vm_gcp_terradorm_dir }}/terraform.log"
+    TF_LOG: INFO
+    TF_IN_AUTOMATION: "1"
+  terraform:
+    project_path: "{{ vm_gcp_terradorm_dir }}/"
+    state: "present"
+    force_init: true
+  register: vm_gcp_result
+  tags:
+    - deploy
+
+- name: Add a host
+  ansible.builtin.add_host:
+    hostname: "{{ vm_gcp_name }}"
+    ansible_host: "{{ vm_gcp_result.outputs.public_instance_ip.value }}"
+    ansible_port: "22"
+    ansible_ssh_private_key_file: "{{ vm_gcp_ssh_private_key }}"
+  tags:
+    - deploy
+    - molecule-idempotence-notest

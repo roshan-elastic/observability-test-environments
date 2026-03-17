@@ -1,0 +1,98 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: query-analyzer-script
+  namespace: default
+data:
+  run-query.sh: |
+    #!/usr/bin/env bash
+    set -e
+
+    MONITORING_ELASTICSEARCH_HOST_ONLY=$(echo ${MONITORING_ELASTICSEARCH_HOST} | sed -E -e 's#.*://([^/@]*@)?([^/:]+):?(.*)#\2#')
+    MONITORING_ELASTICSEARCH_PORT=$(echo ${MONITORING_ELASTICSEARCH_HOST} | sed -E -e 's#.*://([^/@]*@)?([^/:]+):?(.*)#\3#')
+    MONITORING_KIBANA_HOST=${MONITORING_ELASTICSEARCH_HOST/.es./.kb.}
+    CLUSTER_UUID=$(curl -sL -u "${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}" "${ELASTICSEARCH_HOST}" | python -c "import sys, json; print(json.load(sys.stdin)['cluster_uuid'])")
+    CLUSTER_NAME=$(curl -sL -u "${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}" "${ELASTICSEARCH_HOST}" | python -c "import sys, json; print(json.load(sys.stdin)['cluster_name'])")
+
+    mkdir -p "${HOME}/.rally"
+    cat <<EOF > "${HOME}/.rally/rally.ini"
+    [meta]
+    config.version = 17
+
+    [system]
+    env.name = query-analyzer
+
+    [node]
+    root.dir = ${HOME}/.rally/benchmarks
+    src.root.dir = ${HOME}/.rally/benchmarks/src
+
+    [source]
+    remote.repo.url = https://github.com/elastic/elasticsearch.git
+    elasticsearch.src.subdir = elasticsearch
+
+    [benchmarks]
+    local.dataset.cache = ${HOME}/.rally/benchmarks/data
+
+    [reporting]
+    datastore.type = elasticsearch
+    datastore.host = ${MONITORING_ELASTICSEARCH_HOST_ONLY}
+    datastore.port = ${MONITORING_ELASTICSEARCH_PORT}
+    datastore.secure = True
+    datastore.user = ${MONITORING_ELASTICSEARCH_USERNAME}
+    datastore.password = ${MONITORING_ELASTICSEARCH_PASSWORD}
+
+    [tracks]
+    default.url = ${RALLY_TRACKS_REPO}
+
+    [teams]
+    default.url = https://github.com/elastic/rally-teams
+
+    [defaults]
+    preserve_benchmark_candidate = false
+
+    [distributions]
+    release.cache = true
+    EOF
+
+    python -m venv .venv
+    source .venv/bin/activate
+    python -m pip install --upgrade hatch hatchling pip wheel
+    python -m pip install esrally
+    esrally --version
+
+    START_TIMESTAMP_ISO=$(date -u "+%Y-%m-%dT%H:%M:%S.000Z")
+    START_TIMESTAMP=$(date "+%b %d, %Y @ %H:%M:%S.000")
+    RACE_ID=$(cat /proc/sys/kernel/random/uuid)
+    esrally race \
+        --track "${RALLY_TRACK}" \
+        --challenge "${RALLY_CHALLENGE}" \
+        --include-tasks="${RALLY_INCLUDE_TASKS}" \
+        --target-hosts "${ELASTICSEARCH_HOST}" \
+        --client-options "basic_auth_user:'${ELASTICSEARCH_USERNAME}',basic_auth_password:'${ELASTICSEARCH_PASSWORD}'" \
+        --pipeline benchmark-only \
+        --cluster-name "${CLUSTER_NAME}" \
+        --race-id "${RACE_ID}" \
+        --telemetry "${TELEMETRY_OPTS}"
+    STOP_TIMESTAMP_ISO=$(date -u "+%Y-%m-%dT%H:%M:%S.000Z")
+    STOP_TIMESTAMP=$(date "+%b %d, %Y @ %H:%M:%S.000")
+
+    cat <<EOF > /tmp/race.json
+    {
+      "cluster_uuid": "${CLUSTER_UUID}",
+      "cluster_name": "${CLUSTER_NAME}",
+      "start": "${START_TIMESTAMP_ISO}",
+      "stop": "${STOP_TIMESTAMP_ISO}",
+      "dashboard": "${MONITORING_KIBANA_HOST}/app/dashboards#/view/a7d4baea-5956-4749-bffa-d289e5d660b4?_g=(time:(from:'${START_TIMESTAMP_ISO}',to:'${STOP_TIMESTAMP_ISO}'))&_a=(query:(language:kuery,query:'cluster_uuid:${CLUSTER_UUID}%20OR%20(labels.deploymentName:%22${CLUSTER_NAME}%22%20and%20data_stream.type:traces%20AND%20transaction.name:%20%22${TRANSACTION_NAME}%22%20AND%20url.path:%22${TRANSACTION_URL_PATH}%22)%20OR%20(labels.deploymentName:%22${CLUSTER_NAME}%22%20and%20data_stream.type:metrics)'))",
+      "race_id": "${RACE_ID}",
+      "track": "${RALLY_TRACK}"
+    }
+    EOF
+
+    cat /tmp/race.json
+
+    curl -X POST \
+      -u ${MONITORING_ELASTICSEARCH_USERNAME}:${MONITORING_ELASTICSEARCH_PASSWORD} \
+      -H "Content-Type: application/json" \
+      -d "@/tmp/race.json" \
+      "${MONITORING_ELASTICSEARCH_HOST}/query-analyzer-races/_doc"

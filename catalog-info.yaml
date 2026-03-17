@@ -1,0 +1,351 @@
+# Put your catalog-info.yaml below and validate it
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: oblt-clusters
+  description: Obeservability Test Environments
+
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://ela.st/oblt-clusters
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - ansible
+    - ctf
+
+  links:
+    - title: Documentation
+      url: https://ela.st/oblt-clusters
+    - title: Releases
+      url: https://github.com/elastic/observability-test-environments/releases
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: production
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: oblt-cli
+  description: Obeservability CLI tool to manage oblt clusters.
+
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tools/oblt-cli
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://ela.st/oblt-cli
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - cli
+    - tool
+    - go
+
+  links:
+    - title: Documentation
+      url: https://ela.st/oblt-cli
+    - title: Releases
+      url: https://github.com/elastic/observability-test-environments/releases
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: production
+  dependsOn:
+    - resource:oblt-clusters
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: oblt-robot
+  description: Obeservability Slack bot to manage oblt clusters and interact with CI and DX services.
+
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tools/oblt-robot
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://ela.st/oblt-robot
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - cli
+    - bot
+    - go
+    - slack
+
+  links:
+    - title: Documentation
+      url: https://ela.st/oblt-robot
+    - title: Releases
+      url: https://github.com/elastic/observability-test-environments/releases
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: production
+  dependsOn:
+    - resource:oblt-clusters
+
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: edge-oblt
+  description: |
+    Edge oblt cluster is a long term ESS cluster deployed in the Cloud First test region in producion.
+    We use the next `major` version, therefore it's `unstable` by definition and contains all the new features for the next major.
+
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tree/main/environments/users/robots/edge-oblt
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://elastic.github.io/observability-test-environments/edge-oblt/
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - logs
+    - metrics
+    - apm
+    - ctf
+
+  links:
+    - title: Documentation
+      url: https://elastic.github.io/observability-test-environments/edge-oblt/
+
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: snapshot
+  dependsOn:
+    - resource:oblt-clusters
+    - resource:monitoring-oblt
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: edge-lite-oblt
+  description: |
+    Edge-lite is an observability test cluster deployed everyday with the latest SNAPSHOT version.
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tree/main/environments/users/robots/edge-lite-oblt
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://elastic.github.io/observability-test-environments/edge-lite-oblt/
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - logs
+    - metrics
+    - apm
+    - ctf
+
+  links:
+    - title: Documentation
+      url: https://elastic.github.io/observability-test-environments/edge-lite-oblt/
+
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: snapshot
+  dependsOn:
+    - resource:oblt-clusters
+    - resource:monitoring-oblt
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: dev-oblt
+  description: |
+    Dev oblt cluster is a long term ESS cluster deployed in the Cloud First test region in producion.
+    We use the next minor release, therefore it is stable and contains new features for the new release.
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tree/main/environments/users/robots/dev-oblt
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://elastic.github.io/observability-test-environments/dev-oblt/
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - logs
+    - metrics
+    - apm
+    - ctf
+
+  links:
+    - title: Documentation
+      url: https://elastic.github.io/observability-test-environments/dev-oblt/
+
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: snapshot
+  dependsOn:
+    - resource:oblt-clusters
+    - resource:monitoring-oblt
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: release-oblt
+  description: |
+    Release oblt cluster is a long term ESS cluster deployed in the Cloud First test region in producion.
+    We use the latest release or current BC, therefore it is stable and contains the features of the current release or Build Candidate (BC).
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tree/main/environments/users/robots/release-oblt
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://elastic.github.io/observability-test-environments/release-oblt/
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - logs
+    - metrics
+    - apm
+    - ctf
+
+  links:
+    - title: Documentation
+      url: https://elastic.github.io/observability-test-environments/release-oblt/
+
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: release
+  dependsOn:
+    - resource:oblt-clusters
+    - resource:monitoring-oblt
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: monitoring-oblt
+  description: |
+    Monitoring oblt cluster is a long term ESS cluster deployed in the Cloud First test region in producion.
+    We use the next minor release, therefore it is stable and contains new features for the new release.
+    The ESS deployment has Elasticsearch, Kibana, and Integrations server. The rest of oblt clusters send logs, metrics, and APM data to monitoring oblt,
+    It uses Elastic Stack monitoring and APM for that, thus this cluster is the place to check the behaviour if the rest of oblt clusters.
+    There are some Synthetic monitors configured to make a basic funcional test on some of the oblt clusters.
+    The use Elastic Agent standalone to Collect log and metrics from the GKE cluster.
+    There are also some SIEM instances reporting security data connected to the cluster.
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tree/main/environments/users/robots/monitoring-oblt
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://elastic.github.io/observability-test-environments/monitoring-oblt/
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - logs
+    - metrics
+    - apm
+    - ctf
+
+  links:
+    - title: Documentation
+      url: https://elastic.github.io/observability-test-environments/monitoring-oblt/
+
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: release
+  dependsOn:
+    - resource:oblt-clusters
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: overview-oblt
+  description: |
+    Overview-oblt is an observability test cluster deployed everyday with the latest SNAPSHOT version.
+    Overview cluster is connected to the CTF region monitoring clusters using CCS (https://overview.elastic-cloud.com/),
+    so it has access to all the logs and metrics from the CTF region.
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tree/main/environments/users/robots/overview-oblt
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://elastic.github.io/observability-test-environments/overview-oblt/
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - logs
+    - metrics
+    - apm
+    - ctf
+
+  links:
+    - title: Documentation
+      url: https://elastic.github.io/observability-test-environments/overview-oblt/
+
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: release
+  dependsOn:
+    - resource:oblt-clusters
+    - resource:monitoring-oblt
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: stateless-oblt
+  description: |
+    Stateless-oblt is an observability test cluster deployed using the latest SNAPSHOT version.
+    The aim of Stateless-oblt is to simulate the performance we expect in any Elastic Stack serverless deployment.
+  annotations:
+    backstage.io/source-location: url:https://github.com/elastic/observability-test-environments/tree/main/environments/users/robots/stateless-oblt
+    github.com/project-slug: elastic/observability-test-environments
+    github.com/team-slug: elastic/observablt-robots
+    backstage.io/techdocs-ref: https://elastic.github.io/observability-test-environments/stateless-oblt/
+
+  tags:
+    - environments
+    - observability
+    - stack
+    - logs
+    - metrics
+    - apm
+    - ctf
+    - serverless
+    - stateless
+
+  links:
+    - title: Documentation
+      url: https://elastic.github.io/observability-test-environments/stateless-oblt/
+
+spec:
+  type: framework
+  owner: group:observablt-robots
+  lifecycle: release
+  dependsOn:
+    - resource:oblt-clusters
+    - resource:monitoring-oblt

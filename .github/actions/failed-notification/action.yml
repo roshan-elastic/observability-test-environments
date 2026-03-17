@@ -1,0 +1,64 @@
+---
+name: Notify failed cluster creation
+inputs:
+  thread-timestamp:
+    description: 'The timestamp on the message that was posted into Slack when using bot token'
+    required: false
+  gitOps:
+    description: 'The gitops flag.'
+    default: "false"
+  issue:
+    description: 'The issue number.'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: GitHub summary
+      if: ${{ always() }}
+      continue-on-error: true
+      uses: actions/github-script@v7
+      id: summary
+      with:
+        script: |
+          const fs = require('fs')
+          const summaryFilePath = './ansible/build/github-summary.md'
+          if (fs.existsSync(summaryFilePath)) {
+            const content = fs.readFileSync(summaryFilePath)
+            await core.summary.addRaw(content).write()
+            core.setOutput('summary', content)
+          } else {
+            await core.summary.addRaw('No summary file found').write()
+          }
+
+    - name: Notify - failure 💔
+      if: ${{ always() && inputs.gitops == 'true' }}
+      continue-on-error: true
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const runLogs = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          github.rest.issues.createComment({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `💔 Something went wrong with the deployment ([logs](${runLogs}))
+
+            ${{ steps.summary.outputs.summary }}
+            `
+          })
+          const result = await github.rest.issues.listLabelsOnIssue({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          })
+          const labels = result.data.map((label) => label.name)
+          labels.push('failed-cluster')
+          github.rest.issues.update({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'closed',
+            labels: labels
+          })

@@ -1,0 +1,47 @@
+---
+- name: Generate Beats config files
+  when: "beats[item.name].enabled"
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ build_dir }}/{{ item.file }}"
+    mode: 0600
+  loop:
+    - name: "metricbeat"
+      file: "k8s/beats/metricbeat/metricbeat-deployment.yaml"
+    - name: "metricbeat"
+      file: "k8s/beats/metricbeat/metricbeat-daemonset.yaml"
+    - name: "metricbeat"
+      file: "k8s/beats/metricbeat/metricbeat-configmap.yaml"
+    - name: "metricbeat"
+      file: "k8s/beats/metricbeat/metricbeat-service-acount.yaml"
+    - name: "filebeat"
+      file: "k8s/beats/filebeat/filebeat-daemonset.yaml"
+    - name: "filebeat"
+      file: "k8s/beats/filebeat/filebeat-configmap.yaml"
+    - name: "auditbeat"
+      file: "k8s/beats/auditbeat/auditbeat-daemonset.yaml"
+    - name: "auditbeat"
+      file: "k8s/beats/auditbeat/auditbeat-configmap.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-configmap.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-deployment-au.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-deployment-es.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-deployment-us.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-configmap-au.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-configmap-es.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-configmap-us.yaml"
+    - name: "heartbeat"
+      file: "k8s/beats/heartbeat/heartbeat-daemonset.yaml"
+    - name: "packetbeat"
+      file: "k8s/beats/packetbeat/packetbeat-daemonset.yaml"
+    - name: "packetbeat"
+      file: "k8s/beats/packetbeat/packetbeat-configmap.yaml"
+  tags:
+    - beats
+    - generate_secrets

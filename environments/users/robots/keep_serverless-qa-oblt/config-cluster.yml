@@ -1,0 +1,56 @@
+apps:
+    helm:
+        - chart: prometheus-community/kube-state-metrics
+          name: kube-state-metrics
+          namespace: '{{ k8s_default_namespace }}'
+          version: '{{ kube_state_metrics_version }}'
+        - chart: '{{ helm_charts_dir }}/elastic_agent'
+          name: elastic-agent-standalone
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/elastic_agent/standalone/helm-values.yml.j2'
+          version: 0.1.0
+        - chart: open-telemetry/opentelemetry-demo
+          extra_args: --create-namespace
+          name: opentelemetry-demo
+          namespace: opentelemetry-demo-{{ cluster_hash }}
+          values_file: '{{ helm_deployment_dir }}/opentelemetry-demo/helm-values.yml.j2'
+          version: 0.22.3
+        - chart: '{{ helm_charts_dir }}/apm-synthtrace'
+          name: apm-synthtrace-all
+          namespace: '{{ k8s_default_namespace }}'
+          values_file: '{{ helm_deployment_dir }}/apm-synthtrace/helm-values-all.yml.j2'
+          version: 0.1.0
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+    - '{{ deployment_dir }}/bootstrap-serverless'
+    - '{{ deployment_dir }}/bootstrap-slo'
+cluster_name: keep_serverless-qa-oblt
+force_update: "2024-06-20"
+golden_cluster: true
+k8s:
+    cluster_name: keep-serverless-qa-oblt
+    default_namespace: default
+    kube_system_namespace: kube-system
+    machine_type: e2-highcpu-4
+    max_node_count: 20
+    provider: gcp
+oblt_username: robots
+opbeans:
+    enabled: true
+slack_channel: '#observablt-bots'
+stack:
+    mode: serverless
+    target: qa
+    template: observability
+synthetics_monitors_folders:
+    - folder: '{{ synthetics_deployments_dir }}/generic'
+      id: monitors
+      locale: en-US
+      params:
+        APM_URL: '{{ apm_url | default('''') }}'
+        ELASTICSEARCH_URL: '{{ elasticsearch_url | default('''') }}'
+        KIBANA_PASSWORD: '{{ elasticsearch_password | default('''') }}'
+        KIBANA_URL: '{{ kibana_url | default('''')}}'
+        KIBANA_USERNAME: '{{ elasticsearch_username | default('''') }}'
+      timezone: America/Los_Angeles
+trigger_update: "2024-04-09"

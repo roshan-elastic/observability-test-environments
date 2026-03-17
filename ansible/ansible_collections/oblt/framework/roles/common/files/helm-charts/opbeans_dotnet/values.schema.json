@@ -1,0 +1,188 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "opbeans": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.",
+                    "default": true
+                },
+                "nameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.",
+                    "default": ""
+                },
+                "fullnameOverride": {
+                    "type": "string",
+                    "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.",
+                    "default": ""
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).",
+                            "default": "docker.elastic.co/observability-ci/opbeans-dotnet"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "description": "Tag of the Docker image (latest).",
+                            "default": "daily"
+                        },
+                        "pullPolicy": {
+                            "type": "string",
+                            "description": "Docker image pull policy (IfNotPresent|Always|Never)",
+                            "default": "IfNotPresent"
+                        }
+                    }
+                },
+                "command": {
+                    "type": "array",
+                    "description": "Override default container command (useful when using custom images)",
+                    "default": [
+                        "dotnet"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "args": {
+                    "type": "array",
+                    "description": "Override default container args (useful when using custom images)",
+                    "default": [
+                        "opbeans-dotnet.dll",
+                        "--urls=http://*:$(OPBEANS_SERVER_PORT)"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "apm": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Type of reporting API [apm|otel|annotations]",
+                            "default": "apm"
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "URL to the APM service.",
+                            "default": "https://apm.127.0.0.1.ip.es.io"
+                        },
+                        "token": {
+                            "type": "string",
+                            "description": "Token to authenticate against the APM service.",
+                            "default": "SuP3RSeCr3T"
+                        },
+                        "verifyServerCert": {
+                            "type": "string",
+                            "description": "Enable Certificates verification on TLS connections.",
+                            "default": "true"
+                        },
+                        "serviceName": {
+                            "type": "string",
+                            "description": "Name of the service deploy for the Helm chart (APM spans).",
+                            "default": "opbeans-go"
+                        },
+                        "serviceVersion": {
+                            "type": "string",
+                            "description": "Version of the service deploy for the Helm chart (APM spans).",
+                            "default": "1.0"
+                        },
+                        "logLevel": {
+                            "type": "string",
+                            "description": "Level of debug.",
+                            "default": "debug"
+                        },
+                        "logFile": {
+                            "type": "string",
+                            "description": "File to debug to.",
+                            "default": "stderr"
+                        },
+                        "inferredSpans": {
+                            "type": "string",
+                            "description": "Enable inferred spans.",
+                            "default": "true"
+                        },
+                        "logCorrelation": {
+                            "type": "string",
+                            "description": "Enable log correlation.",
+                            "default": "true"
+                        },
+                        "transactionRate": {
+                            "type": "string",
+                            "description": "Configure the APM transaction rate (0.9).",
+                            "default": "0.9"
+                        },
+                        "environment": {
+                            "type": "string",
+                            "description": "Environment where the service is deployed.",
+                            "default": "production"
+                        },
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable to send data to the APM service.",
+                            "default": true,
+                            "nullable": true
+                        }
+                    }
+                },
+                "ingress": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable or disable the ingress resource.",
+                            "default": false
+                        },
+                        "certificateIssuer": {
+                            "type": "string",
+                            "description": "Name of the certificates issuer.",
+                            "default": "letsencrypt-stage"
+                        },
+                        "host": {
+                            "type": "string",
+                            "description": "Hostname exposed by the ingress resource.",
+                            "default": "opbeans-dotnet.127.0.0.1.ip.es.io"
+                        }
+                    }
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "memory": {
+                                    "type": "string",
+                                    "description": "The memory limit for the Opbean",
+                                    "default": "1.5Gi"
+                                }
+                            }
+                        },
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "memory": {
+                                    "type": "string",
+                                    "description": "The requested memory for the Opbean",
+                                    "default": "256Mi"
+                                },
+                                "cpu": {
+                                    "type": "number",
+                                    "description": "The requested cpu for the Opbean",
+                                    "default": 0.1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

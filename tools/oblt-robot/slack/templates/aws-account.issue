@@ -1,0 +1,7 @@
+### Your elastic email account (Required)
+
+{{ .Email }}
+
+### Further details
+
+Issue created by {{ .User }}

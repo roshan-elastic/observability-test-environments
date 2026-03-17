@@ -1,0 +1,13 @@
+## Expected Behavior
+{{ .ExpectedBehavior }}
+
+## Current Behavior
+{{ .CurrentBehavior }}
+
+## Suggestions
+{{ .Suggestions }}
+
+## Additional Notes
+{{ .Context }}
+
+Issue created by {{ .User }}

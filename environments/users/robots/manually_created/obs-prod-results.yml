@@ -1,0 +1,3 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: obs-prod-results
+oblt_managed: false

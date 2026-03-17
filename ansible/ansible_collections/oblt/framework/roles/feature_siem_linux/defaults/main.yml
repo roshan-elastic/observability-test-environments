@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=../schema.json
+# see https://github.com/bitnami/readme-generator-for-helm
+## @section General
+## @param feature_siem_linux_user [string] User to connect to the VM
+feature_siem_linux_user: "admin"
+## @param feature_siem_linux_name [string] Name of the VM
+feature_siem_linux_name: "test-instance"
+## @param feature_siem_linux_fleet_url URL of the Fleet server
+feature_siem_linux_fleet_url: "{{ fleet_url | mandatory }}"
+## @param feature_siem_linux_kibana_url URL of the Kibana server
+feature_siem_linux_kibana_url: "{{ kibana_url | mandatory }}"
+## @param feature_siem_linux_kibana_username Username to connect to Kibana
+feature_siem_linux_kibana_username: "{{ kibana_username | mandatory }}"
+## @param feature_siem_linux_kibana_password Password to connect to Kibana
+feature_siem_linux_kibana_password: "{{ kibana_password | mandatory }}"
+## @param feature_siem_linux_elastic_agent_version Version of the Elastic Agent
+feature_siem_linux_elastic_agent_version: "{{ role_parameters.feature_siem_linux_elastic_agent_version | mandatory }}"
+## @param feature_siem_linux_elastic_agent_package URL of the Elastic Agent package
+feature_siem_linux_elastic_agent_package: "{{ role_parameters.feature_siem_linux_elastic_agent_package | default('elastic-agent-' + feature_siem_linux_elastic_agent_version + '-amd64.deb') }}"
+## @param feature_siem_linux_elastic_agent_package_url URL of the Elastic Agent package
+feature_siem_linux_elastic_agent_package_url: "{{ role_parameters.feature_siem_linux_elastic_agent_package_url | default('https://artifacts-api.elastic.co/v1/downloads/elastic-agent-package/' + feature_siem_linux_elastic_agent_package) }}"
+## @param feature_siem_linux_vpc_name Name of the VPC
+feature_siem_linux_vpc_name: "oblt-clusters-vm-test-vpc"

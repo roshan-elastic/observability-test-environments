@@ -1,0 +1,29 @@
+# TODO use template
+projectName: argocd-cluster
+ingress:
+  enabled: true
+  version: 4.8.3
+  ip: 35.224.41.8
+  type: LoadBalancer
+  namespace: ingress-nginx
+certmanager:
+  enabled: true
+  version: v1.13.2
+  issuer: letsencrypt-prod
+externalSecrets:
+  enabled: true
+  version: 0.9.9
+  namespace: external-secrets
+  gcp:
+    project: elastic-observability
+    clusterLocation: us-central1-c
+    clusterName: argocd
+  serviceAccount:
+    annotations:
+      iam.gke.io/gcp-service-account: k8s-esternal-secrets@elastic-observability.iam.gserviceaccount.com
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/elastic/observability-test-environments.git
+    targetRevision: HEAD

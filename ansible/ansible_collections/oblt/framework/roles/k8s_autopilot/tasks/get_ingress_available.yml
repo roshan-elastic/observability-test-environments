@@ -1,0 +1,40 @@
+---
+- name: Set Ingress Credentials facts
+  vars:
+    username: "admin"
+    plaintext: "{{ username }}:{{ password_plaintext }}"
+    auth_string: "{{ username }}:{{ password_apr1 }}"
+  set_fact:
+    ingress_username: "{{ username }}"
+    ingress_password: "{{ password_plaintext }}"
+    ingress_plaintext: "{{ plaintext }}"
+    ingress_auth: "{{ auth_string }}"
+  when:
+    - ingress_config.password is not defined
+  tags:
+    - ingress
+    - secrets
+
+- name: Generate Secret files
+  template:
+    force: no
+    src: "k8s/ingress-secret.yml.j2"
+    dest: "{{ k8s_dir }}/ingress-secret.yml"
+    mode: 0600
+  tags:
+    - ingress
+    - generate_secrets
+
+- name: Create secrets
+  kubernetes.core.k8s:
+    state: present
+    kind: Secret
+    namespace: "{{ k8s_default_namespace }}"
+    src: "{{ k8s_dir }}/ingress-secret.yml"
+  tags:
+    - ingress
+    - deploy
+
+- name: Set Config fatcs
+  set_fact:
+    ingress_enabled: "{{ ingress_enabled }}"

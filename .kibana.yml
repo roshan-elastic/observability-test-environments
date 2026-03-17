@@ -1,0 +1,20 @@
+elasticsearch.hosts: https://serverless-production-oblt-ad85d6.es.us-east-1.aws.elastic.cloud
+elasticsearch.serviceAccountToken: null
+elasticsearch.ssl.verificationMode: none
+elasticsearch.ignoreVersionMismatch: true
+migrations:
+  skip: true
+server.host: 0.0.0.0
+xpack:
+  reporting:
+    encryptionKey: null
+  security:
+    authc:
+      providers:
+        basic:
+          cloud-basic:
+            order: 150
+    encryptionKey: null
+    loginAssistanceMessage: 'Credentials: testing-internal / X4RFz8I11S6vmsD787JK6T0p'
+  encryptedSavedObjects:
+    encryptionKey: null

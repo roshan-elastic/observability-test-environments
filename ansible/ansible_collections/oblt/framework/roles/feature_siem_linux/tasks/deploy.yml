@@ -1,0 +1,42 @@
+---
+- name: Copy files to the build dir
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Process templates
+  template:
+    src: "{{ item }}"
+    dest: "{{ build_dir }}/{{ role_name }}/{{ item | basename | regex_replace('\\.j2$', '') }}"
+  loop: "{{ query('fileglob', role_path + '/templates/*.j2') | sort }}"
+  tags:
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Create Linux VM
+  vars:
+    vm_name: "{{ role_parameters.feature_siem_linux_name | default(feature_siem_linux_name) }}"
+    vm_gcp_user: "{{ role_parameters.feature_siem_linux_user | default(feature_siem_linux_user) }}"
+    vm_gcp_name: "{{ vm_name }}"
+    vm_gcp_image: "debian-cloud/debian-11"
+    vm_gcp_os: "linux"
+    vm_gcp_vpc_name: "{{ role_parameters.feature_siem_linux_vpc_name | default(feature_siem_linux_vpc_name) }}"
+    vm_gcp_scripts:
+      - "{{ build_dir }}/feature_siem_linux/install-elastic-agent.sh"
+      - "{{ build_dir }}/feature_siem_linux/rta-setup.sh"
+      - "{{ build_dir }}/feature_siem_linux/crontab.sh"
+    vm_gcp_startup_script: |
+      #!/usr/bin/env bash
+      set -e
+      echo "Hello, World!" > /tmp/hello.txt
+    gcp_vm_upload_files:
+      - source: "{{ build_dir }}/feature_siem_linux/rta-random-attack.sh"
+        destination: "/tmp/rta-random-attack.sh"
+    vm_gcp_machine_type: "{{ role_parameters.feature_siem_linux_machine_type | default('e2-small') }}"
+  include_role:
+    name: oblt.framework.vm_gcp
+  tags:
+    - deploy

@@ -1,0 +1,18 @@
+---
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: false
+ephemeral_cluster: true
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+
+k8s:
+  provider: kind
+apps:
+  helm:
+    - name: dummy-helm
+      values_file: "{{ playbook_dir }}/helm/dummy/helm-values.yml"
+      chart: "{{ build_dir }}/helm-charts/hello"
+      version: 0.1.0
+    - name: dummy-helm-1
+      values_file: "{{ playbook_dir }}/helm/dummy1/helm-values.yml"
+      chart: "{{ build_dir }}/helm-charts/hello"
+      version: 0.1.0

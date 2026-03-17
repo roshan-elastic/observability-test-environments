@@ -1,0 +1,120 @@
+---
+{{- if eq .Values.mode "deployment-standalone" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "elastic-agent.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "elastic-agent.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "elastic-agent.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "elastic-agent.labels" . | nindent 8 }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-elastic-agent.yaml") . | sha256sum | trunc 63 }}
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      {{- with .Values.tolerations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "elastic-agent.serviceAccountName" . }}
+    {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: elastic-agent
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - -c
+            - /etc/elastic-agent/agent.yml
+        {{- with .Values.commandArgs }}
+            {{- toYaml . | nindent 12  }}
+        {{- end }}
+          env:
+            {{- tpl (.Files.Get "config/environment-elastic-agent-standalone.yaml" | nindent 12) . }}
+            {{- tpl (.Files.Get "config/environment-fleet-server.yaml" | nindent 12) . }}
+          {{- with .Values.extraEnvs }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: elastic-agent-config
+              mountPath: /etc/elastic-agent/agent.yml
+              readOnly: true
+              subPath: agent.yml
+            - name: proc
+              mountPath: /hostfs/proc
+              readOnly: true
+            - name: cgroup
+              mountPath: /hostfs/sys/fs/cgroup
+              readOnly: true
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+            - name: etc-full
+              mountPath: /hostfs/etc
+              readOnly: true
+            - name: var-lib
+              mountPath: /hostfs/var/lib
+              readOnly: true
+      volumes:
+        - name: elastic-agent-config
+          configMap:
+            defaultMode: 0640
+            name: {{ include "elastic-agent.fullname" . }}-config
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: varlog
+          hostPath:
+            path: /var/log
+        # The following volumes are needed for Cloud Security Posture integration (cloudbeat)
+        # If you are not using this integration, then these volumes and the corresponding
+        # mounts can be removed.
+        - name: etc-full
+          hostPath:
+            path: /etc
+        - name: var-lib
+          hostPath:
+            path: /var/lib
+{{ end }}

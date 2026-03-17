@@ -1,0 +1,14 @@
+---
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: false
+ephemeral_cluster: true
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+k8s:
+  provider: autopilot
+  project: elastic-observability
+  region: us-central1
+  default_namespace: "{{ cluster_name }}-default"
+  kube_system_namespace: "{{ cluster_name }}-kube-system"
+  certmanager: true
+  ingress: false
+  network: "oblt-clusters-test-vpc"

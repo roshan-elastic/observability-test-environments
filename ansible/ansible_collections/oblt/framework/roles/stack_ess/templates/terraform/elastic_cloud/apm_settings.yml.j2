@@ -1,0 +1,23 @@
+# timestamp {{ deploy_timestamp }}
+{% if apm_enabled %}
+apm-server.rum.enabled: true
+{% if (ess_stack_pack_version is version('7.9.0', '>=') and ess_stack_pack_version is version('7.10.0', '<')) %}
+apm-server.aggregation.enabled: true
+{% elif ess_stack_pack_version is version('7.10.0', '>=') %}
+# TODO request to allow this setting
+# apm-server.aggregation.transactions.enabled: true
+{% elif ess_stack_pack_version is version('7.16.0', '>=') %}
+apm-server.sampling.keep_unsampled: true
+{% endif %}
+{% endif %}
+{% if ess_stack_pack_version is version('8.5.0', '>=') and observability_enabled and ess_not_allow_settings %}
+agent.monitoring.enabled: true
+agent.monitoring.traces: true
+agent.monitoring.apm.hosts: ["{{ observability_apm_url }}"]
+agent.monitoring.apm.secret_token: {{ observability_apm_token }}
+agent.monitoring.apm.global_labels.deploymentName: {{ cluster_name }}
+agent.monitoring.apm.global_labels.elasticStack: {{ stack_version | default('unknown') }}
+{% endif %}
+{% if integrations_extra_config is defined %}
+{{ integrations_extra_config }}
+{%- endif %}

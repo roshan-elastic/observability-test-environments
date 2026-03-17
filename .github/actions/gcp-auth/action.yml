@@ -1,0 +1,50 @@
+---
+name: gcp-auth
+description: |
+  Authenticate with Google Cloud Platform using the Workload Identity Federation
+  It export the environment variables exported by `https://github.com/google-github-actions/auth` plus some new ones:
+    * GCP_AUTH_KIND: accesstoken
+    * GCP_ACCESS_TOKEN: the access token
+    * GCP_PROJECT: elastic-observability
+inputs:
+  projectId:
+    description: 'The project id to authenticate to'
+    required: true
+    default: 'elastic-observability'
+  workloadIdentityProvider:
+    description: 'The workload identity provider id'
+    required: true
+  serviceAccount:
+    description: 'The service account email'
+    required: true
+  accessTokenLifetime:
+    description: 'The access token lifetime'
+    required: false
+    default: '3600s'
+  accessTokenScopes:
+    description: 'The access token scopes'
+    required: false
+    default: 'https://www.googleapis.com/auth/cloud-platform'
+runs:
+  using: "composite"
+  steps:
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v2'
+      id: gcp-auth
+      with:
+        project_id: '${{ inputs.projectId }}'
+        workload_identity_provider: ${{ inputs.workloadIdentityProvider }}
+        service_account: ${{ inputs.serviceAccount }}
+        token_format: access_token
+        access_token_lifetime: ${{ inputs.accessTokenLifetime }}
+        access_token_scopes: ${{ inputs.accessTokenScopes }}
+    - name: 'Set outputs'
+      uses: 'actions/github-script@v7'
+      env:
+        TOKEN: ${{ steps.gcp-auth.outputs.access_token }}
+      with:
+        script: |
+          core.exportVariable('GCP_AUTH_KIND', 'accesstoken');
+          core.exportVariable('GCP_ACCESS_TOKEN', process.env.TOKEN);
+          core.exportVariable('GCP_PROJECT', '${{ inputs.projectId }}');
+          core.setSecret(process.env.TOKEN);

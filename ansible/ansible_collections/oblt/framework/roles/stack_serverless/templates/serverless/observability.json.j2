@@ -1,0 +1,25 @@
+{
+  "name": "{{ cluster_name }}",
+  "alias": "{{ cluster_name | replace('_', '-') }}",
+  "region_id": "{{ serverless_region }}",
+  "overrides": {
+    "elasticsearch": {
+{% if elasticsearch_image | length > 0 %}
+      "docker_image": "{{ elasticsearch_image}}"
+{% endif %}
+    },
+    "kibana": {
+{% if kibana_image | length > 0 %}
+      "docker_image": "{{ kibana_image }}"
+{% endif %}
+    },
+    "fleet": {
+{% if fleet_image | length > 0 %}
+      "docker_image": "{{ fleet_image }}"
+{% endif %}
+    }
+{% if serverless_cluster | length > 0 %}
+    ,"cluster": "{{ serverless_cluster }}"
+{% endif %}
+  }
+}

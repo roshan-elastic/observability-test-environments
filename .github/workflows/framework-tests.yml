@@ -1,0 +1,69 @@
+---
+## Workflow to test the oblt framework ne version.
+name: Oblt Framework test
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/actions/cluster-target/action.yml
+  push:
+    branches:
+      - "main"
+    paths:
+      - .github/actions/cluster-target/action.yml
+
+permissions:
+  pull-requests: read
+  contents: read
+  id-token: write
+
+jobs:
+  test-operations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Cluster
+        run: |
+          CLUSTER_NAME=test-framework-$(date +%s)
+          export CLUSTER_NAME
+          export CLUSTER_CONFIG_DIR=${GITHUB_WORKSPACE}/environments/users/robots/${CLUSTER_NAME}
+          export CLUSTER_CONFIG_FILE=${CLUSTER_CONFIG_DIR}/config-cluster.yml
+          cp -R environments/users/robots/release-oblt "${CLUSTER_CONFIG_DIR}"
+          sed -i "s/release-oblt/${CLUSTER_NAME}/g" "${CLUSTER_CONFIG_FILE}"
+          yq -i '.k8s.network = "oblt-clusters-test-vpc"' "${CLUSTER_CONFIG_FILE}"
+          echo "CLUSTER_CONFIG_FILE=${CLUSTER_CONFIG_FILE}" >> "${GITHUB_ENV}"
+
+      - name: Creating cluster
+        uses: ./.github/actions/cluster-create
+        with:
+          clusterConfigFile: ${{ env.CLUSTER_CONFIG_FILE }}
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Update cluster
+        uses: ./.github/actions/cluster-update
+        with:
+          clusterConfigFile: ${{ env.CLUSTER_CONFIG_FILE }}
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Deleting cluster
+        if: always()
+        uses: ./.github/actions/cluster-destroy
+        with:
+          clusterConfigFile: ${{ env.CLUSTER_CONFIG_FILE }}
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -1,0 +1,29 @@
+---
+- name: Wipeout cluster Data
+  ignore_errors: true
+  vars:
+    url: "{{ elasticsearch_url }}"
+    requests_list:
+      - url: "/_data_stream/*?expand_wildcards=all&pretty"
+        method: "DELETE"
+        payload: ""
+      - url: "*?expand_wildcards=all&pretty"
+        method: DELETE
+        payload: ""
+  uri:
+    url: "{{ url }}/{{ item.url }}"
+    method: "{{ item.method }}"
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: "{{ item.payload }}"
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 3
+  delay: 30
+  loop: "{{ requests_list }}"

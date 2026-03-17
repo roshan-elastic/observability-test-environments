@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param build_dir [string] The directory where the build is stored
+build_dir: "{{ lookup('env','BUILD_DIR') | default(playbook_dir + '/build', true) }}"
+## @param bin_dir [string] The directory where the binaries are stored
+bin_dir: "{{ build_dir }}/bin"
+## @param hermit_enabled Enable Hermit to install the tools
+hermit_enabled: true
+## @param k8s_provider [string] The k8s provider name
+k8s_provider: "{{ k8s.provider | default('autopilot') }}"
+## @param k8s_enabled [string] Enable K8s
+k8s_enabled: "{{ k8s.enabled | default((k8s.provider | default('')) | length>0) | default(false) | bool }}"
+## @param save_secrets Save the secrets in the build directory
+save_secrets: true
+## @param terraform_version [string] The Terraform version to install
+terraform_version: 1.4.6
+## @param ess_terraform_version [string] Elastic terraform provider version
+ess_terraform_version: 0.10.0
+## @param build_tf_provider_from_src [string] Build the Terraform provider from source
+build_tf_provider_from_src: false
+## @param use_snapshot_tf_provider [string] Use the snapshot version of the Terraform provider
+use_snapshot_tf_provider: false
+## @param gcloud_version [string] The GCloud version to install
+gcloud_version: "464.0.0"
+## @param kind_version [string] The Kind version to install
+kind_version: 0.23.0
+## @param kubectl_version [string] The Kubectl version to install
+kubectl_version: 1.30.3
+## @param helm_version [string] The Helm version to install
+helm_version: 3.15.3

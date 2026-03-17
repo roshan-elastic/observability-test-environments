@@ -1,0 +1,23 @@
+---
+description: Create a APM package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "apm-integration",
+    "package": {
+      "name": "apm",
+      "version": "{{ packages_result.json | json_query('[?name==`apm`].version') | first }}"
+    },
+    "name": "apm_policy",
+    "id": "apm_policy",
+    "description": "",
+    "namespace": "default"
+  }

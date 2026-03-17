@@ -1,0 +1,206 @@
+#{% set monitoring_cluster_state = (lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_monitoring-oblt_cluster-state')|safe()|from_yaml) %}
+# Default values for elastic-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/observability-ci/elastic-agent
+  # -- Tag for the Docker image.
+  tag: "{{ stack_version }}"
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - name: docker.elastic.co
+
+# -- Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: deployment
+
+# -- Elastic Common Schema versions.
+ecsVersion: 1.9.0
+
+
+# -- Elastic Agent settings.
+fleet:
+  # -- token policy name to use for fetching token from Kibana. This requires Kibana configs to be set. This setting is ignored if you provide a `enrollToken`.
+  tokenPolicyName: "Stack monitoring - {{ cluster_name }}"
+  # -- To ensure that enrollment occurs on every start of the container set `fleet.force` to true.
+  force: true
+  # -- set to `true` for enrollment into fleet-server. If not set, Elastic Agent is run in standalone mode.
+  enroll: true
+  # -- communicate with Fleet with either insecure HTTP or unverified HTTPS.
+  insecure: false
+  # -- URL of the Fleet Server to enroll into (e.g. https://fleet-server:8220).
+  serverUrl: "{{ monitoring_cluster_state.fleet_url  }}"
+
+# -- Kibana settings.
+kibana:
+  # -- URL of the Kibana (e.g. https://kibana:5601).
+  host: "{{ monitoring_cluster_state.kibana_url }}"
+  # -- Elasticsearch username.
+  username: "{{ monitoring_cluster_state.elasticsearch_username }}"
+  # -- Elasticsearch password.
+  password: "{{ monitoring_cluster_state.elasticsearch_password }}"
+  agent_policies:
+    - name: Stack monitoring - {{ cluster_name }}
+      id: stack-monitoring-policy-{{ cluster_hash }}
+      description: "Policy to Monintoring the Elastic Stack, it is similar to Stack monitoring but using regular Observability."
+      namespace: default
+      monitoring_enabled:
+        - logs
+        - metrics
+  package_policies:
+    - name: Elasticsearch monitoring - {{ cluster_name }}
+      id: stack_monitoring_es_policy{{ cluster_hash }}
+      description: "Monitoring for Elasticsearch"
+      policy_id: stack-monitoring-policy-{{ cluster_hash }}
+      package:
+        name: elasticsearch
+        version: "1.11.2"
+      namespace: default
+      inputs:
+        elasticsearch-logfile:
+          enabled: false
+        elasticsearch-elasticsearch/metrics:
+          enabled: true
+          vars:
+            hosts:
+              - '{{ elasticsearch_url }}'
+            username: '{{ elasticsearch_username }}'
+            password: '{{ elasticsearch_password }}'
+            scope: node
+            ssl: |
+              #certificate_authorities: ["/etc/ca.crt"]
+              #certificate: "/etc/client.crt"
+              #key: "/etc/client.key"
+            leaderelection: false
+          streams:
+            elasticsearch.stack_monitoring.ccr:
+              enabled: true
+              vars:
+                period: 10s
+            elasticsearch.stack_monitoring.cluster_stats:
+              enabled: true
+              vars:
+                period: 10s
+            elasticsearch.stack_monitoring.enrich:
+              enabled: true
+              vars:
+                period: 10s
+            elasticsearch.stack_monitoring.index:
+              enabled: true
+              vars:
+                period: 10s
+            elasticsearch.stack_monitoring.index_recovery:
+              enabled: true
+              vars:
+                active.only: true
+                period: 10s
+            elasticsearch.stack_monitoring.index_summary:
+              enabled: true
+              vars:
+                period: 10s
+            elasticsearch.ingest_pipeline:
+              enabled: true
+              vars:
+                ingest_pipeline_processor_sampling_rate: "0.25"
+            elasticsearch.stack_monitoring.ml_job:
+              enabled: true
+              vars:
+                period: 10s
+            elasticsearch.stack_monitoring.node:
+              enabled: true
+              vars:
+                period: 2s
+            elasticsearch.stack_monitoring.node_stats:
+              enabled: true
+              vars:
+                period: 2s
+            elasticsearch.stack_monitoring.pending_tasks:
+              enabled: true
+              vars:
+                period: 10s
+            elasticsearch.stack_monitoring.shard:
+              enabled: true
+              vars:
+                period: 10s
+    - name: Kibana monitoring - {{ cluster_name }}
+      id: stack_monitoring_kbn_policy{{ cluster_hash }}
+      description: "Monitoring for Elasticsearch"
+      policy_id: stack-monitoring-policy-{{ cluster_hash }}
+      package:
+        name: kibana
+        version: "2.5.1"
+      description: ""
+      namespace: default
+      inputs:
+        kibana-logfile:
+          enabled: false
+        kibana-http/metrics:
+          enabled: true
+          vars:
+            hosts:
+              - '{{ kibana_url }}'
+            username: '{{ kibana_username }}'
+            password: '{{ kibana_password }}'
+            ssl: |
+              #certificate_authorities: ["/etc/ca.crt"]
+              #certificate: "/etc/client.crt"
+              #key: "/etc/client.key"
+          streams:
+            kibana.background_task_utilization:
+              enabled: true
+              vars:
+                period: 10s
+            kibana.task_manager_metrics:
+              enabled: true
+              vars:
+                period: 10s
+        kibana-kibana/metrics:
+          enabled: true
+          vars:
+            hosts:
+              - '{{ kibana_url }}'
+            username: '{{ kibana_username }}'
+            password: '{{ kibana_password }}'
+            ssl: |
+              #certificate_authorities: ["/etc/ca.crt"]
+              #certificate: "/etc/client.crt"
+              #key: "/etc/client.key"
+          streams:
+            kibana.stack_monitoring.cluster_actions:
+              enabled: true
+              vars:
+                period: 10s
+            kibana.stack_monitoring.cluster_rules:
+              enabled: true
+              vars:
+                period: 10s
+            kibana.stack_monitoring.node_actions:
+              enabled: true
+              vars:
+                period: 10s
+            kibana.stack_monitoring.node_rules:
+              enabled: true
+              vars:
+                period: 10s
+            kibana.stack_monitoring.stats:
+              enabled: true
+              vars:
+                period: 10s
+            kibana.stack_monitoring.status:
+              enabled: true
+              vars:
+                period: 10s
+
+fullnameOverride: "{{ helm_chart.name }}"
+
+extraEnvs:
+  - name: DEPLOY_TIMESTAMP
+    value: "{{ deploy_timestamp }}"
+
+serviceAccount:
+  name: {{ helm_chart.name }}-{{ cluster_hash }}

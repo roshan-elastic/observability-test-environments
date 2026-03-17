@@ -1,0 +1,154 @@
+---
+name: Notify cluster update success
+inputs:
+  thread-timestamp:
+    description: 'The timestamp on the message that was posted into Slack when using bot token'
+    required: false
+  slackChannel:
+    description: 'The slack channel to post to.'
+    required: true
+  slack-bot-token:
+    description: 'The Slack bot token.'
+    required: true
+  clusterName:
+    description: 'The cluster name.'
+    required: true
+  gitOps:
+    description: 'The gitops flag.'
+    default: "false"
+  issue:
+    description: 'The issue number.'
+    required: false
+  buildDir:
+    description: 'The build directory.'
+    default: ${{ github.workspace }}/build
+
+runs:
+  using: "composite"
+  steps:
+    - name: Read Files
+      uses: actions/github-script@v7
+      id: read-files
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+
+          filePath = path.join('${{ inputs.buildDir }}', 'deploy-info-slack.json');
+          if (fs.existsSync(filePath)) {
+            core.setOutput('deploy-info-slack', true);
+          }
+
+          filePath = path.join('${{ inputs.buildDir }}', 'deploy-info.md');
+          if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath);
+            const msg = content.toString();
+            core.setOutput('deploy-info', true);
+            core.setOutput('deploy-info-msg', msg);
+          }
+
+          filePath = path.join('${{ inputs.buildDir }}', 'github-summary.md');
+          if (fs.existsSync(filePath)) {
+            core.setOutput('github-summary', true);
+          }
+
+          filePath = path.join('${{ inputs.buildDir }}', 'kibana.yml');
+          if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath);
+            const msg = '```\n' + content.toString() + '\n```';
+            core.setOutput('kibana', true);
+            core.setOutput('kibana-msg', msg);
+          }
+
+          filePath = path.join('${{ inputs.buildDir }}', 'users.yml');
+          if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath);
+            const msg = '```\n' + content.toString() + '\n```';
+            core.setOutput('users', true);
+            core.setOutput('users-msg', msg);
+          }
+
+    - if: steps.read-files.outputs.deploy-info-slack == 'true'
+      continue-on-error: true
+      name: Send slack message with Deploy info
+      uses: ./.github/actions/slack-msg-file
+      with:
+        slack-channel: "${{ inputs.slackChannel }}"
+        slack-bot-token: ${{ inputs.slack-bot-token }}
+        payload-file-path: ${{ inputs.buildDir }}/deploy-info-slack.json
+        thread-timestamp: "${{ inputs.thread-timestamp || '' }}"
+
+    - name: GitHub summary
+      continue-on-error: true
+      uses: actions/github-script@v7
+      env:
+        BUILD_DIR: ${{ inputs.buildDir }}
+      with:
+        script: |
+          const fs = require('fs')
+          const path = require('path');
+          const content = fs.readFileSync(path.join(process.env.BUILD_DIR, 'github-summary.md'))
+          await core.summary.addRaw(content).write()
+
+    ## NOTE: steps.cluster-info.outputs are decoded, hence it's required to be decoded.
+    - if: inputs.gitOps && contains(inputs.gitOps, 'true') && inputs.issue
+      name: Notify GitHub issue when created
+      continue-on-error: true
+      uses: actions/github-script@v7
+      env:
+        BUILD_DIR: ${{ inputs.buildDir }}
+        INFO: ${{ steps.read-files.outputs.deploy-info-msg }}
+        KIBANA: ${{ steps.read-files.outputs.kibana-msg }}
+        USERS: ${{ steps.read-files.outputs.users-msg }}
+      with:
+        script: |
+          const fs = require('fs')
+          const path = require('path');
+          const content = fs.readFileSync(path.join(process.env.BUILD_DIR, 'github-summary.md'))
+          const body = `💚 Your cluster \`${{ inputs.clusterName }}\` has been created.
+
+            ${content}
+
+            <details>
+              <summary>Info</summary>
+
+              ${process.env.INFO}
+
+            </details>
+
+            <details>
+              <summary>Kibana</summary>
+
+              ${process.env.KIBANA}
+
+            </details>
+
+            <details>
+              <summary>Users</summary>
+
+              ${process.env.USERS}
+
+            </details>
+          `.replace(/  +/g, '')
+
+          github.rest.issues.createComment({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          })
+
+          const result = await github.rest.issues.listLabelsOnIssue({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          })
+          const labels = result.data.map((label) => label.name)
+          labels.push('updated-cluster')
+          github.rest.issues.update({
+            issue_number: ${{ inputs.issue }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'closed',
+            labels: labels
+          })

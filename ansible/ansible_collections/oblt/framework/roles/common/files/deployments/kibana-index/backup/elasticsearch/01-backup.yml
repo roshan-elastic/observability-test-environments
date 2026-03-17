@@ -1,0 +1,22 @@
+---
+# Description of what the recipe do.
+description: Backup .Kibana index.
+# Path to the REST API call.
+api: "/_reindex"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: POST
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+# The payload to send to the REST API.
+body: |
+  {
+      "source": {
+          "index": ".kibana"
+      },
+      "dest": {
+          "index": "kibana_reindex_temp"
+      }
+  }
+# The expected return code.
+return_code: 200

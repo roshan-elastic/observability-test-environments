@@ -1,0 +1,21 @@
+---
+- block:
+    - name: Elastic Stack K8s secrets
+      include_tasks: k8s-stack-secrets.yml
+
+    - name: Install Apps
+      include_tasks: apps.yml
+
+    - name: Import role
+      include_role:
+        name: "oblt.framework.k8s_beats"
+      when:
+        - beats_enabled | default(false)
+
+    - name: Import role Opbeans
+      include_tasks: opbeans.yml
+      when:
+        - opbeans_enabled | default(false)
+
+  when:
+    - k8s_enabled|bool

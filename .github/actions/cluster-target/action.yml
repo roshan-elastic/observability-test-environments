@@ -1,0 +1,178 @@
+---
+name: cluster-target
+description: Execute a Cluster Target.
+inputs:
+  target:
+    description: 'The target to execute.'
+    required: true
+  workloadIdentityProvider:
+    description: 'The workload identity provider id.'
+    required: true
+  serviceAccount:
+    description: 'The service account email.'
+    required: true
+  accessTokenLifetime:
+    description: 'The access token lifetime.'
+    required: false
+    default: 3600s
+  dockerUsername:
+    description: 'The docker username.'
+    required: true
+  dockerPassword:
+    description: 'The docker password.'
+    required: true
+  dockerRegistry:
+    description: 'The docker registry.'
+    required: true
+  clusterConfigFile:
+    description: 'The cluster configuration file.'
+    required: true
+  frameworkVersion:
+    description: 'The framework version.'
+    default: 7.5.19
+  buildDir:
+    description: 'The build directory.'
+    default: ${{ github.workspace }}/build
+  slack-bot-token:
+    description: 'The Slack bot token.'
+    required: true
+outputs:
+  slackChannel:
+    description: 'The slack channel to post to.'
+    value: ${{ steps.cluster-config.outputs.slack_channel }}
+  clusterName:
+    description: 'The cluster name.'
+    value: ${{ steps.cluster-config.outputs.cluster_name }}
+  thread-timestamp:
+    description: 'The thread timestamp.'
+    value: ${{ steps.slack-thread.outputs.thread-timestamp }}
+  goldenCluster:
+    description: 'The golden cluster.'
+    value: ${{ steps.cluster-config.outputs.golden_cluster }}
+  buildDir:
+    description: 'The build directory.'
+    value: ${{ inputs.buildDir }}
+  gitOps:
+    description: 'The gitops flag.'
+    value: ${{ steps.cluster-config.outputs.gitops }}
+  issue:
+    description: 'The issue number.'
+    value: ${{ steps.cluster-config.outputs.issue }}
+  stackBuild:
+    description: 'The stack build.'
+    value: ${{ steps.cluster-config.outputs.stack_build }}
+runs:
+  using: "composite"
+  steps:
+    - name: Read cluster config
+      id: cluster-config
+      uses: ./.github/actions/cluster-read-config
+      with:
+        filename: ${{ inputs.clusterConfigFile }}
+    - name: Start message
+      if: ${{ steps.cluster-config.outputs.slack_channel != '' && steps.cluster-config.outputs.oblt_managed == 'true' }}
+      id: slack-thread
+      uses: ./.github/actions/start-notification
+      with:
+        slack-bot-token: ${{ inputs.slack-bot-token }}
+        slackChannel: ${{ steps.cluster-config.outputs.slack_channel }}
+        clusterName: ${{ steps.cluster-config.outputs.cluster_name }}
+        gitOps: ${{ steps.cluster-config.outputs.gitops }}
+        issue: ${{ steps.cluster-config.outputs.issue }}
+        target: ${{ inputs.target }}
+    - name: Cache Docker images.
+      if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
+      uses: ScribeMD/docker-cache@fb28c93772363301b8d0a6072ce850224b73f74e
+      with:
+        key: docker-${{ inputs.frameworkVersion }}-oblt-framework
+    - name: Log in to the Container registry
+      if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
+      uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+      with:
+        registry: ${{ inputs.dockerRegistry }}
+        username: ${{ inputs.dockerUsername }}
+        password: ${{ inputs.dockerPassword }}
+    - name: Reset environment
+      if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
+      shell: bash
+      run: |
+        echo "DOCKER_USERNAME=" >> $GITHUB_ENV
+        echo "DOCKER_PASSWORD=" >> $GITHUB_ENV
+    - name: Authenticate to Google Cloud
+      if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
+      uses: ./.github/actions/gcp-auth
+      with:
+        workloadIdentityProvider: ${{ inputs.workloadIdentityProvider }}
+        serviceAccount: ${{ inputs.serviceAccount }}
+        accessTokenLifetime: ${{ inputs.accessTokenLifetime }}
+    - name: Task ID
+      if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
+      shell: bash
+      env:
+        CLUSTER_CONFIG_FILE: ${{ inputs.clusterConfigFile }}
+      run: |
+        # shellcheck disable=SC2086
+        echo "TASK_ID=$(yq .cluster_name ${CLUSTER_CONFIG_FILE})" >> $GITHUB_ENV
+    - name: Run the task ${{ inputs.task }}
+      if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
+      run: |
+        make -C "${GITHUB_ACTION_PATH}" docker-run
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        DOCKER_USERNAME: ${{ inputs.dockerUsername }}
+        DOCKER_PASSWORD: ${{ inputs.dockerPassword }}
+        DOCKER_REGISTRY: ${{ inputs.dockerRegistry }}
+        FRAMEWORK_VERSION: ${{ inputs.frameworkVersion }}
+        CLUSTER_CONFIG_FILE: ${{ inputs.clusterConfigFile }}
+        BUILD_DIR: ${{ inputs.buildDir }}
+        CONTAINER_CLUSTER_CONFIG_FILE: /ansible/cluster-config.yml
+        CONTAINER_BUILD_DIR: /tmp/build
+        VERSION: ${{ inputs.frameworkVersion }}
+        GITHUB_ENABLED: "true"
+    - if: ${{ failure() && steps.cluster-config.outputs.oblt_managed == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.TASK_ID }}-logs
+        path: |
+          ${{ inputs.buildDir }}/terraform/elastic_cloud/*.log
+          ${{ inputs.buildDir }}/github-summary.md
+          ${{ inputs.buildDir }}/kind_logs/
+          ${{ inputs.clusterConfigFile }}
+        retention-days: 2
+    - uses: actions/upload-artifact@v3
+      if: ${{ always() && steps.cluster-config.outputs.oblt_managed == 'true' }} # run this step even if previous step failed
+      with:
+        name: test-results-${{ inputs.id }}
+        path: ${{ inputs.buildDir }}/ansible/ansible_collections/oblt/framework/roles/**/test-results/*.xml
+    - name: Cache Docker images.
+      if: ${{ steps.cluster-config.outputs.oblt_managed == 'true' }}
+      uses: ScribeMD/docker-cache@fb28c93772363301b8d0a6072ce850224b73f74e
+      with:
+        key: docker-${{ inputs.frameworkVersion }}-oblt-framework
+    - name: Success message
+      if: ${{ success() && steps.cluster-config.outputs.slack_channel != '' && steps.cluster-config.outputs.oblt_managed == 'true' }}
+      continue-on-error: true
+      uses: elastic/oblt-actions/slack/send@v1
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        channel-id: '${{ steps.cluster-config.outputs.slack_channel }}'
+        message: "${{ inputs.target }} ${{ steps.cluster-config.outputs.cluster_name }} success - <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|build>"
+        thread-timestamp: ${{ steps.slack-thread.outputs.thread-timestamp || '' }}
+    - name: Failure message
+      if: ${{ failure() && steps.cluster-config.outputs.slack_channel != '' && steps.cluster-config.outputs.oblt_managed == 'true' }}
+      continue-on-error: true
+      uses: elastic/oblt-actions/slack/send@v1
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        channel-id: '${{ steps.cluster-config.outputs.slack_channel }}'
+        message: "${{ inputs.target }} ${{ steps.cluster-config.outputs.cluster_name }} failure - <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|build>"
+        thread-timestamp: ${{ steps.slack-thread.outputs.thread-timestamp || '' }}
+    - name: Failure message
+      uses: ./.github/actions/failed-notification
+      if: ${{ failure() && steps.cluster-config.outputs.oblt_managed == 'true' }}
+      with:
+        thread-timestamp: ${{ steps.run-task.outputs.thread-timestamp || '' }}
+        buildDir: ${{ inputs.buildDir }}
+        gitOps: ${{ steps.cluster-config.outputs.gitops }}
+        issue: ${{ steps.cluster-config.outputs.issue }}

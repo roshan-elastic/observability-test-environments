@@ -1,0 +1,8 @@
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: true
+ephemeral_cluster: true
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+k8s:
+  enabled: true
+  provider: gcp
+  network: "oblt-clusters-test-vpc"

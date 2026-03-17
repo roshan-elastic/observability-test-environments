@@ -1,0 +1,48 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Hey there 👋 I'm oblt-robot. I'm here to help you with Oblt Clusters, CI and some automation!\n"
+			}
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "List of Snapshots in the Unified Release process are",
+				"emoji": true
+			}
+		},
+  	{{ $length := len .Snapshots }}
+  	{{ if eq $length 0 }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":ghost: No Snapshots could be found. Contact the `@oblt-robots` team"
+			}
+		},
+    {{else}}
+		{{ range $version := .Snapshots }}
+		{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "*Build:*`{{ $version.BuildId }}` {{ $version.Version }}"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Build date:*`{{ $version.ReleaseDate }}` <{{ $version.Query }}|View request>"
+				}
+			]
+		},
+    {{ end }}
+    {{ end }}
+		{
+			"type": "divider"
+		}
+	]
+}

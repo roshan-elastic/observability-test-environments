@@ -1,0 +1,26 @@
+---
+- name: Install ECK Operator
+  vars:
+    helm_chart:
+      chart: "elastic/eck-operator"
+      version: "{{ eck_version }}"
+      name: "elastic-operator"
+      namespace: "elastic-system"
+      extra_args: "--create-namespace"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: deploy_chart.yml
+  tags:
+    - eck
+    - deploy
+
+- name: Wait for ECK Operator
+  vars:
+    k8s_resource: "pod -n elastic-system --selector statefulset.kubernetes.io/pod-name=elastic-operator-0"
+    timeout: 120s
+  include_role:
+    name: oblt.framework.k8s_common
+    tasks_from: wait_for_resource.yml
+  tags:
+    - eck
+    - deploy

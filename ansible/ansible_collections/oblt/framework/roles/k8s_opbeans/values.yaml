@@ -1,0 +1,5 @@
+---
+## @section Section for Opbeans configuration
+## @param opbeans.enabled Enable Opbeans
+opbeans:
+  enabled: true

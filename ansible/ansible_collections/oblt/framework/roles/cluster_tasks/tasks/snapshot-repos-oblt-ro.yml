@@ -1,0 +1,42 @@
+---
+# It attaches the external snapshot repositories of the oblt cluster as readonly on any cluster
+- name: Set facts
+  set_fact:
+    es_url: "{{ elasticsearch_url }}"
+
+- name: Include tasks from gcs-plugin-credentials.yml
+  include_tasks: gcs-plugin-credentials.yml
+
+- name: Create Snapshot Repository
+  vars:
+    payload_repo:
+      type: "gcs"
+      settings:
+        bucket: "oblt-clusters"
+        client: "external"
+        base_path: "{{ item }}"
+        readonly: "true"
+  ignore_errors: true
+  uri:
+    url: "{{ es_url }}/_snapshot/external_gcs_repository_{{ item }}"
+    method: PUT
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: "{{ payload_repo | to_nice_json }}"
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 3
+  delay: 10
+  loop:
+    - edge-oblt
+    - edge-sec
+    - dev-oblt
+    - release-oblt
+    - release-sec
+    - monitoring-oblt

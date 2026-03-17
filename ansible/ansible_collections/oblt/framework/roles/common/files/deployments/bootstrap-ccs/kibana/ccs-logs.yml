@@ -1,0 +1,27 @@
+---
+# Description of what the recipe does.
+description: Configure logs to use CCS
+# Path to the REST API call.
+api: "api/infra/log_views/default"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PUT
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+  elastic-api-version: 1
+# The payload to send to the REST API.
+body: |
+  {
+    "attributes": {
+      "name": "Default",
+      "logIndices": {
+        "type": "index_name",
+        "indexName": "remote_cluster:filebeat-*,remote_cluster:logs-*,remote_cluster:kibana_sample_data_logs*,filebeat-*,kibana_sample_data_logs*,logs-*,"
+      }
+    }
+  }
+# The expected return code.
+return_code:
+  - 200
+ignore_errors: true

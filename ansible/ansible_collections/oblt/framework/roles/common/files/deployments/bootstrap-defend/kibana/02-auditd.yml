@@ -1,0 +1,42 @@
+---
+description: Create a auditd package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "security-linux-policy",
+    "package": {
+      "name": "auditd",
+      "version": "3.19.1"
+    },
+    "name": "auditd-security-linux-policy",
+    "namespace": "default",
+    "description": "Configuration for Auditd integration",
+    "vars": {},
+    "inputs": {
+      "auditd-logfile": {
+        "enabled": true,
+        "streams": {
+          "auditd.log": {
+            "enabled": true,
+            "vars": {
+              "paths": [
+                "/var/log/audit/audit.log*"
+              ],
+              "tags": [
+                "auditd-log"
+              ],
+              "preserve_original_event": false
+            }
+          }
+        }
+      }
+    }
+  }

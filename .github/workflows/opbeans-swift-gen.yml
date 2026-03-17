@@ -1,0 +1,117 @@
+---
+## Workflow to crun the Opbeans Swift data generator.
+name: Opbeans Swift Data Generator
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+    paths:
+      - 'environments/users/robots/edge-lite-oblt/config-cluster.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  process:
+    runs-on: macos-12
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster_name:
+          - edge-lite-oblt
+    env:
+      BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+      BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
+        with:
+          xcode-version: '14.0'
+
+      - name: Authenticate to Google Cloud
+        uses: ./.github/actions/gcp-auth
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+      - name: "Get Cluster Secrets"
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        with:
+          command: cluster secrets cluster-state --cluster-name ${{ matrix.cluster_name }} --output-file ${PWD}/secrets.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Dependencies
+        run: |
+          echo "node_modules" >> .gitignore
+          npm install js-yaml
+
+      - name: "Export secrets"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            const fileContents = fs.readFileSync('${{ github.workspace }}/secrets.yml', 'utf8');
+            const secrets = yaml.load(fileContents);
+            const ingress_auth = `${secrets.ingress_username}:${secrets.ingress_password}`;
+            const ingress_auth_base64 = Buffer.from(ingress_auth).toString('base64');
+
+            core.exportVariable('APM_URL', secrets.apm_url);
+            core.exportVariable('APM_TOKEN', secrets.apm_token);
+            core.exportVariable('OPBEANS_URL', `https://opbeans-node.${secrets.load_balancer_ip}.ip.es.io:443`);
+            core.exportVariable('OPBEANS_AUTH', ingress_auth_base64);
+            core.setSecret(secrets.apm_url);
+            core.setSecret(secrets.apm_token);
+            core.setSecret(secrets.load_balancer_ip);
+            core.setSecret(secrets.k8s_domain);
+            core.setSecret(ingress_auth_base64);
+
+      - name: Run the Opbeans swift generator
+        run: |
+          set -eu
+          # TODO find another solution
+          OPBEANS_TEMP=$(mktemp -d -t opbeans-swift)
+          CERTIFICATE_PATH="${OPBEANS_TEMP}/build_certificate.p12"
+          PP_PATH="${OPBEANS_TEMP}/build_pp.mobileprovision"
+          KEYCHAIN_PATH="${OPBEANS_TEMP}/app-signing.keychain-db"
+          echo -n "${BUILD_CERTIFICATE_BASE64}" | base64 --decode > "${CERTIFICATE_PATH}"
+          echo -n "${BUILD_PROVISION_PROFILE_BASE64}" | base64 --decode > "${PP_PATH}"
+          uuid=$(grep UUID -A1 -a "${PP_PATH}" | grep -io "[-A-F0-9]\{36\}")
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security import "${CERTIFICATE_PATH}" -P "${P12_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          security list-keychain -d user -s "${KEYCHAIN_PATH}"
+
+          mkdir -p "${HOME}/Library/MobileDevice/Provisioning Profiles"
+          cp "$PP_PATH" "${HOME}/Library/MobileDevice/Provisioning Profiles/${uuid}.mobileprovision"
+          echo "Profile path: ${HOME}/Library/MobileDevice/Provisioning Profiles/${uuid}.mobileprovision"
+          ls -la "${HOME}/Library/MobileDevice/Provisioning Profiles/${uuid}.mobileprovision"
+
+          git clone https://github.com/elastic/opbeans-swift.git
+          cd opbeans-swift
+          python3 ./.ci/scripts/generate-oblt-conf.py \
+              --apm-server "${APM_URL}" \
+              --secret-token "${APM_TOKEN}" \
+              --opbeans-node  "${OPBEANS_URL}" \
+              --opbeans-auth "${OPBEANS_AUTH}"
+          xcodebuild -project opbeans-swift.xcodeproj \
+              -scheme "opbeans-swift (iOS)" clean build \
+              -destination generic/platform=iOS \
+              -derivedDataPath "./DerivedData" \
+              -allowProvisioningUpdates
+          mkdir payload
+
+          cp -r ./DerivedData/Build/Products/Debug-iphoneos/opbeans-swift.app payload/
+          zip -r opbeans-swift.ipa  ./payload
+          curl -u "${SAUCE_USERNAME}:${SAUCE_ACCESS_KEY}" --location \
+              --request POST https://api.us-west-1.saucelabs.com/v1/storage/upload \
+              --form payload=@"./opbeans-swift.ipa" \
+              --form 'name="opbeans-swift.ipa"'

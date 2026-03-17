@@ -1,0 +1,21 @@
+---
+- name: Check that the {{ k8s_dir }}/kibana folder exists
+  stat:
+    path: "{{ k8s_dir }}/kibana"
+  register: stat_result
+
+- name: Undeploy ECK Kibana
+  changed_when: false
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_default_namespace }}"
+    state: absent
+    src: "{{ item.yml }}"
+  loop:
+    - yml: "{{ k8s_dir }}/kibana/kibana-deployment.yaml"
+    - yml: "{{ k8s_dir }}/kibana/kibana-ingress.yaml"
+    - yml: "{{ k8s_dir }}/kibana-secrets.yaml"
+  when:
+    - stat_result.stat.exists
+  tags:
+    - kibana
+    - undeploy

@@ -1,0 +1,21 @@
+---
+# Description of what the recipe do.
+description: Configure logs to use CCS
+# Path to the REST API call.
+api: "/api/metrics/source/default"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PATCH
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+  elastic-api-version: 1
+  kbn-version: "{{ stack_version }}"
+# The payload to send to the REST API.
+body: |
+  {
+    "metricAlias": "metrics-*:service-extra-metricbeat-*:metrics-*:metrics-*,metrics-*,metricbeat-*,synthetics-*"
+  }
+# The expected return code.
+return_code:
+  - 200

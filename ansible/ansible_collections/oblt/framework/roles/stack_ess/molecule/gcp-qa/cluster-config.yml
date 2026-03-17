@@ -1,0 +1,15 @@
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: true
+deploy_timestamp: foo #always the same to check the idenpotence.
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+ephemeral_cluster: true
+stack:
+  mode: "ess"
+  template: "elasticsearch"
+  target: "qa"
+  ess:
+    provider: gcp
+    elasticsearch:
+      zones: 1
+
+ess_not_allow_settings: false

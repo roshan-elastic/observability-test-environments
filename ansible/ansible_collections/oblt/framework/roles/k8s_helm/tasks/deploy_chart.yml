@@ -1,0 +1,59 @@
+---
+- name: Info
+  debug:
+    msg: "Deploying {{ helm_chart.name }}:{{ helm_chart.version }} Helm Chart"
+
+- name: Create a directory if it does not exist
+  file:
+    path: "{{ helm_dir }}/{{ helm_chart.name }}"
+    state: directory
+    mode: '0700'
+
+- name: Helm chart config
+  template:
+    src: "{{ helm_chart.values_file | default(helm_dir + '/.empty', true) }}"
+    dest: "{{ helm_dir }}/{{ helm_chart.name }}/helm-values.yaml"
+    mode: 0600
+  tags:
+    - helm
+    - generate_config
+    - molecule-idempotence-notest
+
+- name: Deploy Chart
+  changed_when: false
+  shell: |
+    HELM_CHART="{{ helm_chart.chart }}"
+    HELM_CHART_VER="{{ helm_chart.version }}"
+    HELM_CHART_VALUES="--values {{ helm_dir }}/{{ helm_chart.name }}/helm-values.yaml"
+    # https://github.com/helm/helm/issues/7350
+    HELM_FORCE_UPDATE="{{ '--force' if (helm_chart.force_update is defined and helm_chart.force_update) else '' }}"
+    HELM_EXTRA_ARGS="{{ helm_chart.extra_args if helm_chart.extra_args is defined else '' }}"
+    NAME="{{ helm_chart.name }}"
+    NAMESPACE="{{ helm_chart.namespace }}"
+    HELM_CHART_BUILD_DEPS="{{ (helm_chart.build_deps if helm_chart.build_deps is defined else false) | string | lower }}"
+    HELM_RENDER_MODE="{{ (helm_chart.render_mode if helm_chart.render_mode is defined else false) | string | lower }}"
+    HELM_OUTPUT_DIR="{{ helm_chart.output_dir if helm_chart.output_dir is defined else '{{ build_dir }}/k8s' }}"
+
+    if [ "${HELM_CHART_BUILD_DEPS}" = "true" ]; then
+      helm dependency build "${HELM_CHART}"
+    fi
+
+    if [ "${HELM_RENDER_MODE}" = "true" ]; then
+      HELM_CMD="template --output-dir ${HELM_OUTPUT_DIR}"
+    else
+      HELM_CMD="upgrade --install"
+    fi
+
+    helm ${HELM_CMD} ${HELM_FORCE_UPDATE} \
+      --namespace "${NAMESPACE}" \
+      --version "${HELM_CHART_VER}" \
+      ${HELM_CHART_VALUES} ${HELM_EXTRA_ARGS} \
+      "${NAME}" "${HELM_CHART}"
+
+- name: Test Chart
+  changed_when: false
+  shell: |
+    helm test "{{ helm_chart.name }}"
+  when:
+    - helm_chart.test is defined
+    - helm_chart.test | bool

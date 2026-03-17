@@ -1,0 +1,13 @@
+---
+cluster_name: "eck-test-oblt{{ lookup('env','BUILD_NUMBER') | default('0', true) }}-{{ stack_version | replace('.', '-') | lower }}"
+docker_registry_eck: "docker.elastic.co/observability-ci"
+certificate_issuer: letsencrypt-staging
+
+k8s:
+  enabled: true
+  provider: gcp
+
+stack:
+  mode: eck
+  version: "{{ default_stack_version }}"
+  template: observability

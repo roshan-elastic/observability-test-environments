@@ -1,0 +1,11 @@
+---
+- name: Configure host variables
+  vars:
+    _apm_url: "https://{{ apm_host }}:443"
+  set_fact:
+    apm_url: "{{ _apm_url }}"
+    apm_token: "{{ apm_secret_token }}"
+    fleet_url: "{{ _apm_url | regex_replace('^(.*//)(apm\\.)(.*)$','\\1fleet.\\3') }}"
+  tags:
+    - apm
+    - load_config

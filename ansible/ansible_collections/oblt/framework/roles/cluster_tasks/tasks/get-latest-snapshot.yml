@@ -1,0 +1,33 @@
+---
+- name: Get latest snapshot name
+  vars:
+    url: "{{ 'https://elasticsearch.127.0.0.1.' + k8s.domain if k8s_provider == 'kind' and elasticsearch_type != 'tf' else elasticsearch_url }}"
+    repo_name: "{{ lookup('env','SNAP_REPO_NAME') | default('external_gcs_repository', true) }}"
+    json_query_snpashots: "snapshots[?state=='SUCCESS']"
+    es_username: "{{ elasticsearch_username }}"
+    es_password: "{{ elasticsearch_password }}"
+  block:
+    - name: Collect snapshots info
+      uri:
+        url: "{{ url }}/_snapshot/{{ repo_name }}/_all"
+        method: "GET"
+        validate_certs: false
+        user: "{{ es_username }}"
+        password: "{{ es_password }}"
+        force_basic_auth: true
+        headers:
+          Content-Type: application/json
+          kbn-xsrf: true
+        body_format: json
+        body: ""
+      register: _snapshot_info
+      until: _snapshot_info.status == 200
+      retries: 3
+      delay: 30
+    - name: Get the latest SUCCESS snapshot
+      set_fact:
+        snapshot_name: "{{ (_snapshot_info.json | json_query(json_query_snpashots) | sort(attribute='end_time',case_sensitive=False) | last ).snapshot }}"
+    - name: Save snapshot name
+      copy:
+        content: "{{ snapshot_name }}"
+        dest: "{{ build_dir }}/latest_snapshot"

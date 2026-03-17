@@ -1,0 +1,18 @@
+---
+- name: Deploying K8s App
+  debug:
+    msg: |
+      ---------------------
+      {{ item | to_nice_yaml }}
+
+- name: Include tasks from copy_files.yml
+  include_tasks: copy_files.yml
+
+- name: Install k8s deployments
+  changed_when: false
+  shell: |
+    if [ -f "{{ k8s_app_dir }}/kustomization.yaml" ] || [ -f "{{ k8s_app_dir }}/kustomization.yml" ]; then
+      kubectl apply -k "{{ k8s_app_dir }}"
+    else
+      kubectl apply -R -f "{{ k8s_app_dir }}"
+    fi

@@ -1,0 +1,51 @@
+services:
+  prepare-volume:
+    image: docker.elastic.co/observability-ci/oblt-framework:${VERSION:-latest}
+    entrypoint: /bin/bash
+    user: root
+    command: -c 'rm -fr /data/build && mkdir -p /data/build && chown -R oblt:oblt /data'
+    volumes:
+      - type: volume
+        source: oblt-build
+        target: /data
+  oblt-framework:
+    image: docker.elastic.co/observability-ci/oblt-framework:${VERSION:-latest}
+    user: oblt:oblt
+    depends_on:
+      prepare-volume:
+        condition: service_completed_successfully
+    environment:
+      - GCP_PROJECT
+      - GCP_AUTH_KIND
+      - GCP_ACCESS_TOKEN
+      - CLOUDSDK_AUTH_ACCESS_TOKEN
+      - GOOGLE_OAUTH_ACCESS_TOKEN
+      - DOCKER_USERNAME
+      - DOCKER_PASSWORD
+      - DOCKER_REGISTRY
+      - CLUSTER_CONFIG_FILE=/ansible/cluster-config.yml
+      - GITHUB_ENABLED
+      - ANSIBLE_OPTS
+    volumes:
+      - type: volume
+        source: oblt-build
+        target: /data
+        volume:
+          nocopy: true
+  copy-files:
+    image: docker.elastic.co/observability-ci/oblt-framework:${VERSION:-latest}
+    entrypoint: /bin/bash
+    user: root
+    environment:
+      - "NEW_UID=${NEW_UID:-oblt}"
+      - "NEW_GID=${NEW_GID:-oblt}"
+    command: -c 'cp -R /data/build/* /output && chown -R ${NEW_UID}:${NEW_GID} /output/*'
+    volumes:
+      - type: volume
+        source: oblt-build
+        target: /data
+      - type: bind
+        source: ${BUILD_DIR:-./build}
+        target: /output
+volumes:
+  oblt-build:

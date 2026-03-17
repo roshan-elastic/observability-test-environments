@@ -1,0 +1,11 @@
+build/
+packages/
+.cache
+.bundle
+.env
+.vendor
+fake_passwd
+dist/
+static/.version
+manpages/*
+completions/*

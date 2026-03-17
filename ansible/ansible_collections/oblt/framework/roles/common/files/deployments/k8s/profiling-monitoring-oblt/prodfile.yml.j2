@@ -1,0 +1,182 @@
+---
+#{% set monitoring_cluster_state = (lookup('oblt.framework.gcp_secret_manager', key='oblt-clusters_monitoring-oblt_cluster-state')|safe()|from_yaml) %}
+#{% set stack_version = monitoring_cluster_state.stack_version %}
+#{% set profiling_url = monitoring_cluster_state.profiling_url %}
+#{% set profiling_token = monitoring_cluster_state.profiling_token %}
+#{% set ess_profiling_image = 'docker.elastic.co/observability-ci/profiling-agent:' + stack_version %}
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: universal-profiling-{{ cluster_hash}}
+---
+{% set docker_auth = (docker_auth_usr + ':' + docker_auth_psw) | b64encode %}
+{% set docker_config = {"auths":{docker_registry:{"username": docker_auth_usr,"password": docker_auth_psw,"email": docker_email,"auth": docker_auth}}} %}
+apiVersion: v1
+data:
+  .dockerconfigjson: "{{ docker_config | to_json | b64encode }}"
+kind: Secret
+metadata:
+  name: "{{ docker_secret_name | default(docker_registry) }}"
+  namespace: universal-profiling-{{ cluster_hash}}
+type: kubernetes.io/dockerconfigjson
+---
+# Source: pf-host-agent/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: universal-profiling-{{ cluster_hash}}
+  name: universal-profiling-host-agent-{{ cluster_hash}}
+automountServiceAccountToken: true
+---
+# Source: pf-host-agent/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: universal-profiling-{{ cluster_hash}}
+  name: universal-profiling-agent-{{ cluster_hash}}
+  labels:
+    name: pf-host-agent
+data:
+  pf-host-agent.conf: |
+    project-id 1
+    tracers all
+    verbose false
+    collection-agent {{ profiling_url | default('NotSet') | replace('https://', '') }}
+    secret-token {{ profiling_token | default('NotSet') }}
+    disable-tls false
+---
+# Source: pf-host-agent/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: universal-profiling-agent-cluster-discovery-{{ cluster_hash}}
+rules:
+  - verbs:
+      - get
+      - watch
+      - list
+    resources:
+      - nodes
+    apiGroups:
+      - ""
+---
+# Source: pf-host-agent/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: universal-profiling-agent-sa-view-{{ cluster_hash}}
+subjects:
+  - kind: ServiceAccount
+    name: universal-profiling-host-agent-{{ cluster_hash}}
+    namespace: universal-profiling-{{ cluster_hash}}
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: pf-host-agent/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: universal-profiling-agent-sa-cluster-discovery-{{ cluster_hash}}
+subjects:
+  - kind: ServiceAccount
+    name: universal-profiling-host-agent-{{ cluster_hash}}
+    namespace: universal-profiling-{{ cluster_hash}}
+roleRef:
+  kind: ClusterRole
+  name: universal-profiling-agent-cluster-discovery-{{ cluster_hash}}
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: pf-host-agent/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  namespace: universal-profiling-{{ cluster_hash}}
+  name: universal-profiling-agent-{{ cluster_hash}}
+  labels:
+    name: pf-host-agent
+    provider: optimyze
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: "5%"
+  selector:
+    matchLabels:
+      app: profiling-agent
+      app.kubernetes.io/name: profiling-agent
+      app.kubernetes.io/part-of: continuous-profiling
+  template:
+    metadata:
+      labels:
+        app: profiling-agent
+        app.kubernetes.io/name: profiling-agent
+        app.kubernetes.io/part-of: continuous-profiling
+        app.kubernetes.io/version: {{ stack_version }}
+    spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: pf-host-agent
+          image: {{ ess_profiling_image }}
+          command: [ "/root/pf-host-agent" ]
+          args:
+          resources:
+            limits:
+              memory: 400Mi
+            requests:
+              memory: 200Mi
+          env:
+
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          securityContext:
+            procMount: "Unmasked"
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          volumeMounts:
+            - name: config
+              mountPath: /etc/Elastic/universal-profiling
+              readOnly: true
+            - name: dbusmachineid
+              mountPath: /var/lib/dbus
+              readOnly: true
+            - name: etcmachineid
+              mountPath: /etc/machine-id
+              readOnly: true
+            - name: debugfs
+              mountPath: /sys/kernel/debug
+              readOnly: true
+            - name: optimyzecache
+              mountPath: /var/cache/optimyze
+      serviceAccountName: universal-profiling-host-agent-{{ cluster_hash}}
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: universal-profiling-agent-{{ cluster_hash}}
+        - name: dbusmachineid
+          hostPath:
+            path: /var/lib/dbus
+            type: DirectoryOrCreate
+        - name: etcmachineid
+          hostPath:
+            path: /etc/machine-id
+            type: File
+        - name: debugfs
+          hostPath:
+            path: /sys/kernel/debug
+            type: Directory
+        - name: optimyzecache
+          hostPath:
+            path: /var/cache/optimyze
+            type: DirectoryOrCreate
+      imagePullSecrets:
+        - name: docker.elastic.co

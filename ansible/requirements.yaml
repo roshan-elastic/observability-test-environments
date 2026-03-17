@@ -1,0 +1,6 @@
+---
+collections:
+  - name: google.cloud
+  - name: kubernetes.core
+  - source: ./ansible_collections/oblt/framework
+    type: dir

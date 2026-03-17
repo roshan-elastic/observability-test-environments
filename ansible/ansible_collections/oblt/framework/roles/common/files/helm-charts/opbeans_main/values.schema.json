@@ -1,0 +1,535 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "replicaCount": {
+            "type": "number",
+            "description": "Number of pod replicas",
+            "default": 1
+        },
+        "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.",
+            "default": true
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).",
+                    "default": "docker.elastic.co/observability-ci/it_opbeans-frontend_nginx"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Tag of the Docker image (latest).",
+                    "default": "latest"
+                },
+                "pullPolicy": {
+                    "type": "string",
+                    "description": "Docker image pull policy (IfNotPresent|Always|Never)",
+                    "default": "IfNotPresent"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "type": "array",
+            "description": "Name of the Docker secret.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the Docker secret."
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "serviceGroup": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Service group name, this name chain all the services deployed.",
+                    "default": "opbeans"
+                },
+                "deploy": {
+                    "type": "boolean",
+                    "description": "True to deploy a global service to group all opbean with the same service group.",
+                    "default": false
+                },
+                "member": {
+                    "type": "boolean",
+                    "description": "True if the Opbeans is a service group member.",
+                    "default": true
+                },
+                "port": {
+                    "type": "number",
+                    "description": "Source port of the service group.",
+                    "default": 3000
+                },
+                "targetPort": {
+                    "type": "number",
+                    "description": "Target port to expose the service group.",
+                    "default": 3000
+                }
+            }
+        },
+        "annotations": {
+            "type": "object",
+            "description": "Additional annotations to add to the kubernetes deployment.",
+            "default": {}
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a service account should be created",
+                    "default": true
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Annotations to add to the service account",
+                    "default": {}
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the service account to use.",
+                    "default": ""
+                }
+            }
+        },
+        "ingress": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the ingress resource.",
+                    "default": false
+                },
+                "tls": {
+                    "type": "boolean",
+                    "description": "Enable or disable the tls configuration for the ingress resource.",
+                    "default": true
+                },
+                "certificateIssuer": {
+                    "type": "string",
+                    "description": "Name of the certificates issuer.",
+                    "default": "letsencrypt-staging"
+                },
+                "host": {
+                    "type": "string",
+                    "description": "Hostname exposed by the ingress resource.",
+                    "default": "opbeans.127.0.0.1.ip.es.io"
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Additional annotation to the ingress resource.",
+                    "default": {}
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "The memory limit for the Opbean",
+                            "default": "512Mi"
+                        }
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "The requested memory for the Opbean",
+                            "default": "256Mi"
+                        },
+                        "cpu": {
+                            "type": "number",
+                            "description": "The requested cpu for the Opbean",
+                            "default": 0.1
+                        }
+                    }
+                }
+            }
+        },
+        "volumeMounts": {
+            "type": "array",
+            "description": "Volume mounts",
+            "default": [],
+            "items": {}
+        },
+        "volumes": {
+            "type": "array",
+            "description": "Volumes",
+            "default": [],
+            "items": {}
+        },
+        "apm": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Type of reporting API [apm|otel|annotations]",
+                    "default": "apm"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL to the APM service.",
+                    "default": "https://apm.127.0.0.1.ip.es.io"
+                },
+                "token": {
+                    "type": "string",
+                    "description": "Token to authenticate against the APM service.",
+                    "default": "SuP3RSeCr3T"
+                },
+                "apikey": {
+                    "type": "string",
+                    "description": "API Key to authenticate against the APM service. The apikey has precedence to the token.",
+                    "default": ""
+                },
+                "verifyServerCert": {
+                    "type": "string",
+                    "description": "Enable Certificates verification on TLS connections.",
+                    "default": "true"
+                },
+                "serviceName": {
+                    "type": "string",
+                    "description": "Name of the service deploy for the Helm chart (APM spans).",
+                    "default": "opbeans-python"
+                },
+                "serviceVersion": {
+                    "type": "string",
+                    "description": "Version of the service deploy for the Helm chart (APM spans).",
+                    "default": "1.0"
+                },
+                "logLevel": {
+                    "type": "string",
+                    "description": "Level of debug.",
+                    "default": "debug"
+                },
+                "logFile": {
+                    "type": "string",
+                    "description": "File to debug to.",
+                    "default": "stderr"
+                },
+                "inferredSpans": {
+                    "type": "string",
+                    "description": "Enable inferred spans.",
+                    "default": "true"
+                },
+                "logCorrelation": {
+                    "type": "string",
+                    "description": "Enable log correlation.",
+                    "default": "true"
+                },
+                "transactionRate": {
+                    "type": "string",
+                    "description": "Configure the APM transaction rate (0.9).",
+                    "default": "0.9"
+                },
+                "environment": {
+                    "type": "string",
+                    "description": "Environment where the service is deployed.",
+                    "default": "production"
+                },
+                "annotationType": {
+                    "type": "string",
+                    "description": "Type of annotations to use [none|nodejs|java].",
+                    "default": "none"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable to send data to the APM service.",
+                    "default": true,
+                    "nullable": true
+                }
+            }
+        },
+        "loadgen": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable the load generator job deploy.",
+                    "default": false
+                },
+                "schedule": {
+                    "type": "string",
+                    "description": "Schedule to run the load generator job.",
+                    "default": "*/2 * * * *"
+                },
+                "api": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable the API load generator job deploy.",
+                            "default": true
+                        },
+                        "image": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).",
+                                    "default": "docker.elastic.co/observability-ci/opbeans-loadgen"
+                                },
+                                "tag": {
+                                    "type": "string",
+                                    "description": "Tag of the Docker image (latest).",
+                                    "default": "daily"
+                                },
+                                "pullPolicy": {
+                                    "type": "string",
+                                    "description": "Docker image pull policy (IfNotPresent|Always|Never)",
+                                    "default": "IfNotPresent"
+                                }
+                            }
+                        },
+                        "urls": {
+                            "type": "string",
+                            "description": "List of URLs to load generate (opbeans-any:http://opbeans:3000,http://opbeans-1:3000,http://opbeans-2:3000).",
+                            "default": "opbeans-any:http://opbeans:3000"
+                        },
+                        "runLength": {
+                            "type": "string",
+                            "description": "Number of run length per service to generate (opbeans-any:30).",
+                            "default": "opbeans-any:30"
+                        },
+                        "requestMinute": {
+                            "type": "string",
+                            "description": "Number of request por minute per service to generate (opbeans-any:50).",
+                            "default": "opbeans-any:200"
+                        }
+                    }
+                },
+                "frontend": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable the frontend load generator job deploy.",
+                            "default": true
+                        },
+                        "image": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).",
+                                    "default": "docker.elastic.co/observability-ci/functional-opbeans"
+                                },
+                                "tag": {
+                                    "type": "string",
+                                    "description": "Tag of the Docker image (latest).",
+                                    "default": "latest"
+                                },
+                                "pullPolicy": {
+                                    "type": "string",
+                                    "description": "Docker image pull policy (IfNotPresent|Always|Never)",
+                                    "default": "IfNotPresent"
+                                }
+                            }
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "URL of the frontend service to load generate (http://opbeans-frontend:3000).",
+                            "default": "http://opbeans-frontend:3000"
+                        }
+                    }
+                },
+                "parallelism": {
+                    "type": "number",
+                    "description": "Number of parallel jobs to run.",
+                    "default": 1
+                },
+                "completions": {
+                    "type": "number",
+                    "description": "Number of completions per job.",
+                    "default": 1
+                },
+                "concurrencyPolicy": {
+                    "type": "string",
+                    "description": "Concurrency policy for the job.",
+                    "default": "Forbid"
+                },
+                "molotov": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable the molotov load generator job deploy.",
+                            "default": false
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "URL of the service to load generate (http://opbeans:3000).",
+                            "default": "http://opbeans:3000"
+                        },
+                        "duration": {
+                            "type": "number",
+                            "description": "Duration of each round.",
+                            "default": 120
+                        },
+                        "tolerance": {
+                            "type": "number",
+                            "description": "Error tolerance percent.",
+                            "default": 75
+                        }
+                    }
+                }
+            }
+        },
+        "opbeans": {
+            "type": "object",
+            "properties": {
+                "apiServiceUrl": {
+                    "type": "string",
+                    "description": "URL of the opbeans service",
+                    "default": "http://opbeans:3000"
+                },
+                "port": {
+                    "type": "number",
+                    "description": "Opbeans service port.",
+                    "default": 3000
+                },
+                "dtProvability": {
+                    "type": "string",
+                    "description": "Distributed tracing provability.",
+                    "default": "0.5"
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Opbeans deployment aditions annotations.",
+                    "default": {}
+                }
+            }
+        },
+        "db": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable the database service deploy.",
+                    "default": false
+                },
+                "host": {
+                    "type": "string",
+                    "description": "Database host.",
+                    "default": "opbeans-db"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Database name.",
+                    "default": "opbeans"
+                },
+                "port": {
+                    "type": "number",
+                    "description": "Database port.",
+                    "default": 5432
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Database type [mysql|postgresql]",
+                    "default": "postgresql"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Database Username.",
+                    "default": "elastic"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Database Password.",
+                    "default": "none"
+                }
+            }
+        },
+        "redis": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "Redis URL.",
+                    "default": "redis://redis-master:6379"
+                }
+            }
+        },
+        "extraEnvVars": {
+            "type": "array",
+            "description": "Array to add extra environment variables",
+            "default": [],
+            "items": {}
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enabled Apache Server pods' Security Context",
+                    "default": false
+                },
+                "fsGroup": {
+                    "type": "number",
+                    "description": "Set Apache Server pod's Security Context fsGroup",
+                    "default": 1001
+                }
+            }
+        },
+        "containerSecurityContext": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enabled Apache Server containers' Security Context",
+                    "default": false
+                },
+                "runAsUser": {
+                    "type": "number",
+                    "description": "Set Apache Server containers' Security Context runAsUser",
+                    "default": 1001
+                },
+                "runAsNonRoot": {
+                    "type": "boolean",
+                    "description": "Set Controller container's Security Context runAsNonRoot",
+                    "default": true
+                }
+            }
+        },
+        "command": {
+            "type": "array",
+            "description": "Override default container command (useful when using custom images)",
+            "default": [],
+            "items": {}
+        },
+        "args": {
+            "type": "array",
+            "description": "Override default container args (useful when using custom images)",
+            "default": [],
+            "items": {}
+        },
+        "labels": {
+            "type": "object",
+            "description": "to add to all deployed objects",
+            "default": {}
+        }
+    }
+}

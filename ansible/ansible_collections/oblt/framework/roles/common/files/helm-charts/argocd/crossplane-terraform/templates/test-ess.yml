@@ -1,0 +1,39 @@
+---
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: ess
+  annotations:
+    crossplane.io/external-name: ess
+spec:
+  forProvider:
+    source: Inline
+    vars:
+      - key: cluster_name
+        value: {{ .Values.ess.clusterName }}
+      - key: ess_stack_pack_version
+        value: {{ .Values.ess.stackPackVersion }}
+    module: |
+      # Create an Elastic Cloud deployment
+      resource "ec_deployment" "main" {
+        name = var.cluster_name
+        alias = var.cluster_name
+        region                 = var.ess_region
+        version                = var.ess_stack_pack_version
+        deployment_template_id = var.ess_template
+
+        elasticsearch = {
+          # cannot be passed as a variable only strings are supported
+          autoscale = true
+          hot = {
+            autoscaling = {}
+          }
+        }
+        kibana = {}
+        integrations_server = {}
+      }
+  providerConfigRef:
+    name: ess-tf
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: terraform-workspace-ess

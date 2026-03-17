@@ -1,0 +1,40 @@
+---
+name: gcsfuse
+description: Mount a GCS bucket as a folder in the workspace using gcsfuse.
+inputs:
+  bucketName:
+    description: 'GCS Bucket Name'
+    default: 'oblt-clusters'
+    required: false
+  workloadIdentityProvider:
+    description: 'Workload Identity Provider'
+    required: true
+  serviceAccount:
+    description: 'Service Account'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Authenticate to Google Cloud
+      uses: ./.github/actions/gcp-auth
+      with:
+        workloadIdentityProvider: ${{ inputs.workloadIdentityProvider }}
+        serviceAccount: ${{ inputs.serviceAccount }}
+        accessTokenLifetime: 3600s
+
+    - name: Configure Cloud Storage FUSE
+      shell: bash
+      run: |
+        export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
+        echo "deb https://packages.cloud.google.com/apt ${GCSFUSE_REPO} main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+        curl -sS https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get install fuse gcsfuse
+        gcsfuse -v
+
+        mkdir -p "${MOUNT_FOLDER}"
+        gcsfuse --implicit-dirs "${BUCKET_NAME}" "${MOUNT_FOLDER}"
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+        BUCKET_NAME: ${{ inputs.bucketName }}
+        MOUNT_FOLDER: ${{ github.workspace }}/gcs

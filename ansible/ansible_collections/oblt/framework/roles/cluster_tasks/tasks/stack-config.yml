@@ -1,0 +1,87 @@
+---
+- name: Get Packages versions
+  vars:
+    package_registry_url: |-
+      {% if 'SNAPSHOT' in stack_version %}https://epr-snapshot.elastic.co{% else %}https://epr.elastic.co{% endif %}
+    _version: "{{ stack_version | split('-') | first }}"
+  uri:
+    url: "{{ package_registry_url }}/search?kibana.version={{ _version }}&experimental=true"
+    method: GET
+    headers:
+      kbn-xsrf: true
+    return_content: yes
+  register: packages_result
+  retries: 3
+  delay: 15
+  until: packages_result.status == 200
+  when:
+    - stack_version is defined
+
+- name: Enable Okta Authentication
+  uri:
+    url: "{{ elasticsearch_url }}/_security/role_mapping/saml-owner-superuser"
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    method: POST
+    force_basic_auth: yes
+    validate_certs: false
+    status_code: 200
+    body_format: json
+    body: |
+      {
+        "roles": [ "superuser", "allow_restricted_indices" ],
+        "enabled": true,
+        "rules":
+          { "field": { "realm.name": "cloud-saml" } }
+      }
+  retries: 3
+  delay: 10
+  when:
+    - elasticsearch_type == 'ess'
+    - kibana_enabled
+    - ess_saml_id != 'disabled'
+
+- name: Configure Security
+  include_role:
+    name: "oblt.framework.stack_security"
+  when:
+    - create_users | default(false) | bool
+
+- name: Configure Synthetic Tasks
+  include_tasks: synthetics-config.yml
+  when:
+    - elasticsearch_enabled|bool
+    - elasticsearch.version is defined
+    - elasticsearch.version is version('8.0.0', '>=')
+
+- name: Configure CCS manually tasks
+  include_tasks: configure-ccs-manually.yml
+
+- name: Process bootstrap_cluster_dirs
+  vars:
+    bootstrap_cluster_dir: "{{ item }}"
+  include_tasks: bootstrap.yml
+  loop: "{{ bootstrap_cluster_dirs }}"
+  when:
+    - bootstrap_cluster_dirs is defined
+    - bootstrap_cluster|bool
+
+- name: Fleet Configure Tasks
+  include_tasks: fleet-config.yml
+
+- name: Profiling configure Tasks
+  include_tasks: profiling-config.yml
+
+- name: APM ApiKey
+  set_fact:
+    apm_apikey: "{{ bootstrap_apm_apikey_result.json.agentKey.encoded | default(None) }}"
+  when:
+    - bootstrap_apm_apikey_result is defined
+    - bootstrap_apm_apikey_result.json is defined
+
+- name: Elasticsearch API Key
+  set_fact:
+    elasticsearch_apikey: "{{ bootstrap_elasticsearch_apikey_result.json.encoded | default(None) }}"
+  when:
+    - bootstrap_elasticsearch_apikey_result is defined
+    - bootstrap_elasticsearch_apikey_result.json is defined

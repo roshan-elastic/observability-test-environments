@@ -1,0 +1,47 @@
+{
+	"type": "modal",
+	"clear_on_close": true,
+	"title": {
+		"type": "plain_text",
+		"text": "{{ .Title }}",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hey!\n\nPlease provide your email account, and I will reset your AWS account for the elastic-observability."
+			}
+		},
+		{
+			"type": "divider"
+		},
+    {
+      "type": "input",
+      "block_id": "email",
+      "label": {
+        "type": "plain_text",
+        "text": "Your @elastic email account"
+      },
+      "element": {
+        "type": "plain_text_input",
+        "action_id": "email",
+        "placeholder": {
+          "type": "plain_text",
+          "text": "Your @elastic.co email account"
+        }
+      }
+    }
+	]
+}

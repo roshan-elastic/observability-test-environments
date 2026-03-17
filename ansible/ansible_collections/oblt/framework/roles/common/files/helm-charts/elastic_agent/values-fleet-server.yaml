@@ -1,0 +1,49 @@
+# minimal helm values for a deployment
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/beats/elastic-agent
+  # -- Tag for the Docker image.
+  tag: 7.16.2
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+
+# -- Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: deployment
+
+# -- Fleet server settings
+fleetServer:
+  # -- set to true enables bootstrapping of Fleet Server inside Elastic Agent (forces `fleet.enroll` enabled).
+  enabled: true
+  # -- expose Fleet Server over HTTP (not recommended; insecure).
+  insecureHttp: false
+  # -- binding host for Fleet Server HTTP (overrides the policy). By default this is 0.0.0.0.
+  host: 0.0.0.0
+  # -- binding port for Fleet Server HTTP (overrides the policy).
+  port: 8220
+  # -- service token to use for communication with elasticsearch.
+  serviceToken: "SERVICE_TOKEN"
+  # -- policy ID for Fleet Server to use for itself ("Default Fleet Server policy" used when undefined).
+  policyId: "POLICY_ID"
+  service:
+    type: LoadBalancer
+  ingress:
+    hosts:
+      - name: fleet.example.com
+        secret: fleet-server-tls
+
+# -- Elasticsearch settings.
+elasticsearch:
+  # -- URL of the Elasticsearch (e.g. https://elasticsearch:9200).
+  host: "https://elasticsearch:9200"
+  # -- Elasticsearch username.
+  username: "elastic"
+  # -- Elasticsearch password.
+  password: "changeme"
+  # -- service token to use for communication with Elasticsearch.
+  apiToken: "API_TOKEN"
+
+fullnameOverride: "mode-fleet-server"

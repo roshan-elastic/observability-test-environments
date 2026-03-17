@@ -1,0 +1,8 @@
+---
+# yaml-language-server: $schema=../schema.json
+# see https://github.com/bitnami/readme-generator-for-helm
+## @section General
+## @param feature_integrations_name [string] Name of the integration
+## @param feature_integrations_helm_chart_version [string] Integrations Helm chart version
+feature_integrations_name: "NoSet"
+feature_integrations_helm_chart_version: "0.1.0"

@@ -1,0 +1,24 @@
+---
+- name: Deploy ingress
+  vars:
+    helm_chart:
+      chart: "ingress-nginx/ingress-nginx"
+      version: "{{ ingress_version }}"
+      values_file: "{{ ingress_dir }}/helm-values.yaml"
+      name: "lb"
+      namespace: "{{ ingress_nginx_namespace }}"
+      extra_args: "--create-namespace --wait --timeout 15m --force"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: deploy_chart.yml
+  tags:
+    - ingress
+    - deploy
+
+- name: Wait for ingress
+  include_role:
+    name: oblt.framework.k8s_ingress
+    tasks_from: wait_for_ingress.yml
+  tags:
+    - ingress
+    - deploy

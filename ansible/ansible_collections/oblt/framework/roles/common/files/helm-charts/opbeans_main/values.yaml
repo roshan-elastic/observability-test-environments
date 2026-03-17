@@ -1,0 +1,256 @@
+---
+# yaml-language-server: $schema=./values.schema.json
+# Default values for Opbeans-main.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+#
+# This file should contain all the variables with the default values and documented
+# for variables that should not have default, it is needed to comment the variable with https://github.com/bitnami-labs/readme-generator-for-helm
+# it allows to generate the correct README.md file with `make readme`
+# Every time you add a new setting you should add a new object to the schema validation `values.schema.json`
+# To generate the initial schema you can use yq (yq . helm-charts/opbeans_main/values.yaml) and https://easy-json-schema.github.io/
+# https://json-schema.org/
+# The file generated will be a JSON file formatted according to the [OpenAPIv3 SchemaObject](https://spec.openapis.org/oas/v3.1.0#schema-object) definition.
+# unit tests https://github.com/quintush/helm-unittest and https://kubetest.readthedocs.io/en/latest/
+# IT https://github.com/helm/chart-testing
+
+## @param replicaCount Number of pod replicas
+replicaCount: 1
+
+## @param enabled Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.
+enabled: true
+
+## @section image Docker image settings
+image:
+  ## @param image.name Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).
+  ## @param image.tag Tag of the Docker image (latest).
+  ## @param image.pullPolicy  Docker image pull policy (IfNotPresent|Always|Never)
+  name: docker.elastic.co/observability-ci/it_opbeans-frontend_nginx
+  tag: latest
+  pullPolicy: IfNotPresent
+
+## @section imagePullSecrets Docker secrets used to pull the Docker images.
+imagePullSecrets:
+  ## @param imagePullSecrets[0].name Name of the Docker secret.
+  - name: docker.elastic.co
+
+## @param nameOverride Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.
+nameOverride: ""
+## @param fullnameOverride Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.
+fullnameOverride: ""
+
+## @section Service Group settings, allow to group opbenas ussing the service-group label.
+## @param serviceGroup.name Service group name, this name chain all the services deployed.
+## @param serviceGroup.deploy True to deploy a global service to group all opbean with the same service group.
+## @param serviceGroup.member True if the Opbeans is a service group member.
+## @param serviceGroup.port Source port of the service group.
+## @param serviceGroup.targetPort Target port to expose the service group.
+serviceGroup:
+  name: "opbeans"
+  deploy: false
+  member: true
+  port: 3000
+  targetPort: 3000
+
+## @param annotations Additional annotations to add to the kubernetes deployment.
+annotations: {}
+
+## @section serviceAccount Kubernetes Service Account settings
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a service account should be created
+  ## @param serviceAccount.annotations Annotations to add to the service account
+  ## @param serviceAccount.name The name of the service account to use.
+  ## If not set and create is true, a name is generated using the fullname template
+  create: true
+  annotations: {}
+  name: ""
+
+## @section ingress Ingress settings
+ingress:
+  ## @param ingress.enabled Enable or disable the ingress resource.
+  ## @param ingress.tls Enable or disable the tls configuration for the ingress resource.
+  ## @param ingress.certificateIssuer Name of the certificates issuer.
+  ## @param ingress.host Hostname exposed by the ingress resource.
+  ## @param ingress.annotations Additional annotation to the ingress resource.
+  enabled: false
+  tls: true
+  certificateIssuer: "letsencrypt-staging"
+  host: opbeans.127.0.0.1.ip.es.io
+  annotations: {}
+    # ingress.kubernetes.io/ssl-redirect: "true"
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # nginx.ingress.kubernetes.io/app-root: /dashboard
+    # nginx.ingress.kubernetes.io/auth-type: basic
+    # nginx.ingress.kubernetes.io/auth-secret: elastic-basic-auth
+    # nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+
+## @section resources requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+## @param resources.limits.memory The memory limit for the Opbean
+## @param resources.requests.memory The requested memory for the Opbean
+## @param resources.requests.cpu The requested cpu for the Opbean
+resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 0.1
+      memory: 256Mi
+
+## @param volumeMounts Volume mounts
+## ref: https://kubernetes.io/docs/concepts/storage/volumes/
+volumeMounts: []
+
+## @param volumes Volumes
+## ref: https://kubernetes.io/docs/concepts/storage/volumes/
+volumes: []
+
+## @section apm APM configuration settings.
+apm:
+  ## @param apm.type Type of reporting API [apm|otel|annotations]
+  ## @param apm.url URL to the APM service.
+  ## @param apm.token Token to authenticate against the APM service.
+  ## @param apm.apikey API Key to authenticate against the APM service. The apikey has precedence to the token.
+  ## @param apm.verifyServerCert Enable Certificates verification on TLS connections.
+  ## @param apm.serviceName Name of the service deploy for the Helm chart (APM spans).
+  ## @param apm.serviceVersion Version of the service deploy for the Helm chart (APM spans).
+  ## @param apm.logLevel Level of debug.
+  ## @param apm.logFile File to debug to.
+  ## @param apm.inferredSpans Enable inferred spans.
+  ## @param apm.logCorrelation Enable log correlation.
+  ## @param apm.transactionRate Configure the APM transaction rate (0.9).
+  ## @param apm.environment Environment where the service is deployed.
+  ## @param apm.annotationType Type of annotations to use [none|nodejs|java].
+  ## @param apm.enabled [boolean,nullable] Enable to send data to the APM service.
+  enabled: true
+  type: apm
+  url: "https://apm.127.0.0.1.ip.es.io"
+  token: "SuP3RSeCr3T"
+  apikey: ""
+  verifyServerCert: "true"
+  serviceName: "opbeans"
+  serviceVersion: "1.0"
+  logLevel: "debug"
+  logFile: "stderr"
+  inferredSpans: "true"
+  logCorrelation: "true"
+  transactionRate: "0.9"
+  environment: "opbeans"
+  annotationType: "none"
+
+## @section loadgen Load generator settings.
+## @param loadgen.enabled Enable the load generator job deploy.
+## @param loadgen.schedule Schedule to run the load generator job.
+## @section loadgen.api API load generator settings.
+## @param loadgen.api.enabled Enable the API load generator job deploy.
+## @param loadgen.api.image.name Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).
+## @param loadgen.api.image.tag Tag of the Docker image (latest).
+## @param loadgen.api.image.pullPolicy  Docker image pull policy (IfNotPresent|Always|Never)
+## @param loadgen.api.urls List of URLs to load generate (opbeans-any:http://opbeans:3000,http://opbeans-1:3000,http://opbeans-2:3000).
+## @param loadgen.api.runLength Number of run length per service to generate (opbeans-any:30).
+## @param loadgen.api.requestMinute Number of request por minute per service to generate (opbeans-any:50).
+## @section loadgen.frontend Frontend load generator settings.
+## @param loadgen.frontend.enabled Enable the frontend load generator job deploy.
+## @param loadgen.frontend.image.name Name of the Docker image (docker.elastic.co/observability-ci/it_opbeans-frontend_nginx).
+## @param loadgen.frontend.image.tag Tag of the Docker image (latest).
+## @param loadgen.frontend.image.pullPolicy  Docker image pull policy (IfNotPresent|Always|Never)
+## @param loadgen.frontend.url URL of the frontend service to load generate (http://opbeans-frontend:3000).
+## @param loadgen.parallelism Number of parallel jobs to run.
+## @param loadgen.completions Number of completions per job.
+## @param loadgen.concurrencyPolicy Concurrency policy for the job.
+## @section loadgen.molotov Molotov load generator settings.
+## @param loadgen.molotov.enabled Enable the molotov load generator job deploy.
+## @param loadgen.molotov.url URL of the service to load generate (http://opbeans:3000).
+## @param loadgen.molotov.duration Duration of each round.
+## @param loadgen.molotov.tolerance Error tolerance percent.
+loadgen:
+  enabled: false
+  schedule: "*/2 * * * *"
+  parallelism: 1
+  completions: 1
+  concurrencyPolicy: Forbid
+  api:
+    enabled: true
+    image:
+      name: docker.elastic.co/observability-ci/opbeans-loadgen
+      tag: daily
+      pullPolicy: IfNotPresent
+    urls: "opbeans-any:http://opbeans:3000"
+    runLength: "opbeans-any:30"
+    requestMinute: "opbeans-any:200"
+  frontend:
+    enabled: true
+    image:
+      name: docker.elastic.co/observability-ci/functional-opbeans
+      tag: latest
+      pullPolicy: IfNotPresent
+    url: "http://opbeans-frontend:3000"
+  molotov:
+    enabled: false
+    url: "http://opbeans:3000"
+    duration: 120
+    tolerance: 75
+
+## @section opbeans Opbeans service settings.
+opbeans:
+  ## @param opbeans.apiServiceUrl URL of the opbeans service
+  ## @param opbeans.port Opbeans service port.
+  ## @param opbeans.dtProvability Distributed tracing provability.
+  ## @param opbeans.annotations Opbeans deployment aditions annotations.
+  apiServiceUrl: "http://opbeans:3000"
+  port: 3000
+  dtProvability: "0.5"
+  annotations: {}
+
+## @section Database settings.
+db:
+  ## @param db.enabled Enable the database service deploy.
+  ## @param db.host Database host.
+  ## @param db.name Database name.
+  ## @param db.port Database port.
+  ## @param db.type Database type [mysql|postgresql]
+  ## @param db.username Database Username.
+  ## @param db.password Database Password.
+  enabled: false
+  host: opbeans-db
+  name: opbeans
+  port: 5432
+  type: postgresql
+  username: elastic
+  password: none
+
+## @section redis Redis settings.
+redis:
+  ## @param redis.url Redis URL.
+  url: redis://redis-master:6379
+
+## @param extraEnvVars Array to add extra environment variables
+extraEnvVars: []
+
+## Configure Pods Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param podSecurityContext.enabled Enabled Apache Server pods' Security Context
+## @param podSecurityContext.fsGroup Set Apache Server pod's Security Context fsGroup
+##
+podSecurityContext:
+  enabled: false
+  fsGroup: 1001
+## Configure Container Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param containerSecurityContext.enabled Enabled Apache Server containers' Security Context
+## @param containerSecurityContext.runAsUser Set Apache Server containers' Security Context runAsUser
+## @param containerSecurityContext.runAsNonRoot Set Controller container's Security Context runAsNonRoot
+##
+containerSecurityContext:
+  enabled: false
+  runAsUser: 1001
+  runAsNonRoot: true
+## @param command Override default container command (useful when using custom images)
+##
+command: []
+## @param args Override default container args (useful when using custom images)
+##
+args: []
+
+## @param labels to add to all deployed objects
+labels: {}

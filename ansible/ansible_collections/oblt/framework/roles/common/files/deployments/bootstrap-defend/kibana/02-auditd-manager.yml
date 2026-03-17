@@ -1,0 +1,47 @@
+---
+description: Create a auditd manager package Policy
+api: "/api/fleet/package_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+return_code:
+  - 200
+  - 409
+ignore_errors: true
+body: |
+  {
+    "policy_id": "security-linux-policy",
+    "package": {
+      "name": "auditd_manager",
+      "version": "1.16.2"
+    },
+    "name": "auditd_manager-security-linux-policy",
+    "namespace": "default",
+    "description": "Configuration for Auditd Manager integration",
+    "vars": {},
+    "inputs": {
+      "auditd-audit/auditd": {
+        "enabled": true,
+        "streams": {
+          "auditd_manager.auditd": {
+            "enabled": true,
+            "vars": {
+              "socket_type": "",
+              "immutable": false,
+              "resolve_ids": true,
+              "failure_mode": "silent",
+              "preserve_original_event": false,
+              "backlog_limit": 8192,
+              "rate_limit": 0,
+              "include_warnings": false,
+              "backpressure_strategy": "auto",
+              "tags": [
+                "auditd_manager-auditd"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }

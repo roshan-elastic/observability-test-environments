@@ -1,0 +1,8 @@
+---
+- name: Copy ECK files to the build dir
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ build_dir }}"
+  tags:
+    - generate_config-eck
+    - molecule-idempotence-notest

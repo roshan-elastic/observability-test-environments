@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-deployment
+  namespace: "{{ k8s_default_namespace }}"
+  labels:
+    app: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: jaeger-agent
+        image: jaegertracing/jaeger-agent:1.32
+        ports:
+        - containerPort: 6831
+          protocol: UDP
+        envFrom:
+          - secretRef:
+              name: apm-creds
+        env:
+        - name: AGENT_TAGS
+          value: "elastic-apm-auth=Bearer $(ELASTIC_APM_SECRET_TOKEN)"
+        - name: REPORTER_GRPC_TLS_ENABLED
+          value: "true"
+        - name: REPORTER_GRPC_TLS_SKIP_HOST_VERIFY
+          value: "true"
+        - name: APM_HOST
+          valueFrom:
+            secretKeyRef:
+              name: apm-creds
+              key: host
+        - name: APM_PORT
+          valueFrom:
+            secretKeyRef:
+              name: apm-creds
+              key: port
+        - name: REPORTER_GRPC_HOST_PORT
+          value: "${ELASTIC_APM_SERVER_HOST_PORT}"
+      - name: jaeger-hotrod
+        image: jaegertracing/example-hotrod:1.32
+        args: ["all"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
+        - name: JAEGER_AGENT_HOST
+          value: "localhost"

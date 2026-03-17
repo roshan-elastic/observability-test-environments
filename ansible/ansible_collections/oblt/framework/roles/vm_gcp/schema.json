@@ -1,0 +1,117 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "vm_gcp_machine_type": {
+            "type": "string",
+            "description": "The machine type to use for the instance.",
+            "default": "e2-micro"
+        },
+        "vm_gcp_name": {
+            "type": "string",
+            "description": "The name of the instance.",
+            "default": "test-instance"
+        },
+        "vm_gcp_image": {
+            "type": "string",
+            "description": "The image to use for the instance.",
+            "default": "debian-cloud/debian-11"
+        },
+        "vm_gcp_vpc_name": {
+            "type": "string",
+            "description": "The name of the instance.",
+            "default": "{{ cluster_name }}-network"
+        },
+        "vm_gcp_terradorm_dir": {
+            "type": "string",
+            "description": "The directory where the terraform files are located.",
+            "default": "{{ build_dir }}/terraform/gcp/{{ vm_gcp_name }}"
+        },
+        "vm_gcp_bucket": {
+            "type": "string",
+            "description": "The name of the bucket to use for the Terraform state.",
+            "default": "oblt-clusters"
+        },
+        "vm_gcp_bucket_prefix": {
+            "type": "string",
+            "description": "The prefix to use for the Terraform state in the bucket.",
+            "default": "terraform/gcp/{{ vm_gcp_name }}"
+        },
+        "vm_gcp_user": {
+            "type": "string",
+            "description": "The user to access the instance.",
+            "default": "admin"
+        },
+        "vm_gcp_ssh_private_key": {
+            "type": "string",
+            "description": "The path to the private key to use for SSH access.",
+            "default": "{{ private_key_file | default('~/.ssh/google_compute_engine') }}"
+        },
+        "vm_gcp_ssh_public_key": {
+            "type": "string",
+            "description": "The path to the public key to use for SSH access.",
+            "default": "{{ vm_gcp_ssh_private_key }}.pub"
+        },
+        "vm_gcp_scripts": {
+            "type": "array",
+            "description": "The list of scripts to run on the instance.",
+            "default": [
+                "{{ vm_gcp_terradorm_dir }}/script.sh"
+            ],
+            "items": {
+                "type": "string"
+            }
+        },
+        "vm_gcp_open_ports": {
+            "type": "array",
+            "description": "The list of ports to open on the instance.",
+            "default": [
+                "22"
+            ],
+            "items": {
+                "type": "string"
+            }
+        },
+        "vm_gcp_project": {
+            "type": "string",
+            "description": "The GCP project to use.",
+            "default": "{{ gcp_project | mandatory }}"
+        },
+        "vm_gcp_zone": {
+            "type": "string",
+            "description": "The GCP zone to use.",
+            "default": "{{ gcp_zone | mandatory }}"
+        },
+        "vm_gcp_cluster_name": {
+            "type": "string",
+            "description": "The name of the GCP cluster.",
+            "default": "{{ cluster_name | mandatory }}"
+        },
+        "vm_gcp_oblt_username": {
+            "type": "string",
+            "description": "The username owner of the project.",
+            "default": "{{ oblt_username | mandatory }}"
+        },
+        "vm_gcp_windows_startup_script": {
+            "type": "string",
+            "description": "The path to the Windows startup script.",
+            "default": "{{ vm_gcp_terradorm_dir }}/windows-startup-script.cmd"
+        },
+        "vm_gcp_os": {
+            "type": "string",
+            "description": "The operating system of the instance.",
+            "default": "linux"
+        },
+        "gcp_vm_upload_files": {
+            "type": "array",
+            "description": "The list of files to upload to the instance.",
+            "default": [],
+            "items": {}
+        },
+        "vm_gcp_startup_script": {
+            "type": "string",
+            "description": "Script to run on startup (e.g. \"echo 'Hello, World!' > /tmp/hello.txt\")",
+            "default": ""
+        }
+    }
+}

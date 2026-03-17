@@ -1,0 +1,60 @@
+---
+- name: Select Payload
+  set_fact:
+    serverless_payload: |
+      {% if stack_template == 'elasticsearch' %}
+      {{ lookup('ansible.builtin.template', 'serverless/elasticsearch.json.j2') | to_json }}
+      {% elif stack_template == 'observability' %}
+      {{ lookup('ansible.builtin.template', 'serverless/observability.json.j2') | to_json }}
+      {% elif stack_template == 'security' %}
+      {{ lookup('ansible.builtin.template', 'serverless/security.json.j2') | to_json }}
+      {% endif %}
+
+- name: Deploy serverless
+  uri:
+    url: "{{ serverless_endpoint }}/api/v1/serverless/projects/{{ stack_template }}"
+    method: POST
+    headers:
+      Content-Type: application/json
+      Authorization: "ApiKey {{ serverless_apikey }}"
+      accept: application/json
+    body_format: json
+    body: "{{ serverless_payload | to_json }}"
+    status_code: [200, 201, 302]
+  register: _result
+  retries: 5
+  delay: 10
+  until: _result.status in [200, 201, 302]
+  when: cluster_created is false
+
+- name: Set serverless facts
+  set_fact:
+    serverless_deployment_id: "{{ _result.json.id }}"
+    elasticsearch_url: "{{ _result.json.endpoints.elasticsearch | default(None) }}"
+    kibana_url: "{{ _result.json.endpoints.kibana | default(None) }}"
+    apm_url: "{{ _result.json.endpoints.apm | default(None) }}"
+    fleet_url: "{{ _result.json.endpoints.fleet | default(None) }}"
+  when: cluster_created is false
+
+# TODO not implemented yet in the API
+# - name: Update serverless
+#   uri:
+#     url: "{{ serverless_endpoint }}/api/v1/serverless/projects/{{ stack_template }}/{{ serverless_deployment_id }}"
+#     method: PATCH
+#     headers:
+#       Content-Type: application/json
+#       Authorization: "ApiKey {{ serverless_apikey }}"
+#     body_format: json
+#     body: "{{ serverless_payload | to_json }}"
+#     status_code: [200, 201, 302]
+#   register: _result
+#   retries: 5
+#   delay: 10
+#   until: (_result.json.id | default(None)) is defined
+#   when: cluster_created is true
+
+- name: Show Cluster ID
+  debug:
+    msg: |
+      Cluster ID: {{ serverless_deployment_id }}
+      Project: {{ stack_template }}

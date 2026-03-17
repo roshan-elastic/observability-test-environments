@@ -1,0 +1,205 @@
+variable "ess_apikey" {
+  type = string
+}
+
+terraform {
+  required_version = ">= 0.12.29"
+
+  required_providers {
+    ec = {
+      source  = "elastic/ec"
+      version = "{{ ess_terraform_version }}"
+    }
+  }
+}
+
+provider "ec" {
+  # ECE installation endpoint
+  endpoint = "{{ ess_endpoint }}"
+
+  # If the ECE installation has a self-signed certificate
+  # setting "insecure" to true is required.
+  insecure = true
+
+  # APIKey is the recommended authentication mechanism. When
+  # Targeting the Elasticsearch Service, APIKeys are the only
+  # valid authentication mechanism.
+  apikey = var.ess_apikey
+
+  verbose = true
+}
+
+# Create an Elastic Cloud deployment
+resource "ec_deployment" "main" {
+  name = "{{ cluster_name }}"
+  alias = "{{ cluster_name }}"
+  region                 = "{{ ess_region }}"
+  version                = "{{ ess_stack_pack_version }}"
+  deployment_template_id = "{{ ess_template }}"
+
+  elasticsearch = {
+    autoscale = {{ ess_autoscale | lower }}
+    reset_elasticsearch_password: {{ ess_reset_password | lower }}
+    config = {
+{% if ess_es_image %}
+      docker_image = "{{ ess_es_image }}"
+{% endif %}
+{% if ess_custom_settings %}
+      user_settings_yaml = file("./es_settings.yml")
+{% endif %}
+    }
+    hot = {
+      autoscaling = {
+        # "{{ ess_max_mem if (ess_max_mem|int) > (ess_es_mem|int) else ess_es_mem }}g"
+        # {{ ess_max_mem }}
+        # {{ ess_es_mem }}
+        max_size = "{{ ess_max_mem if (ess_max_mem|int) > (ess_es_mem|int) else ess_es_mem }}g"
+        max_size_resource = "memory"
+      }
+{% if (not ess_autoscale) or (ess_autoscale and (ess_es_mem|int) >= 64 ) or (not cluster_created) %}
+      size = "{{ ess_es_mem }}g"
+{% endif %}
+      zone_count = {{ ess_es_zones }}
+    }
+{% if (ess_es_zones | int) >= 2 %}
+{% set _total_nodes = ((ess_total_nodes | default(ess_es_zones)) | int) %}
+{% set _nodes_zones = (((ess_es_mem|int)/64|default(1))*(ess_es_zones|int))%}
+{% set _needs_dedicated_masters = (not ess_autoscale) or _total_nodes >=6 or _nodes_zones >=6 %}
+# Total nodes {{ _total_nodes }}
+# Nodes zones {{ _nodes_zones }}
+{% if _needs_dedicated_masters %}
+    master = {
+      autoscaling = {}
+      size = "8g"
+      zone_count = {{ ess_es_zones }}
+    }
+{% endif %}
+
+    ml = {
+      autoscaling = {
+        max_size = "{{ ess_max_mem }}g"
+      }
+{% if not ess_autoscale %}
+      size = "2g"
+{% endif %}
+      zone_count = 1
+    }
+    warm = {
+      autoscaling = {
+        max_size = "{{ ess_max_mem }}g"
+      }
+{% if not ess_autoscale %}
+      size = "16g"
+{% endif %}
+      zone_count = 2
+    }
+    cold = {
+      autoscaling = {
+        max_size = "{{ ess_max_mem }}g"
+      }
+{% if not ess_autoscale %}
+      size = "4g"
+{% endif %}
+      zone_count = 2
+    }
+{% endif %}
+{% if (ess_trusted_org | length) > 1 %}
+    # TODO support multiple trusted orgs
+    trust_account = [
+      {
+        account_id = "{{ ess_trusted_org }}"
+        trust_all  = true
+      }
+{% if stack_target == "production" %}
+      # platform organization
+      ,{
+        account_id = "2870499056"
+        trust_all  = true
+      }
+{% endif %}
+    ]
+{% endif %}
+    # TODO check if we can use on staging deployments
+    # trust_external = [
+    # ]
+{% if ess_ccs_enabled %}
+    # TODO implement a list of remote clusters
+    remote_cluster = [
+      {
+      deployment_id = "{{ ess_ccs_remote_cluster_id }}"
+      alias         = "remote_cluster"
+      ref_id        = "main-elasticsearch"
+      skip_unavailable = true
+      }
+    ]
+{% endif %}
+{% if ess_restore_snapshot_from %}
+    snapshot_source {
+      source_elasticsearch_cluster_id = "{{ ess_restore_snapshot_from }}"
+      snapshot_name = "{{ ess_restore_snapshot_name }}"
+    }
+{% endif %}
+{% if ess_terraform_version  is version('0.8.0', '>=') %}
+    strategy = "rolling_all"
+{% endif %}
+    # Create the keystore secret entry
+    keystore_contents = {
+      "gcs.client.external.credentials_file" = {
+        value         = file("./gcp-credentials.json")
+        as_file       = true
+      }
+    }
+  }
+
+{% if apm_enabled %}
+  integrations_server = {
+    config = {
+      debug_enabled      = true
+{% if apm_enabled and ess_integrations_image %}
+      docker_image = "{{ ess_integrations_image }}"
+{% endif %}
+{% if ess_custom_settings %}
+      user_settings_yaml = file("./apm_settings.yml")
+{% endif %}
+    }
+    size = "{{ ess_integrations_mem if (apm_enabled | bool) else 0 }}g"
+    zone_count = {{ ess_integrations_zones }}
+  }
+{% endif %}
+{% if kibana_enabled %}
+  kibana = {
+    config = {
+{% if ess_kb_image %}
+      docker_image = "{{ ess_kb_image }}"
+{% endif %}
+{% if ess_custom_settings %}
+      user_settings_yaml = file("./kbn_settings.yml")
+{% endif %}
+    }
+    size = "{{ ess_kb_mem if (kibana_enabled | bool) else 0 }}g"
+    zone_count = {{ ess_kb_zones }}
+  }
+{% endif %}
+
+{% if observability_enabled %}
+  observability = {
+    deployment_id = "{{ ess_observability_deployment_id }}"
+    logs          = true
+    metrics       = true
+  }
+{% endif %}
+
+  tags = {
+    owner = "{{ oblt_username }}"
+{% if cluster_created == false %}
+    created_date = "{{ deploy_timestamp }}"
+{% endif %}
+    update_date = "{{ deploy_timestamp }}"
+    type = "{{ template_name | default('oblt-cluster')}}"
+    golden = "{{ golden_cluster | default('false') }}"
+    ephemeral = "{{ ephemeral_cluster | default('false') }}"
+{% if (stack_template | default(None)) %}
+    stack_template = "{{ stack_template }}"
+{% endif %}
+  }
+}

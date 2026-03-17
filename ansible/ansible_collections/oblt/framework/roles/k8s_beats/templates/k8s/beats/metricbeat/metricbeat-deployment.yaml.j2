@@ -1,0 +1,82 @@
+---
+# Deploy singleton instance in the whole cluster for some unique data sources, like kube-state-metrics
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metricbeat-deploy
+  namespace: "{{ kube_system_namespace }}"
+  labels:
+    k8s-app: metricbeat-deploy
+spec:
+  selector:
+    matchLabels:
+      k8s-app: metricbeat-deploy
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: metricbeat-deploy
+    spec:
+      serviceAccountName: metricbeat
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: true
+      initContainers:
+      - name: wait-for-service
+        image: curlimages/curl:latest
+        command: ['sh', '-c', 'until curl -LksS -u ${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD} ${ELASTICSEARCH_HOST}; do echo waiting for ${ELASTICSEARCH_HOST}; sleep 2; done;']
+        envFrom:
+          - secretRef:
+              name: es-creds
+      containers:
+      - name: metricbeat
+        image: {{ beats.metricbeat.image }}
+        imagePullPolicy: Always
+        args: [
+          "-c", "/etc/metricbeat.yml",
+          "-e",
+          ]
+        envFrom:
+          - secretRef:
+              name: es-creds
+          - secretRef:
+              name: apm-creds
+          - secretRef:
+              name: kibana-creds
+        env:
+        - name: ELASTIC_APM_ACTIVE
+          value: 'true'
+        - name: DEPLOY_TIMESTAMMP
+          value: "{{ deploy_timestamp }}"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 300Mi
+          requests:
+            cpu: 0.05
+            memory: 100Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/metricbeat.yml
+          readOnly: true
+          subPath: metricbeat.yml
+        - name: modules
+          mountPath: /usr/share/metricbeat/modules.d
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0600
+          name: metricbeat-deployment-config
+      - name: modules
+        configMap:
+          defaultMode: 0600
+          name: metricbeat-deployment-modules
+      imagePullSecrets:
+        - name: docker.elastic.co

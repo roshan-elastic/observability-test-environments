@@ -1,0 +1,164 @@
+site_name: Observability Test Clusters
+repo_url: https://github.com/elastic/observability-test-environments
+plugins:
+    - search
+    - mkdocstrings
+    - monorepo
+    - macros
+theme:
+    name: material
+    palette:
+        scheme: slate
+        primary: blue
+        accent: light blue
+    features:
+        - navigation.instant
+#        - navigation.expand
+        - navigation.top
+        - toc.integrate
+        - toc.follow
+        - content.code.copy
+    font:
+        text: Ubuntu
+        code: Ubuntu Mono
+markdown_extensions:
+    - toc:
+        permalink: True
+    - admonition
+    - attr_list
+    - def_list
+    - md_in_html
+    - meta
+    - footnotes
+    - abbr
+    - markdown.extensions.codehilite:
+        linenums: false
+        guess_lang: false
+        use_pygments: true
+        noclasses: false
+        pygments_style: monokai
+    - pymdownx.arithmatex
+    - pymdownx.betterem:
+        smart_enable: all
+    - pymdownx.caret
+    - pymdownx.critic
+    - pymdownx.details
+    - pymdownx.emoji:
+        emoji_index: !!python/name:materialx.emoji.twemoji
+        emoji_generator: !!python/name:materialx.emoji.to_svg
+    - pymdownx.superfences:
+        # make exceptions to highlighting of code:
+        custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:pymdownx.superfences.fence_code_format
+    - pymdownx.inlinehilite
+    - pymdownx.keys
+    - pymdownx.magiclink:
+        repo_url_shorthand: true
+        user: elastic
+        repo: observability-test-environments
+    - pymdownx.tabbed:
+        alternate_style: true
+    - pymdownx.mark
+    - pymdownx.smartsymbols
+    - pymdownx.superfences
+    - pymdownx.tasklist:
+        custom_checkbox: True
+    - pymdownx.tilde
+    - mkdocs-click
+nav:
+  - 'Getting Started': 'index.md'
+  - 'Serverless':
+    - 'Quick start': 'user-guide/serverless-quick-start.md'
+    - 'Local Development': 'user-guide/serverless-local-development.md'
+    - 'Deploy PRs': 'user-guide/serverless-deploy-prs.md'
+    - 'k8s resources': 'user-guide/serverless-k8s-resources.md'
+    - 'Logs/Metrics/APM': 'user-guide/serverless-logs-metrics-apm.md'
+    - 'Troubleshooting': 'user-guide/serverless-troubleshooting.md'
+    - 'Advanced': 'user-guide/serverless-advanced.md'
+  - 'User Guide':
+    - 'Accessing Resources':
+      - 'ESS deployments': 'user-guide/use-case-ess-ui.md'
+      - 'Kubernetes': 'user-guide/use-case-connect-to-k8s-cluster.md'
+    - 'BootStrap': 'user-guide/bootstrap.md'
+    - 'CI': 'user-guide/ci.md'
+    - 'Clusters status': 'https://status.obs.elastic.dev'
+    - 'Create clusters':
+      - 'Autopilot': "user-guide/autopilot.md"
+      - 'CCS': 'user-guide/use-case-create-cluster.md'
+      - 'ESS': 'user-guide/ess.md'
+      - 'Kibana PR': 'user-guide/deploy-my-kibana-pr.md'
+      - 'Opbeans': 'user-guide/opbeans-cluster.md'
+      - 'Overview': 'user-guide/overview.md'
+      - 'Profiling': 'user-guide/profiling.md'
+    - 'Credentials': 'user-guide/use-case-retrieve-credentials.md'
+    - 'Destroy a Cluster': 'user-guide/use-case-destroy-cluster.md'
+    - 'Expiration date': 'user-guide/expiration-date.md'
+    - 'Integrations': 'user-guide/integrations.md'
+    - 'Local cluster': 'user-guide/use-case-run-a-local-cluster.md'
+    - 'Local Kibana': user-guide/use-case-local-kibana.md
+    - 'Logs/Metrics/APM': 'user-guide/use-case-check-logs.md'
+    - "MKI": 'user-guide/mki.md'
+    - 'Push Licenses': 'user-guide/push-licenses.md'
+    - 'Stack Profiling': 'user-guide/stack-profiling.md'
+    - 'Templates': 'user-guide/cluster-templates.md'
+    - 'Test data': 'user-guide/oblt-cluster-snapshots.md'
+    - 'Troubleshooting': 'user-guide/troubleshooting.md'
+    - 'Update a cluster': 'user-guide/use-case-update-cluster.md'
+    - 'VPN': 'user-guide/vpn.md'
+  - 'Admin Guide':
+    - 'Configure SSO': 'admin-guide/admin-configure-sso.md'
+    - 'Rally tracks': 'admin-guide/rally-tracks.md'
+    - 'Release oblt tools': 'tools/oblt-tools.md'
+    - 'Repair an unlhealth cluster': 'admin-guide/cluster-unhealthy.md'
+    - 'Restore snapshots': 'admin-guide/use-case-restore-snapshots.md'
+    - 'Rotate ingress password': 'admin-guide/process-rotate-ingress-password.md'
+    - 'Rotate ESS API keys': 'admin-guide/process-rotate-ess-api-keys.md'
+    - 'Configuration reference': 'user-guide/cluster-config.md'
+  - 'Tools':
+    - 'oblt-cli':
+      - 'Overview': 'tools/oblt-cli/index.md'
+      - 'Bootstrap': 'tools/oblt-cli/bootstrap.md'
+      - 'Contributing': 'tools/oblt-cli/CONTRIBUTING.md'
+      - 'EOL': 'tools/oblt-cli/eol.md'
+      - 'Local Kibana': 'tools/oblt-cli/local-kibana.md'
+      - 'Manual deployment': 'tools/oblt-cli/manual-deployment.md'
+      - 'Run in Docker': 'tools/oblt-cli/run-in-docker.md'
+      - 'Templates': 'tools/oblt-cli/templates.md'
+      - 'Update': 'tools/oblt-cli/update.md'
+      - 'GitHub Token': 'user-guide/github-token.md'
+      - 'Commands': 'tools/oblt-cli/generated/oblt-cli.md'
+    - 'oblt-framework':
+      - 'Overview': 'tools/oblt-framework/overview.md'
+      - 'Ansible Collection':
+        - 'Overview': 'tools/oblt-framework/ansible-collection.md'
+        - 'cluster_tasks': 'tools/oblt-framework/ansible/cluster_tasks/README.md'
+        - 'common': 'tools/oblt-framework/ansible/common/README.md'
+        - 'feature_dummy': 'tools/oblt-framework/ansible/feature_dummy/README.md'
+        - 'feature_siem_linux': 'tools/oblt-framework/ansible/feature_siem_linux/README.md'
+        - 'features': 'tools/oblt-framework/ansible/features/README.md'
+        - 'helm_apps': 'tools/oblt-framework/ansible/helm_apps/README.md'
+        - 'k8s': 'tools/oblt-framework/ansible/k8s/README.md'
+        - 'k8s_apps': 'tools/oblt-framework/ansible/k8s_apps/README.md'
+        - 'k8s_autopilot': 'tools/oblt-framework/ansible/k8s_autopilot/README.md'
+        - 'k8s_beats': 'tools/oblt-framework/ansible/k8s_beats/README.md'
+        - 'k8s_certmanager': 'tools/oblt-framework/ansible/k8s_certmanager/README.md'
+        - 'k8s_common': 'tools/oblt-framework/ansible/k8s_common/README.md'
+        - 'k8s_gcp': 'tools/oblt-framework/ansible/k8s_gcp/README.md'
+        - 'k8s_helm': 'tools/oblt-framework/ansible/k8s_helm/README.md'
+        - 'k8s_ingress': 'tools/oblt-framework/ansible/k8s_ingress/README.md'
+        - 'k8s_kind': 'tools/oblt-framework/ansible/k8s_kind/README.md'
+        - 'k8s_opbeans': 'tools/oblt-framework/ansible/k8s_opbeans/README.md'
+        - 'stack_eck': 'tools/oblt-framework/ansible/stack_eck/README.md'
+        - 'stack_ess': 'tools/oblt-framework/ansible/stack_ess/README.md'
+        - 'stack_security': 'tools/oblt-framework/ansible/stack_security/README.md'
+        - 'stack_serverless': 'tools/oblt-framework/ansible/stack_serverless/README.md'
+        - 'tools': 'tools/oblt-framework/ansible/tools/README.md'
+        - 'vm_gcp': 'tools/oblt-framework/ansible/vm_gcp/README.md'
+      - 'Docker': 'tools/oblt-framework/docker.md'
+      - 'CI': 'tools/oblt-framework/ci.md'
+    - 'oblt-robot': 'tools/oblt-robot/index.md'
+    - 'Tips':
+      - 'Sudo Touch ID': 'user-guide/sudo_touch_id.md'
+  - 'Environments': '*include ./docs/oblt-clusters/mkdocs_*.yml'

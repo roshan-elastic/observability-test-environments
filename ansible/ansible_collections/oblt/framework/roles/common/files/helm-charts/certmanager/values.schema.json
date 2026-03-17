@@ -1,0 +1,171 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.",
+            "default": true
+        },
+        "nameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "cert-manager": {
+            "type": "object",
+            "properties": {
+                "global": {
+                    "type": "object",
+                    "properties": {
+                        "leaderElection": {
+                            "type": "object",
+                            "properties": {
+                                "namespace": {
+                                    "type": "string",
+                                    "description": "namespace to use for leader election",
+                                    "default": "default"
+                                }
+                            }
+                        }
+                    }
+                },
+                "startupapicheck": {
+                    "type": "object",
+                    "properties": {
+                        "startupapicheck": {
+                            "type": "string",
+                            "description": "time to wait for the webhook to be ready",
+                            "default": "5m"
+                        }
+                    }
+                },
+                "installCRDs": {
+                    "type": "boolean",
+                    "description": "install CRDs",
+                    "default": true
+                },
+                "ingressShim": {
+                    "type": "object",
+                    "properties": {
+                        "defaultIssuerName": {
+                            "type": "string",
+                            "description": "name of the default issuer",
+                            "default": "letsencrypt-staging"
+                        },
+                        "defaultIssuerKind": {
+                            "type": "string",
+                            "description": "kind of the default issuer",
+                            "default": "ClusterIssuer"
+                        }
+                    }
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "memory": {
+                                    "type": "string",
+                                    "description": "The memory limit for the Opbean",
+                                    "default": "128Mi"
+                                }
+                            }
+                        },
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "memory": {
+                                    "type": "string",
+                                    "description": "The requested memory for the Opbean",
+                                    "default": "64Mi"
+                                },
+                                "cpu": {
+                                    "type": "number",
+                                    "description": "The requested cpu for the Opbean",
+                                    "default": 0.1
+                                }
+                            }
+                        }
+                    }
+                },
+                "webhook": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The memory limit for the Opbean",
+                                            "default": "128Mi"
+                                        }
+                                    }
+                                },
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The requested memory for the Opbean",
+                                            "default": "64Mi"
+                                        },
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "The requested cpu for the Opbean",
+                                            "default": 0.1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "cainjector": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "type": "object",
+                            "properties": {
+                                "limits": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The memory limit for the Opbean",
+                                            "default": "256Mi"
+                                        }
+                                    }
+                                },
+                                "requests": {
+                                    "type": "object",
+                                    "properties": {
+                                        "memory": {
+                                            "type": "string",
+                                            "description": "The requested memory for the Opbean",
+                                            "default": "64Mi"
+                                        },
+                                        "cpu": {
+                                            "type": "number",
+                                            "description": "The requested cpu for the Opbean",
+                                            "default": 0.1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

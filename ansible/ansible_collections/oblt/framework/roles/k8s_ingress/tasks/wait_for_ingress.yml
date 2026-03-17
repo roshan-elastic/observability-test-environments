@@ -1,0 +1,14 @@
+---
+- name: Wait for ingress controller running
+  k8s_info:
+    kind: Pod
+    namespace: "{{ ingress_nginx_namespace }}"
+    field_selectors:
+      - status.phase=Running
+    label_selectors:
+      - app.kubernetes.io/component=controller
+      - app.kubernetes.io/name=ingress-nginx
+  register: controller_pods
+  retries: 10
+  delay: 5
+  until: (controller_pods.resources | length) > 0

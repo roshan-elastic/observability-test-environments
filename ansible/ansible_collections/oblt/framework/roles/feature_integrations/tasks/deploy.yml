@@ -1,0 +1,24 @@
+---
+- name: bootstrap fleet
+  vars:
+    bootstrap_cluster: true
+    bootstrap_cluster_dir: '{{ deployment_dir }}/bootstrap-integration'
+    integrations_name: "{{ role_parameters.feature_integrations_name | default(feature_integrations_name) }}"
+  include_role:
+    name: oblt.framework.cluster_tasks
+    tasks_from: bootstrap.yml
+
+- name: Deploy feature '{{ role_name }}'
+  vars:
+    _integration_name: "{{ role_parameters.feature_integrations_name | default(feature_integrations_name) }}"
+    _integration_name_fqdn: "{{ _integration_name | replace('_','-') }}"
+    helm_chart:
+      chart: "{{ helm_charts_dir }}/integrations"
+      version: "{{ feature_integrations_helm_chart_version }}"
+      values_file: "{{ helm_deployment_dir }}/integrations/common/generic.yaml.j2"
+      name: "{{ _integration_name_fqdn}}"
+      namespace: "{{ k8s_default_namespace }}"
+      build_deps: "true"
+  include_role:
+    name: oblt.framework.k8s_helm
+    tasks_from: deploy_chart.yml

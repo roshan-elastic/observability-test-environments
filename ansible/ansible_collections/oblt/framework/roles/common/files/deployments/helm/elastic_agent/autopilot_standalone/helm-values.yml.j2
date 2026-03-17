@@ -1,0 +1,28 @@
+# minimal helm values for a deployment
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/observability-ci/elastic-agent
+  # -- Tag for the Docker image.
+  tag: "{{ stack_version }}"
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - name: docker.elastic.co
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: standalone
+
+elasticsearch:
+  # -- URL of the Elasticsearch (e.g. https://Elasticsearch:9200).
+  # serverless does not provide the port in the URL fleet needs the ports in the URL to be able to connect
+  host: "https://{{ elasticsearch_url | urlsplit('hostname') }}:443"
+  # -- Elasticsearch username.
+  username: "{{ elasticsearch_username }}"
+  # -- Elasticsearch password.
+  password: "{{ elasticsearch_password }}"
+
+fullnameOverride: {{ helm_chart.name }}-{{ cluster_hash }}
+
+serviceAccount:
+  name: {{ helm_chart.name }}-{{ cluster_hash }}

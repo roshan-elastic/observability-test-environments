@@ -1,0 +1,53 @@
+---
+- name: Wait for Elasticsearch service
+  uri:
+    url: "{{ elasticsearch_url }}"
+    method: GET
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+  register: _result
+  until: _result.status == 200
+  retries: 30
+  delay: 30
+  when:
+    - elasticsearch_enabled | bool
+  tags:
+    - elasticsearch
+    - deploy
+
+- name: Wait for Kibana service
+  uri:
+    url: "{{ kibana_url }}"
+    method: GET
+    validate_certs: false
+    user: "{{ kibana_username }}"
+    password: "{{ kibana_password }}"
+    force_basic_auth: true
+  register: _result
+  until: _result.status == 200
+  retries: 30
+  delay: 30
+  when:
+    - kibana_enabled | bool
+  tags:
+    - kibana
+    - deploy
+
+- name: Wait for APM service
+  uri:
+    url: "{{ apm_url }}"
+    method: GET
+    validate_certs: false
+    headers:
+      Authorization: "Bearer {{ apm_token }}"
+  register: _result
+  until: _result.status == 200
+  retries: 30
+  delay: 30
+  when:
+    - apm_enabled | bool
+  tags:
+    - apm
+    - deploy

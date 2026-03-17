@@ -1,0 +1,23 @@
+{
+  "apache-logfile": {
+    "streams": {
+      "apache.access": {
+        "vars": {
+          "paths": [
+            "/usr/shared/data/logs/access.log*",
+            "/usr/shared/data/logs/other_vhosts_access.log*",
+            "/usr/shared/data/logs/access_log*"
+          ]
+        }
+      },
+      "apache.error": {
+        "vars": {
+          "paths": [
+            "/usr/shared/data/logs/error.log*",
+            "/usr/shared/data/logs/error_log*"
+          ]
+        }
+      }
+    }
+  }
+}

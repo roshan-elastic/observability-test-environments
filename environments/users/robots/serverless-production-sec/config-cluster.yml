@@ -1,0 +1,18 @@
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+    - '{{ deployment_dir }}/bootstrap-defend'
+cluster_name: serverless-production-sec
+features:
+    - feature_siem_linux_elastic_agent_version: '{{ stack_version }}'
+      feature_siem_linux_name: siem-linux-{{ cluster_name }}
+      name: siem_linux
+    - feature_siem_linux_elastic_agent_version: '{{ stack_version }}'
+      feature_siem_linux_name: siem-linux-{{ cluster_name }}-bis
+      name: siem_linux
+golden_cluster: true
+grab_cluster_info: true
+slack_channel: '#observablt-bots'
+stack:
+    mode: serverless
+    target: production
+    template: security

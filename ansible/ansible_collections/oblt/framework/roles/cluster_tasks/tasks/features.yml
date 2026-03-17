@@ -1,0 +1,4 @@
+---
+- name: Process features
+  include_role:
+    name: oblt.framework.features

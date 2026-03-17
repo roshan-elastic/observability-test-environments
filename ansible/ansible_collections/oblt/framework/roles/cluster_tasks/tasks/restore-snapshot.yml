@@ -1,0 +1,56 @@
+---
+- name: Restore snapshot
+  vars:
+    indices: "{{ INDICES | default('.kibana*,metrics-*,logs-*,traces-*,heartbeat-*,filebeat-*,auditbeat-*,metricbeat-*,.monitoring-*', true) }}"
+    snap_repo: "{{ SNAP_REPO_NAME | default('external_gcs_repository', true) }}"
+    snapshot_name: "{{ lookup('file', '{{ build_dir }}/latest_snapshot') | mandatory }}"
+    data_node: "{{ DATA_NODE | default('data_warm,data_cold') }}"
+    url: "{{ elasticsearch_url }}"
+    requests_list:
+      - url: "_cluster/settings?pretty"
+        method: "PUT"
+        payload: |
+          {
+            "persistent" : {
+              "cluster.routing.allocation.node_concurrent_recoveries" : "20",
+              "indices.recovery.max_concurrent_file_chunks" : "8",
+              "indices.recovery.max_concurrent_operations" : "4",
+              "indices.recovery.max_bytes_per_sec" : "400mb"
+            }
+          }
+      - url: "_snapshot/{{ snap_repo }}/{{ snapshot_name }}/_restore?pretty"
+        method: "POST"
+        timeout: 240
+        payload: |
+          {
+            "indices": "{{ indices }}",
+            "ignore_unavailable": true,
+            "include_global_state": true,
+            "feature_states": [
+              "kibana"
+            ],
+            "partial": true,
+            "index_settings": {
+              "index.number_of_replicas": 0,
+              "auto_expand_replicas": false,
+              "index.routing.allocation.include._tier_preference" : "{{ data_node }}"
+            }
+          }
+  uri:
+    url: "{{ url }}/{{ item.url }}"
+    method: "{{ item.method }}"
+    validate_certs: false
+    user: "{{ elasticsearch_username }}"
+    password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body_format: json
+    body: "{{ item.payload }}"
+    timeout: "{{ item.timeout | default(30) }}"
+  register: _result_es
+  until: _result_es.status == 200
+  retries: 3
+  delay: 30
+  loop: "{{ requests_list }}"

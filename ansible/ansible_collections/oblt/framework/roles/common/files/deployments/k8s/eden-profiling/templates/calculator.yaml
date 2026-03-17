@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: interest-calculator-optimized
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: interest-calculator-optimized
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: interest-calculator-optimized
+  template:
+    metadata:
+      labels:
+        app: interest-calculator-optimized
+      annotations:
+        co.elastic.logs/enabled: "true"
+        co.elastic.logs/json.keys_under_root: "true"
+    spec:
+      imagePullSecrets:
+        - name: elastic-prod-registry
+      containers:
+      - name: interest-calculator-optimized
+        image: docker.elastic.co/sa/{{ .Chart.Name }}-calculator:{{ .Values.es_version }}-{{ .Values.build_num }}
+        imagePullPolicy: Always
+        resources:
+          limits:
+           memory: 100Mi
+          requests:
+           cpu: 0.05
+           memory: 50Mi
+        env:
+        - name: FOR
+          value: "30"
+        - name: INTEREST_RATE
+          value: "0.003"
+        - name: SERVICE_NAME
+          value: "interest-calculator-optimized"
+        - name: SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-apm-creds
+              key: APM_URL
+        - name: SECRET_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-apm-creds
+              key: APM_SECRET_TOKEN
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: interest-calculator-optimized
+  namespace: {{ .Chart.Name }}-{{ .Values.username }}
+  labels:
+    app: interest-calculator-optimized
+spec:
+  clusterIP: 'None'
+  ports:
+  - port: 5001
+    targetPort: 5001
+  selector:
+    app: interest-calculator-optimized

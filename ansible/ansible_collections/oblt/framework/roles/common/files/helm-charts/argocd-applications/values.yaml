@@ -1,0 +1,25 @@
+projectName: argocd-cluster
+ingress:
+  enabled: true
+  version: 4.10.1
+  ip: 34.136.172.108
+  type: LoadBalancer
+  namespace: ingress-nginx
+certmanager:
+  enabled: true
+  version: v1.14.5
+  issuer: letsencrypt-prod
+  namespace: default
+externalSecrets:
+  enabled: true
+  version: 0.9.18
+  namespace: external-secrets
+  serviceAccount:
+    annotations:
+      iam.gke.io/gcp-service-account: k8s-esternal-secrets@elastic-observability.iam.gserviceaccount.com
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/elastic/observability-test-environments.git
+    targetRevision: HEAD

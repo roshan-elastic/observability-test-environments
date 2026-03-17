@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+# Script to prepare a local environment to operate with the GKE cluster.
+# This script is iterative, it cannot be used on CI.
+
+set -eo pipefail
+
+{% if k8s_enabled %}
+ZONE="{{ k8s_region }}"
+PROJECT_ID="{{ k8s_project }}"
+GKE_CLUSTER_NAME="{{ gke_cluster_name }}"
+DEFAULT_NAMESPACE="{{ k8s_default_namespace }}"
+
+CLUSTER_NAME="{{ cluster_name }}"
+CONTEXT="gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER_NAME}"
+
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
+# Alias
+alias k=kubectl
+alias h=helm
+
+HERMIT_ACTIVALE_FILE="${HOME}/.oblt-cli/observability-test-environments/.ci/bin/activate-hermit"
+if [ -f "${HERMIT_ACTIVALE_FILE}" ]; then
+  # shellcheck disable=SC1090
+  . "${HERMIT_ACTIVALE_FILE}" || true
+fi
+
+# install gke-gcloud-auth-plugin if it is needed
+command -v gke-gcloud-auth-plugin || gcloud components install gke-gcloud-auth-plugin --quiet --verbosity=error
+
+# Converts a string to kebab-case
+function kebab_case() {
+  local str="${1:?-"kebab_case: string argument is required"}"
+  echo -n "${str}" |\
+  sed 's/\([^A-Z+]\)\([A-Z0-9]\)/\1-\2/g' |\
+  sed 's/\([0-9]\)\([A-Z]\)/\1-\2/g' |\
+  sed 's/\([A-Z]\)\([0-9]\)/\1-\2/g' |\
+  sed 's/_/-/g' |\
+  sed 's/__/-/g' |\
+  sed 's/--/-/g' |\
+  sed 's/\([\/]\)-/\1/g' |\
+  tr '[:upper:]' '[:lower:]'
+}
+
+# Get the pod name of the package or selector passed as argument
+function oblt-package-pod(){
+  local selector=$1
+  if [ -z "${selector}" ]; then
+    PACKAGE_NORMALIZED=$(kebab_case "${PACKAGE}")
+    selector="app.kubernetes.io/instance=${PACKAGE_NORMALIZED}"
+  fi
+
+  kubectl get pods -l "${selector}" -o jsonpath='{.items[0].metadata.name}' || exit 1
+}
+
+# Authenticate to GKE and get the cluster credentials
+function oblt-auth(){
+  if [ ! -f "${HOME}/.oblt-cli/gke-login" ]; then
+    gcloud auth login --verbosity=error
+		date -u +"%Y-%m-%dT%H:%M:%S%z" > "${HOME}/.oblt-cli/gke-login"
+  fi
+  gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" \
+    --zone "${ZONE}" --project "${PROJECT_ID}" --verbosity=error
+}
+
+# Set the default namespace and context
+function oblt-context(){
+  # Set default namespace
+  kubectl config set-context "${CONTEXT}" --namespace="${DEFAULT_NAMESPACE}"
+  kubectl config use-context "${CONTEXT}"
+}
+
+# Relaunches the integration pod
+function oblt-relaunch(){
+  kubectl delete "$(oblt-package-pod)"
+}
+
+# Run a elastic package command
+function oblt-elastic-package(){
+  POD_NAME=$(oblt-package-pod)
+  echo "Changing to folder ${PACKAGE_FOLDER}"
+  cd "${PACKAGE_FOLDER}" || exit 1
+  elastic-package -v "$@"
+  cd -
+}
+
+# Install the elastic-package binary
+function oblt-elastic-package-install(){
+  go install github.com/elastic/elastic-package@latest
+}
+
+# Check the package
+function oblt-check(){
+  oblt-elastic-package check
+}
+
+# Test the package
+function oblt-test(){
+  oblt-elastic-package test asset
+  oblt-elastic-package test pipeline
+  oblt-elastic-package test static
+}
+
+# Build the package
+function oblt-build(){
+  oblt-elastic-package build
+}
+
+#{% if (ess_stack_pack_version | default(default_stack_version) ) is version('8.8.0', '>=') %}
+# Build a package and copy it to the package registry >=8.10.0
+function oblt-publish(){
+  oblt-build
+  POD_NAME=$(oblt-package-pod)
+  BUILD_FOLDER=$(realpath ${PACKAGE_FOLDER}/../../build/packages)
+
+  for i in "${BUILD_FOLDER}/${PACKAGE}"-*.zip; do
+    if [ -f "$i" ]; then
+      echo "Publishing the package ${i}"
+      oblt-elastic-package install --skip-validation --zip "${i}"
+    fi
+  done
+}
+#{% else %}
+# Build a package and copy it to the package registry <8.10.0
+function oblt-publish(){
+  POD_NAME=$(oblt-package-pod)
+  BUILD_FOLDER=$(realpath ${PACKAGE_FOLDER}/../../build/packages)
+  rm "${HOME}/.oblt-cli/lock" || true
+  echo "Updating Kibana configuration"
+  oblt-cli cluster update --cluster-name "{{ cluster_name }}" \
+    --parameters '{"stack":{"package_registry":"package-registry-{{ cluster_hash }}.{{ load_balancer_ip }}.ip.es.io"}}' \
+    --disable-banner
+  oblt-build
+  echo "Copying the package to the Package Registry"
+  kubectl cp -c package-registry "${BUILD_FOLDER}/${PACKAGE}"-*.zip "${POD_NAME}:/usr/shared/data/packages/development"
+  echo "Restartting the Package Registry"
+  PACKAGE_REGISTRY_PID=$(kubectl exec -it -c package-registry "${POD_NAME}" -- /bin/sh -c 'pgrep package-registr')
+  kubectl exec -it -c package-registry "${POD_NAME}" -- /bin/sh -c "kill ${PACKAGE_REGISTRY_PID}"
+  echo "The first time it can take a while to restart Kibana with the new configurations (5-10 min)"
+}
+#{% endif %}
+
+# Open a shell in a pod container
+function oblt-shell(){
+  local container=${1:-"workspace"}
+  local shell=${2:-"/bin/bash"}
+  kubectl exec -it "$(oblt-package-pod)" -c "${container}" -- "${shell}"
+}
+
+# Open a shell in the service container
+function oblt-shell-service(){
+  oblt-shell "service" "/bin/sh"
+}
+
+# Open a shell in the DinD container
+function oblt-shell-dind(){
+  oblt-shell dind "/bin/sh"
+}
+
+# Open a shell in the elastic-agent container
+function oblt-shell-elastic-agent(){
+  oblt-shell elastic-agent
+}
+
+# Open a shell in the package-registry container
+function oblt-shell-package-registry(){
+  oblt-shell package-registry
+}
+
+# Open a shell in the workspace container
+function oblt-shell-workspace(){
+  oblt-shell workspace
+}
+
+# Show the logs of the service container
+function oblt-logs-service(){
+  PACKAGE_NORMALIZED=$(kebab_case "${PACKAGE}")
+  kubectl logs "$(oblt-package-pod)" -f -c "service"
+}
+
+# Show the logs of the git-clone container
+function oblt-logs-git-clone(){
+  kubectl logs "$(oblt-package-pod)" -f -c "git-clone"
+}
+
+# Show the logs of the DinD container
+function oblt-logs-dind(){
+  kubectl logs "$(oblt-package-pod)" -f -c "dind"
+}
+
+# Show the logs of the elastic-agent container
+function oblt-logs-elastic-agent(){
+  kubectl logs "$(oblt-package-pod)" -f -c "elastic-agent"
+}
+
+# Show the logs of the package-registry container
+function oblt-logs-package-registry(){
+  kubectl logs "$(oblt-package-pod)" -f -c "package-registry"
+}
+
+# Show the logs of the workspace container
+function oblt-logs-workspace(){
+  kubectl logs "$(oblt-package-pod)" -f -c "workspace"
+}
+
+# Forward all the pod ports to localhost
+function oblt-fordward-ports(){
+  local ports=${1:?-"port/s argument is required"}
+  kubectl port-forward "pod/$(oblt-package-pod)" $*
+}
+
+# show the cluster state secret
+function oblt-secrets(){
+
+  gcloud secrets versions access latest --secret="oblt-clusters_${CLUSTER_NAME}_cluster-state"
+}
+
+# Open the VSCode from the pod
+function oblt-vscode(){
+  (sleep 10 && open http://localhost:3000)&
+  oblt-fordward-ports 3000
+}
+
+# Sync a local folder from the pod workspace container
+function oblt-ksync(){
+  local pod=$(oblt-package-pod)
+  local local_folder=${1:?-"local folder argument is required"}
+  local remote_folder=${2:-/workspace/logs}
+  rsync -avz --blocking-io --rsync-path=${remote_folder} --rsh="kubectl exec ${pod} -i -c workspace --" rsync: "${local_folder}"
+}
+
+# Sync a local folder from the pod workspace container every 10 seconds
+function oblt-ksync-task(){
+  local local_folder=${1:?-"local folder argument is required"}
+  local remote_folder=${2:-/workspace/logs}
+  while [ true ];
+  do
+    oblt-ksync "${local_folder}"
+    sleep 10
+  done
+}
+{% endif %}

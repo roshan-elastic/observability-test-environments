@@ -1,0 +1,7 @@
+cluster_name: foo
+stack:
+  version: 8.16.0-SNAPSHOT
+  mode: ess
+  ess:
+    elasticsearch:
+      image: :8.16.0-SNAPSHOT

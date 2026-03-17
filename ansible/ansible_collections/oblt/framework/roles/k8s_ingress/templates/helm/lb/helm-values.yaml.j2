@@ -1,0 +1,42 @@
+---
+# {% if  k8s_provider != 'kind' %}
+# {% set lb_type = 'LoadBalancer'%}
+# {% set lb_replica_count = 3 %}
+# {% set lb_default_backend_enabled = true %}
+# {% else %}
+# {% set lb_type = 'NodePort'%}
+# {% set lb_replica_count = 1 %}
+# {% set lb_default_backend_enabled = false %}
+# {% endif %}
+
+rbac:
+  create: true
+defaultBackend:
+  enabled: {{ lb_default_backend_enabled }}
+controller:
+  replicaCount: {{ lb_replica_count }}
+  service:
+    type: '{{ lb_type }}'
+    externalTrafficPolicy: Local
+    enableHttp: true
+    enableHttps: true
+    loadBalancerIP: "{{ load_balancer_ip | default(None) }}"
+
+# {% if k8s_provider == 'kind' %}
+
+  nodeSelector:
+    ingress-ready: "true"
+  hostPort:
+    enabled: true
+    ports:
+      http: 80
+      https: 443
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Equal
+      effect: NoSchedule
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Equal
+
+# {% endif %}

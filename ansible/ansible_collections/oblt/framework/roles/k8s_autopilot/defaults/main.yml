@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section K8s Autopilot Role to create a GKE Autopilot cluster
+## @param cluster_context The context name of the cluster to use.
+cluster_context: "gke_{{ k8s_project }}_{{ k8s_region }}_{{ gke_cluster_name }}"
+## @param k8s_autopilot_channel The GCE update channel to use for updating the cluster.
+k8s_autopilot_channel: "stable"
+# Versions available on a channel https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels#what_versions_are_available_in_a_channel
+## @param k8s_autopilot_version The version of the GKE Autopilot cluster to use.
+k8s_autopilot_version: 1.29.5-gke.1091002
+## @param k8s_autopilot_labels The labels to apply to the cluster.
+k8s_autopilot_labels: "name={{ cluster_name }},owner={{ oblt_username }},division=engineering,org=obs,team=observability,project=oblt-clusters"
+## @param password_apr1 The password hash for the user to access the cluster.
+password_apr1: "{{ password_plaintext | password_hash('apr_md5_crypt') }}"

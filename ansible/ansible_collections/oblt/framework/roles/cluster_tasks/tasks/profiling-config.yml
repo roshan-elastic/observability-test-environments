@@ -1,0 +1,38 @@
+---
+- name: Configure Profiling
+  block:
+    - name: Configure Kibana
+      vars:
+        bootstrap_cluster: true
+        bootstrap_cluster_dir: '{{ deployment_dir }}/bootstrap-profiling'
+      include_tasks: bootstrap.yml
+
+    - name: Set Profiling Token
+      set_fact:
+        profiling_url: "{{ apm_url | replace('.apm','.profiling') | default(None) }}"
+        profiling_token: "{{ _result_profiling_token.json | community.general.json_query('item.package_policies[?package.name == `profiler_collector`].inputs[0].vars.secret_token.value') | first | default(None) }}"
+      when:
+        - _result_profiling_token is defined
+        - _result_profiling_token.status is defined
+        - _result_profiling_token.status == 200 or _result_profiling_token.status == 202
+
+    - name: Deploy Profiling
+      vars:
+        apps:
+          k8s:
+            - name: universal-profiling-agent-{{ cluster_hash}}
+              src: "{{ k8s_deployment_dir }}/profiling"
+      include_role:
+        name: oblt.framework.k8s_apps
+      when:
+        - profiling_token is defined
+        - profiling_url is defined
+        - profiling_url | length > 0
+        - profiling_token | length > 0
+        - profiling_agent_deploy | default(true) | bool
+        - k8s_provider != 'autopilot'
+  when:
+    - k8s_enabled|bool
+    - stack_version is defined
+    - stack_version is version('8.11', '>=')
+    - profiling_enable|bool

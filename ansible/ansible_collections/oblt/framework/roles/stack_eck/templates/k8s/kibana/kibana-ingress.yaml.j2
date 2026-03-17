@@ -1,0 +1,33 @@
+---
+{% if ingress_available %}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: "{{ certificate_issuer }}"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  labels:
+    app: kibana
+  name: kibana
+spec:
+  rules:
+  - host: {{ kibana_host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ kibana_host_int }}
+            port:
+              number: {{ kibana_port_int }}
+        path: /
+        pathType: Prefix
+{% if certmanager_available %}
+  tls:
+  - hosts:
+    - {{ kibana_host }}
+    secretName: kibana-ingress-tls
+{% endif %}
+{% endif %}

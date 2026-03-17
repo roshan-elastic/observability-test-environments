@@ -1,0 +1,61 @@
+---
+- name: "{{ synthetics_monitor_id }} - Generate Light Monitor files"
+  template:
+    src: "{{ file_item }}"
+    dest: "{{ synthetics_monitors_folder }}/lightweight/{{ file_item | basename | splitext | first }}"
+    mode: 0600
+  with_fileglob: "{{ synthetics_monitors_folder }}/lightweight/*.j2"
+  loop_control:
+    loop_var: file_item
+
+- name: "{{ synthetics_monitor_id }} - Generate Journey files"
+  template:
+    src: "{{ file_item }}"
+    dest: "{{ synthetics_monitors_folder }}/journeys/{{ file_item | basename | splitext | first }}"
+    mode: 0600
+  with_fileglob: "{{ synthetics_monitors_folder }}/journeys/*.j2"
+  loop_control:
+    loop_var: file_item
+
+- name: "{{ synthetics_monitor_id }} - Get Synthetics API key"
+  uri:
+    url: "{{ kibana_url }}/internal/synthetics/service/api_key?accessToElasticManagedLocations=true"
+    method: GET
+    validate_certs: false
+    user: "{{ kibana_username }}"
+    password: "{{ kibana_password }}"
+    force_basic_auth: true
+    headers:
+      Content-Type: application/json
+      kbn-xsrf: true
+    body: ""
+  register: _result
+  until: _result.status == 200
+  retries: 3
+  delay: 15
+  when:
+    - kibana_url is defined
+
+- name: "{{ synthetics_monitor_id }} - Deploy Synthetics Monitors"
+  vars:
+    parse_env: |
+      SYNTHETICS_API_KEY: "{{ _result.json.apiKey.encoded }}"
+      SYNTHETICS_KIBANA_URL: "{{ kibana_url }}"
+      SYNTHETICS_LOCALE: "{{ synthetics_locale }}"
+      SYNTHETICS_TIMEZONE: "{{ synthetics_timezone }}"
+      SYNTHETICS_PROJECT_ID: "{{ synthetics_monitor_id }}"
+      {{ synthetics_monitors_params | default({}) | to_nice_yaml }}
+  environment: "{{ parse_env | from_yaml }}"
+  shell: |
+    npm install --quiet --silent --no-progress
+    npm run push
+  args:
+    chdir: "{{ synthetics_monitors_folder }}"
+  # register: _result
+  # until: _result.rc == 0
+  # retries: 3
+  # delay: 15
+  when:
+    - kibana_url is defined
+    - synthetics_monitors_folders is defined
+    - synthetics_monitors_folders | length > 0

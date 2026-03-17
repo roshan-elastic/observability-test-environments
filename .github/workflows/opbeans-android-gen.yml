@@ -1,0 +1,95 @@
+---
+## Workflow to run the Opbeans Android app uploader.
+name: Opbeans Android App Uploader
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+    paths:
+      - 'environments/users/robots/edge-lite-oblt/config-cluster.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster_name:
+          - edge-lite-oblt
+    env:
+      OPBEANS_ANDROID_KEY: ${{ secrets.OPBEANS_ANDROID_KEY }}
+      OPBEANS_APP_ID: ${{ secrets.OPBEANS_APP_ID }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: ./.github/actions/gcp-auth
+        with:
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+      - name: "Get Cluster Secrets"
+        uses: elastic/oblt-actions/oblt-cli/run@v1
+        with:
+          command: cluster secrets cluster-state --cluster-name ${{ matrix.cluster_name }} --output-file ${PWD}/secrets.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Dependencies
+        run: |
+          echo "node_modules" >> .gitignore
+          npm install js-yaml
+
+      - name: "Export secrets"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const yaml = require('js-yaml');
+            const filePath = path.join('${{ github.workspace }}','secrets.yml');
+            const fileContents = fs.readFileSync(filePath, 'utf8');
+            const secrets = yaml.load(fileContents);
+            const ingress_auth = `${secrets.ingress_username}:${secrets.ingress_password}`;
+            const ingress_auth_base64 = Buffer.from(ingress_auth).toString('base64');
+
+            core.exportVariable('APM_URL', secrets.apm_url);
+            core.exportVariable('APM_TOKEN', secrets.apm_token);
+            core.exportVariable('OPBEANS_URL', `https://opbeans-node.${secrets.load_balancer_ip}.${secrets.k8s_domain}:443`);
+            core.exportVariable('OPBEANS_AUTH', ingress_auth_base64);
+            core.setSecret(secrets.apm_url);
+            core.setSecret(secrets.apm_token);
+            core.setSecret(secrets.load_balancer_ip);
+            core.setSecret(secrets.k8s_domain);
+            core.setSecret(ingress_auth_base64);
+
+            const opbeansAndroidKey = path.join(`${process.env.GITHUB_WORKSPACE}`, 'opbeans-android-key.json');
+            core.exportVariable('OPBEANS_ANDROID_KEY_FILE', opbeansAndroidKey);
+            fs.writeFileSync(opbeansAndroidKey, process.env.OPBEANS_ANDROID_KEY);
+
+      - name: Run the Opbeans Android app uploader
+        run: |
+          set -e
+          git clone https://github.com/elastic/opbeans-android-loadgen.git
+          cd opbeans-android-loadgen
+          cp "${OPBEANS_ANDROID_KEY_FILE}" ./app-uploader/opbeans-android-key.json
+          docker build -t opbeans-android-uploader \
+            --build-arg cluster_name="${CLUSTER_NAME}" \
+            --build-arg exporter_endpoint="${APM_URL}" \
+            --build-arg exporter_auth_token"=${APM_TOKEN}" \
+            --build-arg sauce_username="${SAUCE_USERNAME}" \
+            --build-arg sauce_access_key="${SAUCE_ACCESS_KEY}" \
+            --build-arg opbeans_endpoint="${OPBEANS_URL}" \
+            --build-arg opbeans_auth_token="${OPBEANS_AUTH}" \
+            --build-arg firebase_app_id="${OPBEANS_APP_ID}" \
+             ./app-uploader
+          docker run opbeans-android-uploader
+        env:
+          CLUSTER_NAME: ${{ matrix.cluster_name }}

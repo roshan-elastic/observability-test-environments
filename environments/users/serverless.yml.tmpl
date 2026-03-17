@@ -1,0 +1,131 @@
+---
+# last update {{ .Date }}
+template_name: serverless
+template_description: |
+  Serverless template configure a oblt cluster that runs on Elastic Stack serverless on the QA environment.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#serverless)
+
+#{{ $template := "observability" }}
+#{{- if .ProjectType }}
+#{{ $template = .ProjectType }}
+#{{- end }}
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+#{{- $target := "qa" }}
+#{{- if .Target }}
+#{{ $target = .Target }}
+#{{- end }}
+#{{- $updateMode := "recreate" }}
+#{{- if .UpdateMode }}
+#{{ $updateMode = .UpdateMode }}
+#{{- end }}
+
+slack_channel: "{{ .SlackChannel }}"
+oblt_username: "{{ $username }}"
+#{{- if .EphemeralCluster }}
+ephemeral_cluster: "{{ .EphemeralCluster }}"
+#{{- end }}
+grab_cluster_info: true
+create_ilm: false
+create_users: false
+cluster_name: "{{ .ClusterName }}"
+
+expire_date: '{{ now | mustDateModify "+72h" | date "2006-01-02" }}'
+
+k8s:
+  provider: gcp
+  shared: "serverless-k8s"
+  ingress: false
+  certmanager: false
+  default_namespace: "{{ .ClusterName }}-default"
+  kube_system_namespace: "{{ .ClusterName }}-kube-system"
+
+stack:
+  mode: "serverless"
+  template: "{{ $template }}"
+  target: "{{ $target }}"
+  update_mode: "{{ $updateMode }}"
+  serverless:
+#{{- if .ElasticsearchDockerImage }}
+    elasticsearch:
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- if .KibanaDockerImage }}
+    kibana:
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .FleetDockerImage }}
+    fleet:
+      image: "{{ .FleetDockerImage }}"
+#{{- end }}
+
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ `{{ deployment_dir }}` }}/bootstrap-serverless"
+
+kube_metrics_deploy_name: k8s-int-{{ .ClusterName }}
+apps:
+    helm:
+#{{- if ne $template "elasticsearch" }}
+    - name: ksm-{{ .ClusterName }}
+      chart: "prometheus-community/kube-state-metrics"
+      values_file: "{{ `{{ helm_deployment_dir }}` }}/kube-state-metrics/helm-values.yml.j2"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      version: "{{ `{{ kube_state_metrics_version }}` }}"
+    - name: k8s-int-{{ .ClusterName }}
+      values_file: '{{ `{{ helm_deployment_dir }}` }}/elastic_agent/standalone-afinity/helm-values.yml.j2'
+      chart: '{{ `{{ helm_charts_dir }}` }}/elastic_agent'
+      version: 0.1.0
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      extra_args: "--set metricsService=ksm-{{ .ClusterName }}-kube-state-metrics:8080"
+#{{- end }}
+#{{- if eq $template "observability" }}
+    - name: opbeans-go
+      values_file: "{{ `{{ helm_deployment_dir }}` }}/opbeans/go/helm-values.yml.j2"
+      chart: "{{ `{{ helm_charts_dir }}` }}/opbeans_go"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      build_deps: true
+      version: 0.1.0
+    - name: opbeans-java
+      values_file: "{{ `{{ helm_deployment_dir }}` }}/opbeans/java/helm-values.yml.j2"
+      chart: "{{ `{{ helm_charts_dir }}` }}/opbeans_java"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      build_deps: true
+      version: 0.1.0
+    - name: opbeans-python
+      values_file: "{{ `{{ helm_deployment_dir }}` }}/opbeans/python/helm-values.yml.j2"
+      chart: "{{ `{{ helm_charts_dir }}` }}/opbeans_python"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      build_deps: true
+      version: 0.1.0
+    - name: apm-synthtrace-ms
+      values_file: '{{ `{{ helm_deployment_dir }}` }}/apm-synthtrace/helm-values-ms.yml.j2'
+      chart: '{{ `{{ helm_charts_dir }}` }}/apm-synthtrace'
+      version: 0.1.0
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+#{{- end }}
+
+#{{- if .GitOps }}
+gitops:
+  enabled: "{{ .GitOps }}"
+#{{- if .GitHubCommit }}
+  commit: "{{ .GitHubCommit }}"
+#{{- end }}
+#{{- if .GitHubIssue }}
+  issue: "{{ .GitHubIssue }}"
+#{{- end }}
+#{{- if .GitHubPullRequest }}
+  pull_request: "{{ .GitHubPullRequest }}"
+#{{- end }}
+#{{- if .GitHubRepository }}
+  repository: "{{ .GitHubRepository }}"
+#{{- end }}
+#{{- if .GitHubCommentId }}
+  comment_id: "{{ .GitHubCommentId }}"
+#{{- end }}
+#{{- end }}

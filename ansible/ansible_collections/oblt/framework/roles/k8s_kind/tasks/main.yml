@@ -1,0 +1,32 @@
+---
+- block:
+  - name: Set Config fatcs
+    set_fact:
+      k8s: "{{ k8s }}"
+
+  - name: Import tasks
+    import_tasks: copy_files.yml
+
+  - name: Import tasks
+    import_tasks: create_cluster.yml
+
+  - name: Import tasks
+    import_tasks: list_clusters.yml
+
+  - name: Context info
+    include_role:
+      name: oblt.framework.k8s_common
+      tasks_from: context_info.yml
+
+  - name: Set default context
+    include_role:
+      name: oblt.framework.k8s_common
+      tasks_from: set_default_context.yml
+
+  - name: Create default namespace
+    include_role:
+      name: oblt.framework.k8s_common
+      tasks_from: create_default_namespace.yml
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'kind'

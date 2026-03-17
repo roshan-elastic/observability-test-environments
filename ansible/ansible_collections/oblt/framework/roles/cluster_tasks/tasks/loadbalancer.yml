@@ -1,0 +1,17 @@
+---
+- name: Load balancer Info
+  block:
+    - name: Ingress loadbalancer
+      include_role:
+        name: oblt.framework.k8s_ingress
+        tasks_from: loadbalancer.yml
+  when:
+    - k8s_provider == 'gcp'
+    - load_balancer_ip is not defined
+
+- name: Load balancer Info (load_balancer_ip)
+  set_fact:
+    load_balancer_ip: "{{ load_balancer_ip }}"
+  when:
+    - load_balancer_ip is defined
+    - load_balancer_ip | length > 0

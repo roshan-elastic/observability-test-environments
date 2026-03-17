@@ -1,0 +1,3 @@
+---
+- name: Iterate over features
+  include_tasks: deploy.yml

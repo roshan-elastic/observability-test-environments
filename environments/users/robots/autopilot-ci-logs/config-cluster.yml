@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: "autopilot-ci-logs"
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+
+k8s:
+  provider: autopilot
+  certmanager: true
+  static_ip: true
+  ingress: true
+
+apps:
+  helm:
+    - name: external-secrets
+      chart: "external-secrets/external-secrets"
+      version: 0.9.14
+      namespace: "external-secrets"
+      extra_args: "--create-namespace --set installCRDs=true"
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ kube_state_metrics_version }}"
+      namespace: "{{ k8s_default_namespace }}"
+    - name: kubernetes-integration
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/standalone-monitoring-oblt/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent_autopilot"
+      version: 0.1.0
+      namespace: "{{ k8s_default_namespace }}"
+
+    - name: otel-collector
+      chart: "{{ helm_charts_dir }}/otelcol-github-actions"
+      version: 0.1.0
+      namespace: "otel-collector"
+      build_deps: true

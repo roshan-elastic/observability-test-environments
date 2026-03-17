@@ -1,0 +1,58 @@
+apm:
+{% if apm_apikey is defined and apm_apikey != "" %}
+  api_key: {{ apm_apikey }}
+{% elif apm_token is defined and apm_token != "" %}
+  secret_token: {{ apm_token }}
+{% endif %}
+#   # Custom arrays overwrite those defined in the values.yaml
+#   # In this case, `[default]` is overwritten for `[ns1, ns2]`
+  namespaces:
+    - {{ k8s_default_namespace }}
+webhookConfig:
+  agents:
+    java:
+      image: docker.elastic.co/observability/apm-agent-java:1.38.0
+      artifact: "/usr/agent/elastic-apm-agent.jar"
+      environment:
+        ELASTIC_APM_SERVER_URL: "{{ apm_url }}"
+        ELASTIC_APM_SERVER_URLS: "{{ apm_url }}"
+        ELASTIC_APM_JS_SERVER_URL: "{{ apm_url }}"
+        ELASTIC_APM_JS_BASE_SERVER_URL: "{{ apm_url }}"
+        ELASTIC_APM_LOG_LEVEL: "debug"
+        ELASTIC_APM_PROFILING_INFERRED_SPANS_ENABLED: "true"
+        ELASTIC_APM_SERVICE_VERSION: "{{ deploy_timestamp }} - {{ stack_version | default('') }}"
+        ELASTIC_APM_JS_BASE_SERVICE_VERSION: "{{ deploy_timestamp }} - {{ stack_version | default('') }}"
+        ELASTIC_APM_ENABLE_LOG_CORRELATION: "true"
+        ELASTIC_APM_VERIFY_SERVER_CERT: "{{ elastic_apm_verify_server_cert }}"
+        ELASTIC_APM_TRANSACTION_SAMPLE_RATE: "{{ opbeans_transaction_rate }}"
+    nodejs:
+      image: docker.elastic.co/observability/apm-agent-nodejs:3.46.0
+      artifact: "/opt/nodejs/node_modules/elastic-apm-node"
+      environment:
+        ELASTIC_APM_SERVER_URL: "{{ apm_url }}"
+        ELASTIC_APM_SERVER_URLS: "{{ apm_url }}"
+        ELASTIC_APM_JS_SERVER_URL: "{{ apm_url }}"
+        ELASTIC_APM_JS_BASE_SERVER_URL: "{{ apm_url }}"
+        ELASTIC_APM_LOG_LEVEL: "debug"
+        ELASTIC_APM_PROFILING_INFERRED_SPANS_ENABLED: "true"
+        ELASTIC_APM_SERVICE_VERSION: "{{ deploy_timestamp }} - {{ stack_version | default('') }}"
+        ELASTIC_APM_JS_BASE_SERVICE_VERSION: "{{ deploy_timestamp }} - {{ stack_version | default('') }}"
+        ELASTIC_APM_ENABLE_LOG_CORRELATION: "true"
+        ELASTIC_APM_VERIFY_SERVER_CERT: "{{ elastic_apm_verify_server_cert }}"
+        ELASTIC_APM_TRANSACTION_SAMPLE_RATE: "{{ opbeans_transaction_rate }}"
+    # Not supported yet
+    # dotnet:
+    #   image: docker.elastic.co/observability/apm-agent-dotnet:latest
+    #   artifact: "unknown"
+    #   environment:
+    #     ELASTIC_APM_SERVER_URL: "{{ apm_url }}"
+    #     ELASTIC_APM_SERVER_URLS: "{{ apm_url }}"
+    #     ELASTIC_APM_JS_SERVER_URL: "{{ apm_url }}"
+    #     ELASTIC_APM_JS_BASE_SERVER_URL: "{{ apm_url }}"
+    #     ELASTIC_APM_LOG_LEVEL: "debug"
+    #     ELASTIC_APM_PROFILING_INFERRED_SPANS_ENABLED: "true"
+    #     ELASTIC_APM_SERVICE_VERSION: "{{ deploy_timestamp }} - {{ stack_version | default('') }}"
+    #     ELASTIC_APM_JS_BASE_SERVICE_VERSION: "{{ deploy_timestamp }} - {{ stack_version | default('') }}"
+    #     ELASTIC_APM_ENABLE_LOG_CORRELATION: "true"
+    #     ELASTIC_APM_VERIFY_SERVER_CERT: "{{ elastic_apm_verify_server_cert }}"
+    #     ELASTIC_APM_TRANSACTION_SAMPLE_RATE: "{{ opbeans_transaction_rate }}"

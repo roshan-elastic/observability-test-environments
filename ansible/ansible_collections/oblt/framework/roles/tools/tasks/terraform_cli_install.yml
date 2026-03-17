@@ -1,0 +1,75 @@
+---
+- block:
+    - name: Create a directory tools folder
+      file:
+        path: "{{ bin_dir }}"
+        state: directory
+        mode: 0750
+      when:
+        - hermit_enabled is false
+
+    - name: Install Terraform CLI
+      vars:
+        version: "{{ terraform_version }}"
+        arch: "{{ ansible_system | lower }}"
+      unarchive:
+        src: "https://releases.hashicorp.com/terraform/{{ version }}/terraform_{{ version }}_{{ arch }}_amd64.zip"
+        dest: "{{ bin_dir }}"
+        remote_src: yes
+        mode: 0770
+      when:
+        - hermit_enabled is false
+
+    - name: Build/Install Elastic Terraform provider snapshot
+      shell: |
+        #!/usr/bin/env bash
+
+        set -eu
+
+        GO_VERSION=1.16.4
+        eval $(gvm ${GO_VERSION})
+
+        cd "{{ build_dir }}"
+        git clone git@github.com:elastic/terraform-provider-ec.git
+        cd terraform-provider-ec
+        make install
+
+        grep const "{{ build_dir }}/terraform-provider-ec/ec/version.go"|cut -d "=" -f 2|tr -d ' "'|cut -d '-' -f 1 > {{ build_dir }}/.tf_provider_version
+        rm -fr "{{ build_dir }}/terraform-provider-ec"
+      when:
+        - build_tf_provider_from_src
+
+    - block:
+        - name: Install Elastic Terraform provider snapshot
+          shell: |
+            #!/usr/bin/env bash
+            set -eu
+            cd ${HOME}
+            gsutil cp gs://oblt-clusters/tools/terraform_plugins.tar.gz terraform_plugins.tar.gz
+            tar -xzf terraform_plugins.tar.gz
+      when:
+        - use_snapshot_tf_provider
+  when:
+    - hermit_enabled is false
+  tags:
+    - terraform
+    - cli
+    - molecule-idempotence-notest
+
+- name: Set Elastic Terraform provider version (snapshot)
+  set_fact:
+    ess_terraform_version: "{{ lookup('file', build_dir + '/.tf_provider_version') | trim | default(ess_terraform_version, true) }}"
+  when:
+    - build_tf_provider_from_src
+
+- name: Check tools installed - Terraform
+  changed_when: false
+  command: terraform version
+
+- name: Set terraform installed
+  file:
+    path: "{{ bin_dir }}/terraform_installed"
+    state: touch
+  tags:
+    - terraform
+    - cli

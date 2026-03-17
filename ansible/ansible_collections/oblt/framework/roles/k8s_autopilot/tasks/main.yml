@@ -1,0 +1,36 @@
+---
+- block:
+  - name: Create cluster
+    block:
+      - name: Create Autopilot cluster
+        import_tasks: create.yml
+
+      - name: Get Cluster credentials
+        import_role:
+          name: k8s_gcp
+          tasks_from: cluster_credentials.yml
+
+      - name: Set Default Context
+        import_role:
+          name: k8s_common
+          tasks_from: set_default_context.yml
+
+      - name: Create namespaces
+        import_role:
+          name: k8s_common
+          tasks_from: create_default_namespace.yml
+
+      - name: Set default resources limits
+        import_tasks: set_default_resources_limits.yml
+    rescue:
+      - name: Destroy cluster
+        import_tasks: destroy.yml
+      - name: Fail Deploying
+        fail:
+          msg: "Cluster deploy failed"
+
+  - name: Get loadbalancer IP
+    import_tasks: get_ingress_available.yml
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'autopilot'

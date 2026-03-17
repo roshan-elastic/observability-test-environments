@@ -1,0 +1,47 @@
+---
+- name: restore private key
+  vars:
+    gcsm_cluster_state: "{{ cluster_state | from_yaml }}"
+  ansible.builtin.set_fact:
+    private_key: "{{ gcsm_cluster_state.private_key | default('') }}"
+    public_key: "{{ gcsm_cluster_state.public_key | default('') }}"
+  tags:
+    - molecule-idempotence-notest
+
+- name: Save private key
+  ansible.builtin.copy:
+    content: "{{ private_key }}"
+    dest: "{{ private_key_file }}"
+  when:
+    - private_key | length > 0
+  tags:
+    - molecule-idempotence-notest
+
+- name: Save public key
+  ansible.builtin.copy:
+    content: "{{ public_key }}"
+    dest: "{{ private_key_file }}.pub"
+  when:
+    - private_key | length > 0
+  tags:
+    - molecule-idempotence-notest
+
+- name: Create Key pair
+  community.crypto.openssh_keypair:
+    path: "{{ private_key_file }}"
+    force: true
+    type: rsa
+    size: 2048
+  when:
+    - private_key | length == 0
+  tags:
+    - molecule-idempotence-notest
+
+- name: Load private key
+  ansible.builtin.set_fact:
+    private_key: "{{ lookup('file', private_key_file) }}"
+    public_key: "{{ lookup('file', private_key_file + '.pub') }}"
+  when:
+    - private_key | length == 0
+  tags:
+    - molecule-idempotence-notest

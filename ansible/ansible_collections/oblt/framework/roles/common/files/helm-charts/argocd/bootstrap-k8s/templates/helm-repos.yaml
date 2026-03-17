@@ -1,0 +1,192 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bitnami
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: bitnami
+  url: https://charts.bitnami.com/bitnami
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elastic
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: elastic
+  url: https://helm.elastic.co
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elastic-dev
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: elastic-dev
+  url: https://helm-dev.elastic.co
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jetstack
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: jetstack
+  url: https://charts.jetstack.io
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stable
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: stable
+  url: https://charts.helm.sh/stable
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: grafana
+  url: https://grafana.github.io/helm-charts
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-community
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: prometheus-community
+  url: https://prometheus-community.github.io/helm-charts
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kube-state-metrics
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: kube-state-metrics
+  url: https://kubernetes.github.io/kube-state-metrics
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: ingress-nginx
+  url: https://kubernetes.github.io/ingress-nginx
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkinsci
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: jenkinsci
+  url: https://charts.jenkins.io
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vmware-tanzu
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: vmware-tanzu
+  url: https://vmware-tanzu.github.io/helm-charts
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: open-telemetry
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: open-telemetry
+  url: https://open-telemetry.github.io/opentelemetry-helm-charts
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: strimzi
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: strimzi
+  url: https://strimzi.io/charts/
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: argo
+  url: https://argoproj.github.io/argo-helm
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: crossplane-stable
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: crossplane-stable
+  url: https://charts.crossplane.io/stable
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: external-secrets
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: external-secrets
+  url: https://charts.external-secrets.io
+  type: helm

@@ -1,0 +1,31 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.common
+  tasks:
+    - name: "Check observability loaded"
+      fail:
+        msg: |
+          Observability is not loaded
+          observability_apm_token: {{ observability_apm_token }}
+          observability_apm_url: {{ observability_apm_url }}
+          observability_deployment_id: {{ observability_deployment_id }}
+          observability_es_password: {{ observability_es_password }}
+          observability_es_url: {{ observability_es_url }}
+          observability_es_username: {{ observability_es_username }}
+      when: >
+        observability_enabled or
+        observability_apm_token is defined or
+        observability_apm_url is defined or
+        observability_deployment_id is defined or
+        observability_es_password is defined or
+        observability_es_url is defined or
+        observability_es_username is defined

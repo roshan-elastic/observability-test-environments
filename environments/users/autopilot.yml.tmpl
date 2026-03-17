@@ -1,0 +1,71 @@
+# last update {{ .Date }}
+template_name: autopilot
+template_description: |
+  Deploy The Elastic Stack on ESS and GKE Autopilot clusters to test the Elastic Agent on it.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#autopilot)
+
+cluster_name: "{{ .ClusterName }}"
+slack_channel: "{{ .SlackChannel }}"
+configure_external_snapshots_repo_ro: true
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+oblt_username: "{{ $username }}"
+#{{- if .AutopilotVersion }}
+k8s_autopilot_version: "{{ .AutopilotVersion }}"
+#{{- end }}
+#{{- if .AutopilotChannel }}
+k8s_autopilot_channel: "{{ .AutopilotChannel }}"
+#{{- end }}
+
+expire_date: '{{ now | mustDateModify "+720h" | date "2006-01-02" }}'
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ `{{ deployment_dir }}/bootstrap-fleet` }}"
+
+k8s:
+  provider: autopilot
+  ingress: false
+  certmanager: false
+
+stack:
+  version: "{{ .StackVersion }}"
+  mode: ess
+  template: observability
+  target: production
+  observability: true
+  ess:
+#{{- if .ElasticsearchDockerImage }}
+    elasticsearch:
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- if .KibanaDockerImage }}
+    kibana:
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .ElasticAgentDockerImage }}
+    integrations:
+      image: "{{ .ElasticAgentDockerImage }}"
+#{{- end }}
+
+apps:
+  helm:
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ `{{ kube_state_metrics_version }}` }}"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+      #{{- if eq .DeployMode "standalone" }}
+    - name: kubernetes-integration
+      values_file: "{{ `{{ helm_deployment_dir }}/elastic_agent/autopilot_standalone/helm-values.yml.j2` }}"
+      chart: "{{ `{{ helm_charts_dir }}/elastic_agent_autopilot` }}"
+      version: 0.1.0
+      #{{ else }}
+    - name: kubernetes-integration
+      values_file: "{{ `{{ helm_deployment_dir }}/elastic_agent/autopilot_managed/helm-values.yml.j2` }}"
+      chart: "{{ `{{ helm_charts_dir }}/elastic_agent_autopilot` }}"
+      version: 0.1.0
+#{{- end }}

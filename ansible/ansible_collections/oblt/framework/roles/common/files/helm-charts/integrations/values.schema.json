@@ -1,0 +1,229 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "replicaCount": {
+            "type": "number",
+            "description": "number of replicas to deploy.",
+            "default": 1
+        },
+        "stackVersion": {
+            "type": "string",
+            "description": "Elastic Stack version to use.",
+            "default": "8.7.0"
+        },
+        "kibana": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "Kibana host to connect to.",
+                    "default": "http://kibana:5601"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Kibana username to use.",
+                    "default": "elastic"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Kibana password to use.",
+                    "default": "changeme"
+                }
+            }
+        },
+        "fleet": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "Fleet Server host to connect to.",
+                    "default": "http://fleet-server:8220"
+                },
+                "policy": {
+                    "type": "string",
+                    "description": "Fleet Server policy to configure the integration.",
+                    "default": "Default Integration"
+                }
+            }
+        },
+        "elasticAgent": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the Elastic Agent.",
+                    "default": true
+                }
+            }
+        },
+        "workspace": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the workspace.",
+                    "default": true
+                }
+            }
+        },
+        "packageRegistry": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the package registry.",
+                    "default": true
+                }
+            }
+        },
+        "integration": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "name of the integration.",
+                    "default": "system"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "version/branch of the integration.",
+                    "default": "main"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "type": "array",
+            "description": "list of imagePullSecrets to use.",
+            "default": [],
+            "items": {}
+        },
+        "nameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `elastic-agent`.",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `elastic-agent`.",
+            "default": ""
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a service account should be created",
+                    "default": true
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Annotations to add to the service account",
+                    "default": {}
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the service account to use. If not set and create is true, a name is generated using the fullname template",
+                    "default": ""
+                }
+            }
+        },
+        "labels": {
+            "type": "object",
+            "description": "",
+            "default": {}
+        },
+        "resources": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "",
+                            "default": "1Gi"
+                        }
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "number",
+                            "description": "",
+                            "default": 0.1
+                        },
+                        "memory": {
+                            "type": "string",
+                            "description": "",
+                            "default": "500Mi"
+                        }
+                    }
+                }
+            }
+        },
+        "nodeSelector": {
+            "type": "object",
+            "description": "",
+            "default": {}
+        },
+        "tolerations": {
+            "type": "array",
+            "description": "Configurable [tolerations](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).",
+            "default": [],
+            "items": {}
+        },
+        "affinity": {
+            "type": "object",
+            "description": "",
+            "default": {}
+        },
+        "extraEnvs": {
+            "type": "array",
+            "description": "Additional environment variables for pods.",
+            "default": [],
+            "items": {}
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Service type",
+                    "default": "ClusterIP"
+                },
+                "port": {
+                    "type": "number",
+                    "description": "Service port",
+                    "default": 8080
+                }
+            }
+        },
+        "ingress": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the ingress resource.",
+                    "default": false
+                },
+                "certificateIssuer": {
+                    "type": "string",
+                    "description": "Name of the certificates issuer.",
+                    "default": "letsencrypt-stage"
+                },
+                "host": {
+                    "type": "string",
+                    "description": "Hostname exposed by the ingress resource.",
+                    "default": "package-registry.127.0.0.1.ip.es.io"
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Additional annotation to the ingress resource.",
+                    "default": {}
+                }
+            }
+        }
+    }
+}

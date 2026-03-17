@@ -1,0 +1,69 @@
+---
+- name: Create k8s cluster
+  block:
+    - name: Check tools installed
+      command: "{{ item.cmd }}"
+      changed_when: false
+      loop:
+        - cmd: "openssl version"
+        - cmd: "kubectl version --client=true"
+
+    - name: Copy files
+      include_tasks: copy_files.yml
+
+    - name: Create k8s cluster
+      include_role:
+        name: oblt.framework.k8s_gcp
+      when:
+        - k8s_provider == 'gcp'
+
+    - name: Create k8s cluster
+      include_role:
+        name: oblt.framework.k8s_autopilot
+      when:
+        - k8s_provider == 'autopilot'
+
+    - name: Create k8s cluster
+      include_role:
+        name: oblt.framework.k8s_kind
+      when:
+        - k8s_provider == 'kind'
+
+    - name: Docker secrets
+      include_tasks: docker_secrets.yml
+
+    - block:
+      - name: Import role k8s_helm
+        include_role:
+          name: oblt.framework.k8s_helm
+
+      - name: Import role k8s_ingress
+        include_role:
+          name: oblt.framework.k8s_ingress
+
+      - name: Import role k8s_certmanager
+        include_role:
+          name: oblt.framework.k8s_certmanager
+      when:
+        - k8s_enabled|bool
+
+  rescue:
+    - name: Destroy k8s cluster
+      include_role:
+        name: oblt.framework.k8s_gcp
+        tasks_from: destroy_cluster.yml
+      when:
+        - k8s_provider == 'gcp'
+
+    - name: Destroy k8s cluster
+      include_role:
+        name: oblt.framework.k8s_kind
+        tasks_from: destroy_cluster.yml
+      when:
+        - k8s_provider == 'kind'
+
+    - name: Fail Deploying
+      fail:
+        msg: "Cluster deploy failed"
+  when:
+    - k8s_enabled|bool

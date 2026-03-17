@@ -1,0 +1,14 @@
+---
+- name: Destroy GKE Autopilot cluster
+  import_role:
+    name: k8s_gcp
+    tasks_from: destroy_cluster.yml
+
+- name: Delete static IP
+  import_role:
+    name: k8s_gcp
+    tasks_from: delete_static_ip.yml
+  when:
+    - destroy_cluster
+    - k8s_enabled|bool
+    - gke_create_cluster

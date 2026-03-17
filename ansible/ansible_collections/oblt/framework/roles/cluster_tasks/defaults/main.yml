@@ -1,0 +1,7 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section Cluster Tasks
+## @param templates_dir [string] The directory where the templates are stored
+templates_dir: "{{ role_path }}/templates"
+## @param build_dir [string] The directory where the build is stored
+build_dir: "{{ lookup('env','BUILD_DIR') | default(playbook_dir + '/build', true) }}"

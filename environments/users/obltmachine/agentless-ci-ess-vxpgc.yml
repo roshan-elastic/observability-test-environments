@@ -1,0 +1,29 @@
+cluster_name: agentless-ci-ess-vxpgc
+configure_external_snapshots_repo_ro: true
+create_users: true
+expire_date: "2024-08-09"
+gitops:
+    enabled: "false"
+oblt_username: obltmachine
+slack_channel: '#observablt-bots'
+stack:
+    ess:
+        autoscale: "true"
+        elasticsearch:
+            image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.16.0-SNAPSHOT
+            zones: "2"
+        integrations:
+            image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.16.0-SNAPSHOT
+            zones: "1"
+        kibana:
+            image: docker.elastic.co/observability-ci/kibana-cloud:8.16.0-SNAPSHOT
+            zones: "1"
+    mode: ess
+    observability: true
+    target: production
+    template: observability
+    version: 8.16.0-SNAPSHOT
+template_description: |
+    Elastic Cloud (ESS) template configure a oblt cluster that runs on ESS dev region on production.
+    For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#ess)
+template_name: ess

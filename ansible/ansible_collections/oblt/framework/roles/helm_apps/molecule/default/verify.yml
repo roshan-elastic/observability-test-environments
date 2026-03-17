@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.common
+  tasks:
+    - name: Search for Deployments
+      k8s_info:
+        kind: Deployment
+        namespace: "{{ k8s_default_namespace }}"
+      register: deployments_list
+
+    - name: Check Deployments
+      fail:
+        msg: "Deployment {{ item.metadata.name }} failed."
+      when:
+        - item.status.availableReplicas == 0
+      loop: "{{ deployments_list.resources }}"

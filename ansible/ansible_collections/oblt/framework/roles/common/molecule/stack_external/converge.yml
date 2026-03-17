@@ -1,0 +1,41 @@
+---
+- name: Converge
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  environment:
+    HOME: "{{ build_dir }}"
+    PATH: "{{ build_dir }}/bin:{{ lookup('env','PATH') }}"
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/cluster-config.yml"
+  roles:
+    - role: oblt.framework.common
+  tasks:
+    - name: Check value
+      fail:
+        msg: |
+          elasticsearch_url: {{ elasticsearch_url | default('Empty')}}
+          elasticsearch_username: {{ elasticsearch_username | default('Empty')}}
+          elasticsearch_password: {{ elasticsearch_password | default('Empty')}}
+          kibana_url: {{ kibana_url | default('Empty')}}
+          kibana_username: {{ kibana_username | default('Empty')}}
+          kibana_password: {{ kibana_password | default('Empty')}}
+          apm_url: {{ apm_url | default('Empty')}}
+          apm_token: {{ apm_token | default('Empty')}}
+      when: >
+        elasticsearch_url is not defined or
+        elasticsearch_username is not defined or
+        elasticsearch_password is not defined or
+        kibana_url is not defined or
+        kibana_username is not defined or
+        kibana_password is not defined or
+        apm_url is not defined or
+        (apm_token is not defined and apm_apikey is not defined ) or
+        elasticsearch_url | length == 0 or
+        elasticsearch_username | length == 0 or
+        elasticsearch_password | length == 0 or
+        kibana_url | length == 0 or
+        kibana_username | length == 0 or
+        kibana_password | length == 0 or
+        apm_url | length == 0 or
+        (apm_token | length == 0 and apm_apikey | length == 0)

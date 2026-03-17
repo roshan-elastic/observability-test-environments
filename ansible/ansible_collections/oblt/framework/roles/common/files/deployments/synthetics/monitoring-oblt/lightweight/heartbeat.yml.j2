@@ -1,0 +1,47 @@
+heartbeat.monitors:
+{% if synthetics_monitors_params.APM_URL %}
+- type: http
+  name: {{ synthetics_monitor_id }} - APM_Health
+  id: {{ synthetics_monitor_id }}-apm-health
+  schedule: '@every 60s'
+  urls: ["{{ synthetics_monitors_params.APM_URL }}"]
+{% endif %}
+{% if synthetics_monitors_params.ELASTICSEARCH_URL %}
+- type: http
+  name: {{ synthetics_monitor_id }} - Elasticsearch_Health
+  id: {{ synthetics_monitor_id }}-elasticsearch-health
+  schedule: '@every 60s'
+  urls: ["{{ synthetics_monitors_params.ELASTICSEARCH_URL }}/_cluster/health?wait_for_status=yellow"]
+  check.response.body.negative: ["\"status\":\"red\""]
+  check.response.status: [200]
+  tags: ["o11y"]
+  username: {{ synthetics_monitors_params.KIBANA_USERNAME }}
+  password: {{ synthetics_monitors_params.KIBANA_PASSWORD }}
+  locations:
+    - japan
+    - us_west
+    - us_east
+- type: icmp
+  id: {{ synthetics_monitor_id }}-icmp-ES
+  name: {{ synthetics_monitor_id }} icmp-ES
+  schedule: '@every 60s'
+  hosts: ["{{ synthetics_monitors_params.ELASTICSEARCH_URL }}"]
+- type: tcp
+  id: {{ synthetics_monitor_id }}-tcp-ES
+  name: {{ synthetics_monitor_id }} tcp-ES
+  schedule: '@every 60s'
+  hosts: ["{{ synthetics_monitors_params.ELASTICSEARCH_URL }}"]
+  check.send: "Check"
+  check.receive: "Check"
+{% endif %}
+{% if synthetics_monitors_params.KIBANA_URL %}
+- type: http
+  name: {{ synthetics_monitor_id }} - Kibana_Health
+  id: {{ synthetics_monitor_id }}-kibana-health
+  schedule: '@every 60s'
+  urls: ["{{ synthetics_monitors_params.KIBANA_URL }}/login"]
+  locations:
+    - japan
+    - us_west
+    - us_east
+{% endif %}

@@ -1,0 +1,112 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+project_name: oblt-cli
+before:
+  hooks:
+    - go mod tidy
+    - ./scripts/completions.sh
+    - ./scripts/manpages.sh
+
+archives:
+  - files:
+      - completions/*
+      - manpages/*
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: windows
+        goarch: 386
+      - goos: linux
+        goarch: 386
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+dockers:
+  - image_templates:
+      - "docker.elastic.co/observability-ci/{{.ProjectName}}:{{ .Tag }}-amd64"
+    build_flag_templates:
+      - "--pull"
+      - "--no-cache"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/amd64"
+    goos: linux
+    goarch: amd64
+    use: buildx
+    extra_files:
+      - static/known_hosts
+  - image_templates:
+      - "docker.elastic.co/observability-ci/{{.ProjectName}}:{{ .Tag }}-arm64"
+    build_flag_templates:
+      - "--pull"
+      - "--no-cache"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/arm64"
+    goos: linux
+    goarch: arm64
+    use: buildx
+    extra_files:
+      - static/known_hosts
+
+docker_manifests:
+  - name_template: 'docker.elastic.co/observability-ci/{{.ProjectName}}:{{ .Tag }}'
+    image_templates:
+      - 'docker.elastic.co/observability-ci/{{.ProjectName}}:{{ .Tag }}-amd64'
+      - 'docker.elastic.co/observability-ci/{{.ProjectName}}:{{ .Tag }}-arm64'
+  - name_template: 'docker.elastic.co/observability-ci/{{.ProjectName}}:latest'
+    image_templates:
+      - 'docker.elastic.co/observability-ci/{{.ProjectName}}:{{ .Tag }}-amd64'
+      - 'docker.elastic.co/observability-ci/{{.ProjectName}}:{{ .Tag }}-arm64'
+
+brews:
+  - name: oblt-cli
+    folder: Formula
+    repository:
+      owner: elastic
+      name: homebrew-oblt-cli
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    homepage: "https://ela.st/oblt-cli"
+    description: 'The oblt-cli tool is a multi-purpose tools for Observability team needs.'
+    license: 'Apache-2.0'
+    test: |
+      system "#{bin}/oblt-cli version --disable-banner"
+    download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
+    custom_require: ./scripts/custom_download_strategy.rb
+    install: |-
+      bin.install "oblt-cli"
+      bash_completion.install "completions/oblt-cli.bash" => "oblt-cli"
+      zsh_completion.install "completions/oblt-cli.zsh" => "_oblt-cli"
+      fish_completion.install "completions/oblt-cli.fish"
+      man1.install "manpages/oblt-cli.1.gz"
+
+# creates SBOMs of all archives and the source tarball using syft
+# https://goreleaser.com/customization/sbom
+sboms:
+  - artifacts: archive

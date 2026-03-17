@@ -1,0 +1,5 @@
+---
+# yaml-language-server: $schema=../schema.json
+## @section General
+## @param k8s_apps [array] List of K8s apps to install
+k8s_apps: "{{ (apps is defined and apps.k8s) | default([], true) }}"

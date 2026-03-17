@@ -1,0 +1,64 @@
+---
+# last update {{ .Date }}
+template_name: ccs
+template_description: |
+  Cross Cluster Search (CCS) template configures a oblt cluster that has a remote cluster configured for CCS.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#ccs)
+
+cluster_name: "{{ .ClusterName }}"
+slack_channel: "{{ .SlackChannel }}"
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+oblt_username: "{{ $username }}"
+#{{- if .EphemeralCluster }}
+ephemeral_cluster: "{{ .EphemeralCluster }}"
+#{{- end }}
+#{{- $target := "production" }}
+#{{- if .Target }}
+#{{ $target = .Target }}
+#{{- end }}
+#{{- $trustedOrg := "2001152763" }}
+#{{- if .TrustedOrg }}
+#{{ $trustedOrg = .TrustedOrg }}
+#{{- end }}
+
+create_users: true
+configure_external_snapshots_repo_ro: true
+expire_date: '{{ now | mustDateModify "+720h" | date "2006-01-02" }}'
+
+stack:
+  version: "{{ .StackVersion }}"
+  mode: ess
+  template: elasticsearch
+  target: "{{ $target }}"
+  observability: true
+  ess:
+    trusted_org: "{{ $trustedOrg }}"
+    elasticsearch:
+      ccs_remote_cluster: "{{ .RemoteClusterName }}"
+#{{- if .ElasticsearchDockerImage }}
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+
+gitops:
+  enabled: "{{ .GitOps }}"
+#{{- if .GitHubCommit }}
+  commit: "{{ .GitHubCommit }}"
+#{{- end }}
+#{{- if .GitHubIssue }}
+  issue: "{{ .GitHubIssue }}"
+#{{- end }}
+#{{- if .GitHubPullRequest }}
+  pull_request: "{{ .GitHubPullRequest }}"
+#{{- end }}
+#{{- if .GitHubRepository }}
+  repository: "{{ .GitHubRepository }}"
+#{{- end }}
+#{{- if .GitHubCommentId }}
+  comment_id: "{{ .GitHubCommentId }}"
+#{{- end }}

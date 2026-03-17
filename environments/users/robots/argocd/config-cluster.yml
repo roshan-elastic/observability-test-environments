@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: argocd
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+
+k8s:
+  provider: gcp
+  machine_type: e2-highcpu-4
+  max_node_count: 40
+  certificate_issuer: letsencrypt-prod
+  static_ip: true
+  ingress: false
+  certmanager: false
+
+apps:
+  helm:
+    # https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd
+    # TODO think about use argo-core https://argo-cd.readthedocs.io/en/latest/operator-manual/core/
+    # alternative helm chart https://github.com/bitnami/charts/tree/main/bitnami/argo-cd/#installing-the-chart
+    - name: argocd
+      values_file: "{{ helm_deployment_dir }}/argocd/helm-values.yml"
+      chart: "argo/argo-cd"
+      version: 5.51.4
+      namespace: argocd
+      extra_args: "--create-namespace"
+    - name: "bootstrap-k8s"
+      #values_file: "{{ helm_charts_dir }}/argocd/bootstrap-k8s/values.yaml"
+      chart: "{{ helm_charts_dir }}/argocd/bootstrap-k8s"
+      version: 0.1.0
+      namespace: argocd

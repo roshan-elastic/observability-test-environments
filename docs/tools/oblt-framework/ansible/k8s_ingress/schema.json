@@ -1,0 +1,26 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "ingress_dir": {
+            "type": "string",
+            "description": "The directory where the ingress deploy files are stored",
+            "default": "\"\""
+        },
+        "password_apr1": {
+            "type": "string",
+            "description": "The password hash for the ingress, it is generated with the password_plaintext value.",
+            "default": "\"\""
+        },
+        "ingress_version_default": {
+            "type": "string",
+            "description": "The default version for the ingress",
+            "default": "\"\""
+        },
+        "ingress_version": {
+            "type": "string",
+            "description": "The version for the ingress",
+            "default": "\"\""
+        }
+    }
+}

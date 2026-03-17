@@ -1,0 +1,20 @@
+opbeans:
+  apm:
+    enabled: {{ (opbeans_apm_enabled | default(true)) | bool }}
+    url: "{{ apm_url }}"
+{% if apm_apikey is defined and apm_apikey != "" %}
+    apikey: "{{ apm_apikey }}"
+{% elif apm_token is defined and apm_token != "" %}
+    token: "{{ apm_token }}"
+{% endif %}
+    environment: opbeans
+    serviceName: "{{ helm_chart.name }}"
+# dotnet-frontend configures the ingress and the loadgen.
+  ingress:
+    enabled: false
+  loadgen:
+    enabled: false
+  annotations:
+    deployed-at: "{{ deploy_timestamp | replace(':','')| replace(' ','_') }}"
+  serviceAccount:
+    name: {{ helm_chart.name }}-{{ cluster_hash }}

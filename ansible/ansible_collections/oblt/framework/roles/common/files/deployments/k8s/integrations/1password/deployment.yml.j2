@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 1password-integration
+  namespace: "default"
+  labels:
+    app: 1password-integration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: 1password-integration
+  template:
+    metadata:
+      labels:
+        app: 1password-integration
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: docker.elastic.co
+      volumes:
+        - name: shared-data
+          emptyDir: {}
+      containers:
+        - name: dind
+          image: docker.elastic.co/observability-ci/dind-buildx:integrations
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          command:
+            - dockerd
+          args:
+            - -H tcp://localhost:2375
+            - -H unix:///var/run/docker.sock
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+        - name: elastic-agent
+          image: "docker.elastic.co/observability-ci/elastic-agent:{{ stack_version }}"
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+            - name: FLEET_ENROLL
+              value: "1"
+            - name: FLEET_INSECURE
+              value: "true"
+            - name: FLEET_TOKEN_POLICY_NAME
+              value: "1Password integration"
+            - name: KIBANA_HOST
+              value: "{{ kibana_url }}"
+            - name: KIBANA_FLEET_USERNAME
+              value: "{{ kibana_username }}"
+            - name: KIBANA_FLEET_PASSWORD
+              value: "{{ kibana_password }}"
+            - name: FLEET_URL
+              value: "{{ fleet_url }}"
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+        - name: 1password
+          image: docker.elastic.co/observability-ci/dind-buildx:integrations
+          command:
+            - "/run-integration.sh"
+          args:
+            - "main"
+            - "1password"
+            - "8080"
+          env:
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/shared/data
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi

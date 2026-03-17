@@ -1,0 +1,174 @@
+---
+name: Oblt Cluster destroy custom Kibana Serverless(issue)
+
+on:
+  issues:
+    types:
+      - edited
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+
+# Avoid running if there is already an on-going action running for the same
+# GitHub issue
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.issue.number }}"
+
+env:
+  JOB_LOGS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+  OBLT_CLI_USER: "deploykibana"
+jobs:
+  # Read GitHub issue form, generate the required outputs to be consumed later on and
+  # validate whether the given ref refers to an external pull request
+  # since it's not supported for security reasons.
+  prepare_context:
+    if: contains(github.event.issue.labels.*.name, 'destroy-custom-kibana-serverless')
+    runs-on: ubuntu-latest
+    outputs:
+      continue: ${{ steps.block-pr-external-contributor.outputs.continue }}
+      kibana-pullrequest: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+
+      # Use https://github.com/stefanbuck/github-issue-parser/releases/tag/v3.0.1
+      - name: Parse GitHub issue form
+        uses: stefanbuck/github-issue-parser@c1a559d78bfb8dd05216dab9ffd2b91082ff5324
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/cluster-destroy-custom-kibana-serverless-issue.yaml
+
+      - name: Debug GitHub issue form (fetch content)
+        uses: actions/github-script@v7
+        env:
+          ISSUE_CONTENT: ${{ steps.issue-parser.outputs.jsonString }}
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const issueFilePath = path.join(process.env.GITHUB_WORKSPACE, 'issue.json')
+            const issue = fs.writeFileSync(issueFilePath, process.env.ISSUE_CONTENT)
+            core.info(`Wrote issue to ${issueFilePath}`)
+            core.debug(issue)
+
+      - id: is_elastic_pr_author
+        uses: elastic/apm-pipeline-library/.github/actions/is-pr-author-member-elastic-org@current
+        with:
+          pull-request: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+          repository: "elastic/kibana"
+          token: ${{ secrets.IS_MEMBER_GITHUB_TOKEN }}
+
+      # https://github.com/cli/cli/issues/8102 we can use closed
+      - id: is_pr_closed
+        run: echo "result=$(gh pr view ${{ env.PR }} --repo ${{ env.REPO }} --json closed --jq .closed)" >> "$GITHUB_OUTPUT"
+        env:
+          PR: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+          REPO: "elastic/kibana"
+          GH_TOKEN: ${{ secrets.IS_MEMBER_GITHUB_TOKEN }}
+
+      - name: Block - PR owned by external contributor
+        id: block-pr-external-contributor
+        uses: actions/github-script@v7
+        env:
+          IS_ELASTIC_PR_AUTHOR: ${{ steps.is_elastic_pr_author.outputs.result }}
+          IS_PR_CLOSED: ${{ steps.is_pr_closed.outputs.result }}
+        with:
+          script: core.setOutput('continue', (process.env.IS_PR_CLOSED == 'true' && process.env.IS_ELASTIC_PR_AUTHOR == 'true').toString())
+
+      - name: Notify - PR owned by external contributor
+        if: contains(steps.is_elastic_pr_author.outputs.result, 'false')
+        uses: peter-evans/close-issue@276d7966e389d888f011539a86c8920025ea0626
+        with:
+          comment: 🚫 This automation cannot operate PRs from external contributors. [${{ env.PR }}](${{ github.server_url }}/elastic/kibana/pull/${{ env.PR }}) ([logs](${{ env.JOB_LOGS }}))
+        env:
+          PR: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+
+      - name: Notify - PR still open
+        if: ${{ contains(steps.is_elastic_pr_author.outputs.result, 'true') && contains(steps.is_pr_closed.outputs.result, 'false') }}
+        uses: peter-evans/close-issue@276d7966e389d888f011539a86c8920025ea0626
+        with:
+          comment: 🚫 This automation cannot operate open PRs. [${{ env.PR }}](${{ github.server_url }}/elastic/kibana/pull/${{ env.PR }}) ([logs](${{ env.JOB_LOGS }}))
+        env:
+          PR: ${{ steps.issue-parser.outputs.issueparser_kibana_pullrequest }}
+
+  # NOTE: this is a workaround to list all the deployments for a given PR
+  # this will not be required as soon as we support
+  # https://github.com/elastic/observability-test-environments/pull/27135
+  list_pr_deployments:
+    needs: prepare_context
+    runs-on: ubuntu-latest
+    if: contains(needs.prepare_context.outputs.continue, 'true')
+    outputs:
+      matrix: ${{ steps.setup_matrix.outputs.matrix }}
+      continue: ${{ steps.setup_matrix.outputs.continue }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: setup_matrix
+        run: |
+          cd environments/users/${{ env.OBLT_CLI_USER }}
+          files=$(find . -type f | grep "${{ env.PR }}" | grep issue | sed 's#./##g' | sed 's#.yml##g' | tr '\n' ',' | sed 's/.$//')
+          echo "matrix=[\"${files//,/\",\"}\"]" >> "${GITHUB_OUTPUT}"
+          echo "$files"
+          if [ -z "$files" ] ; then
+            echo "continue=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "continue=true" >> "${GITHUB_OUTPUT}"
+          fi
+        env:
+          PR: ${{ needs.prepare_context.outputs.kibana-pullrequest }}
+
+  destroy:
+    needs: ["prepare_context", "list_pr_deployments"]
+    runs-on: ubuntu-latest
+    if: contains(needs.list_pr_deployments.outputs.continue, 'true')
+    strategy:
+      matrix:
+        cluster-name: ${{ fromJson(needs.list_pr_deployments.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+
+      - name: Destroy in serverless ☁️
+        uses: elastic/oblt-actions/oblt-cli/cluster-destroy@v1
+        with:
+          # NOTE: prefix for the cluster name can be found in
+          #       .github/workflows/cluster-deploy-custom-kibana-serverless-issue.yml
+          cluster-name: "${{ matrix.cluster-name }}"
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          username: ${{ env.OBLT_CLI_USER }}
+
+      - name: Notify - destroy on-going 🔜
+        uses: peter-evans/close-issue@276d7966e389d888f011539a86c8920025ea0626
+        with:
+          comment: '🔜 I am destroying your Kibana Serverless cluster since your [${{ env.PR }}](${{ github.server_url }}/elastic/kibana/pull/${{ env.PR }}) has been closed/merged. ([logs](${{ env.JOB_LOGS }})'
+        env:
+          PR: ${{ needs.prepare_context.outputs.kibana-pullrequest }}
+
+      - name: Notify - failure 💔
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            var message = '💔 Something went wrong with the destroying ([logs](${{ env.JOB_LOGS }}))'
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })
+
+  notify-if-not-found:
+    needs: ["prepare_context", "list_pr_deployments"]
+    runs-on: ubuntu-latest
+    if: contains(needs.list_pr_deployments.outputs.continue, 'false')
+    steps:
+      - name: Notify - PR doesn't have any running deployments
+        uses: peter-evans/close-issue@276d7966e389d888f011539a86c8920025ea0626
+        with:
+          comment: ⛔ There are no running deployments for [${{ env.PR }}](${{ github.server_url }}/elastic/kibana/pull/${{ env.PR }}) ([logs](${{ env.JOB_LOGS }}))
+        env:
+          PR: ${{ needs.prepare_context.outputs.kibana-pullrequest }}

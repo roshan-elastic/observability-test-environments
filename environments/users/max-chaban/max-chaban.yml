@@ -1,0 +1,8 @@
+---
+template_name: oblt-user
+template_description: |
+  This template stores the information about users it is not a cluster configuration file.
+cluster_name: "max-chaban"
+slack_channel: "@U07D4QM7LT0"
+oblt_username: "max-chaban"
+oblt_managed: false

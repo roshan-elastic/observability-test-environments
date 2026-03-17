@@ -1,0 +1,17 @@
+{{- if .Values.apm.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opbeans.fullname" .}}-apm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "opbeans.fullname" . }}-apm
+spec:
+  ports:
+  - protocol: TCP
+    port: {{ .Values.apm.service.port }}
+    targetPort: {{ .Values.apm.service.port }}
+  selector:
+    service: {{ include "opbeans.fullname" . }}-apm
+{{- end -}}

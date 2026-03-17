@@ -1,0 +1,18 @@
+---
+# https://cert-manager.io/docs/troubleshooting/webhook/#error-io-timeout-connectivity-issue
+# Autopilot fixes
+# https://github.com/cert-manager/cert-manager/issues/4646#issuecomment-1023741490
+# https://github.com/cert-manager/cert-manager/issues/3717#issuecomment-931567578
+cert-manager:
+  global:
+    leaderElection:
+      namespace: "{{ k8s_default_namespace }}"
+  ingressShim:
+    defaultIssuerName: "{{ certificate_issuer }}"
+
+startupapicheck:
+  timeout: 5m
+installCRDs: true
+webhook:
+  hostNetwork: true
+  securePort: 10260

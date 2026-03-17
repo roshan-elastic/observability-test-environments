@@ -1,0 +1,53 @@
+---
+# last update 2024-08-08T09:23:12+0200
+template_name: ess-overview
+template_description: |
+  This template is used to create an overview cluster connected to every overview cluster in the cloud test first region.
+  Parameters:
+    - ClusterName: Name for the new oblt cluster (automatic).
+    - StackVersion: Elastic Stack version used for the new cluster.
+    - SlackChannel: SlackChannel name or Slack member ID to send the credentials of the cluster (#my-channel, @MIDNUM)(automatic)
+    - ElasticsearchDockerImage: Docker image to use for Elasticsearch. This version should be the same build of the remote cluster if the version is an SNAPSHOT(Optional).
+  Usage:
+    oblt-cli cluster create custom \
+        --template ess-overview \
+        --parameters '{"StackVersion":"8.7.0"}'
+    oblt-cli cluster create custom \
+        --template ess-overview \
+        --parameters '{"StackVersion":"8.7.0", "ElasticsearchDockerImage":"docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.7.0-16046737"}'
+
+cluster_name: "ess-overview-hcpim"
+slack_channel: "@UJB8TLFSL"
+#
+#
+#
+#
+#
+oblt_username: "dgieselaar"
+
+create_users: true
+configure_external_snapshots_repo_ro: true
+expire_date: '2024-09-07'
+
+remote_cluster_configure: true
+remote_clusters:
+  - host: 74dffda89b14239fdfd1060fec34e5e7.us-east-1.aws.found.io
+    port: 9400
+    name: metrics-us-east-1
+  - host: 738d8b1b03f54448a8051007ea0bfade.us-central1.gcp.cloud.es.io
+    port: 9400
+    name: logging-gcp-us-central1
+  - host: a757d7df5a524982834630392b1918d7.us-central1.gcp.cloud.es.io
+    port: 9400
+    name: metrics-gcp-us-central1
+  - host: fe482248f1c6b4ecc1cd40d7cbea8249.us-east-1.aws.found.io
+    port: 9400
+    name: logging-us-east-1
+
+stack:
+  version: "8.15.0"
+  mode: ess
+  template: elasticsearch
+  target: production
+  observability: true
+#

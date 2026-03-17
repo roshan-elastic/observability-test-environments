@@ -1,0 +1,18 @@
+---
+- name: Create a GCP folder
+  ansible.builtin.file:
+    path: "{{ k8s_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Set default resources limits
+  template:
+    src: "k8s/default-resources-request.yml.j2"
+    dest: "{{ k8s_dir }}/default-resources-request.yml"
+    mode: 0644
+
+- name: Create Resource limits
+  kubernetes.core.k8s:
+    state: present
+    kind: LimitRange
+    src: "{{ k8s_dir }}/default-resources-request.yml"

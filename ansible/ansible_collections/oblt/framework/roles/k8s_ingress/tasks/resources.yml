@@ -1,0 +1,10 @@
+---
+- name: Create secrets
+  kubernetes.core.k8s:
+    state: present
+    kind: Secret
+    namespace: "{{ k8s_default_namespace }}"
+    src: "{{ ingress_dir }}/ingress-secret.yaml"
+  tags:
+    - ingress
+    - deploy

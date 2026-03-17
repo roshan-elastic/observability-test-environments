@@ -1,0 +1,72 @@
+# last update {{ .Date }}
+template_name: stateless
+template_description: |
+  Stateless simulation deployment.
+  Parameters:
+    - ClusterName: Name for the new oblt cluster (automatic).
+    - StackVersion: Elastic Stack version used for the new cluster.
+    - SlackChannel: SlackChannel name or Slack member ID to send the credentials of the cluster (#my-channel, @MIDNUM)(automatic)
+    - WorstCaseScenario: True to set the worst scenario settings on Elasticsearch (by default false).
+    - OnlyElasticsearch: True to only deploy Elasticsearch (by default false).
+    - ElasticsearchDockerImage: Docker image to use for Elasticsearch. This version should be the same build of the remote cluster if the version is an SNAPSHOT(Optional).
+    - KibanaDockerImage: Docker image to use for Kibana. This version should be the same build of the remote cluster if the version is an SNAPSHOT(Optional).
+    - ElasticAgentDockerImage: Docker image to use for Elastic Agent. This version should be the same build of the remote cluster if the version is an SNAPSHOT(Optional).
+  Usage:
+    oblt-cli cluster create custom --template stateless --parameters '{"StackVersion": "8.7.0-SNAPSHOT"}'
+    oblt-cli cluster create custom --template stateless --parameters '{"StackVersion": "8.7.0-SNAPSHOT", "WorstCaseScenario": "true"}'
+    oblt-cli cluster create custom --template stateless --parameters '{"StackVersion": "8.7.0-SNAPSHOT", "ElasticsearchDockerImage": "docker.elastic.co/observability-ci/elasticsearch-cloud:8.7.0-aaaaaaaa"}'
+    oblt-cli cluster create custom --template stateless --parameters '{"StackVersion": "8.7.0-SNAPSHOT", "KibanaDockerImage": "docker.elastic.co/observability-ci/kibana-cloud:8.7.0-aaaaaaaa"}'
+    oblt-cli cluster create custom --template stateless --parameters '{"StackVersion": "8.7.0-SNAPSHOT", "ElasticAgentDockerImage": "docker.elastic.co/observability-ci/elastic-agent-cloud:8.7.0-aaaaaaaa"}'
+
+#{{ $productType:="observability" }}
+#{{ if .OnlyElasticsearch }}
+#{{ $productType:="elasticseacrh" }}
+#{{ end }}
+cluster_name: "{{ .ClusterName }}"
+slack_channel: "{{ .SlackChannel }}"
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+oblt_username: "{{ $username }}"
+
+create_users: true
+configure_external_snapshots_repo_ro: true
+
+stack:
+  version: "{{ .StackVersion }}"
+  mode: ess
+  template: "{{ $productType }}"
+  target: production
+  observability: true
+  ess:
+#{{- if .ElasticsearchDockerImage }}
+    elasticsearch:
+      image: "{{ .ElasticsearchDockerImage }}"
+      extra_config: |
+        #{{- if .WorstCaseScenario }}
+        # Worst scenario
+        indices.write_ack_delay_interval : 500ms
+        #{{ else }}
+        # Best scenario
+        indices.write_ack_delay_interval : 200ms
+        #{{- end }}
+        indices.write_ack_delay_randomness_bound: 100ms
+        node._internal.default_refresh_interval: 5s
+#{{- end }}
+#{{- if .KibanaDockerImage }}
+    kibana:
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .ElasticAgentDockerImage }}
+    integrations:
+      image: "{{ .ElasticAgentDockerImage }}"
+#{{- end }}
+
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "../environments/stateless-oblt/bootstrap"
+bootstrap_username: superuser_restricted_indices

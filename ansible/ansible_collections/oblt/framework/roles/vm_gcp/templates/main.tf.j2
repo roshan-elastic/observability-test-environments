@@ -1,0 +1,115 @@
+variable "privatekeypath" {
+  type    = string
+  default = "{{ vm_gcp_ssh_private_key }}"
+}
+
+variable "publickeypath" {
+  type    = string
+  default = "{{ vm_gcp_ssh_public_key }}"
+}
+
+terraform {
+ backend "gcs" {
+    bucket  = "{{ vm_gcp_bucket }}"
+    prefix  = "{{ vm_gcp_bucket_prefix }}"
+ }
+}
+
+provider "google" {
+  project = "{{ vm_gcp_project }}"
+  zone    = "{{ vm_gcp_zone }}"
+  default_labels = {
+    env = "test"
+    cluster_name = "{{ vm_gcp_cluster_name }}"
+    owner = "{{ vm_gcp_oblt_username }}"
+    division = "engineering"
+    org = "obs"
+    team = "observability"
+    project = "oblt-clusters"
+  }
+}
+
+data "google_compute_network" "vpc_network" {
+  name                    = "{{ vm_gcp_vpc_name }}"
+}
+
+resource "google_compute_network" "vpc_network" {
+  count = ("{{ vm_gcp_vpc_name }}" != "oblt-clusters-vpc" && "{{ vm_gcp_vpc_name }}" != "oblt-clusters-test-vpc" && "{{ vm_gcp_vpc_name }}" != "oblt-clusters-vm-vpc" && "{{ vm_gcp_vpc_name }}" != "oblt-clusters-vm-test-vpc") ? 1 : 0
+  name                    = "{{ vm_gcp_vpc_name }}"
+  auto_create_subnetworks = "true"
+}
+
+resource "google_compute_firewall" "allow-ports" {
+  name    = "allow-{{ vm_gcp_name }}"
+  network = data.google_compute_network.vpc_network.id
+  allow {
+    protocol = "tcp"
+    ports    = {{ vm_gcp_open_ports | to_json }}
+  }
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["allow-{{ vm_gcp_name }}"]
+}
+
+resource "google_compute_instance" "vm_instance" {
+  name         = "{{ vm_gcp_name }}"
+  machine_type = "{{ vm_gcp_machine_type }}"
+  tags         = google_compute_firewall.allow-ports.target_tags
+
+  metadata = {
+    ssh-keys = "{{ vm_gcp_user }}:${file(var.publickeypath)}"
+
+{% if vm_gcp_os == 'windows' %}
+    sysprep-specialize-script-cmd = "googet -noconfirm=true install google-compute-engine-ssh"
+    enable-windows-ssh = "TRUE"
+    windows-startup-script-cmd = file("{{ vm_gcp_windows_startup_script }}")
+{% endif %}
+
+  }
+
+{% if vm_gcp_startup_script|length > 0 %}
+  metadata_startup_script = <<-EOF
+{{ vm_gcp_startup_script }}
+EOF
+{% endif %}
+
+  boot_disk {
+    initialize_params {
+      image = "{{ vm_gcp_image }}"
+    }
+  }
+
+  network_interface {
+    network = data.google_compute_network.vpc_network.id
+    access_config {
+    }
+  }
+
+{% if vm_gcp_os == 'linux' %}
+
+  connection {
+    type        = "ssh"
+    user        = "{{ vm_gcp_user }}"
+    host        = google_compute_instance.vm_instance.network_interface[0].access_config[0].nat_ip
+    private_key = file(var.privatekeypath)
+  }
+
+{% for item in gcp_vm_upload_files %}
+  provisioner "file" {
+    source      = "{{ item.source }}"
+    destination = "{{ item.destination }}"
+  }
+{% endfor %}
+
+  # https://developer.hashicorp.com/terraform/language/resources/provisioners/remote-exec
+  provisioner "remote-exec" {
+    scripts = {{ vm_gcp_scripts | to_json }}
+  }
+
+
+{% endif %}
+
+}
+
+output "public_instance_ip" {
+  value = google_compute_instance.vm_instance.network_interface[0].access_config[0].nat_ip
+}

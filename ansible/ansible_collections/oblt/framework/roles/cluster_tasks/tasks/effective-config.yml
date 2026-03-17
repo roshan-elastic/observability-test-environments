@@ -1,0 +1,8 @@
+---
+  - name: Show effective configuration
+    vars:
+      env: |
+        {{ vars | to_nice_yaml }}
+    copy:
+      content: "{{ env }}"
+      dest: "{{ build_dir }}/cluster-config-effective.yml"

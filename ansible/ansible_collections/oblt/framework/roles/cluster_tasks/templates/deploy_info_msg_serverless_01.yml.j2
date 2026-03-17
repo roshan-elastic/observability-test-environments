@@ -1,0 +1,17 @@
+{% if stack_target == 'production' %}
+{% set _overview_url = 'https://overview.elastic-cloud.com/app/dashboards#/view/serverless-project-applications-logs' %}
+{% set _admin_console_url = 'https://admin.found.no/projects' %}
+{% endif %}
+{% if stack_target == 'qa' %}
+{% set _overview_url = 'https://overview.qa.cld.elstc.co/app/dashboards#/view/serverless-project-applications-logs' %}
+{% set _admin_console_url = 'https://admin.qa.cld.elstc.co/projects' %}
+{% endif %}
+{% if stack_target == 'staging' %}
+{% set _overview_url = 'https://overview.aws.staging.foundit.no/app/dashboards#/view/serverless-project-applications-logs' %}
+{% set _admin_console_url = 'https://admin.staging.foundit.no/projects' %}
+{% endif %}
+# Troubleshooting
+
+{% import 'macros.j2' as fn %}
+{{ fn.showlink("{}/{}/{}".format(_admin_console_url, stack_template, serverless_deployment_id), "Cluster console", slack) }}
+{{ fn.showlink("{}?_g=(filters:!(('$state':(store:globalState),meta:(alias:!n,disabled:!f,field:serverless.project.id,index:'serverless.logs-*',type:phrase),query:(match_phrase:(serverless.project.id:{})))),refreshInterval:(pause:!t,value:60000),time:(from:now-1h,to:now))&_a=()".format(_overview_url, serverless_deployment_id), "Cluster logs", slack) }}

@@ -1,0 +1,10 @@
+---
+enabled: true
+namespace: crossplane-system
+projectName: argocd-cluster
+ess:
+  clusterName: test-crossplane-01
+  stackPackVersion: 8.11.1
+  ess_terraform_version: 0.8.0
+  ess_enpoint: https://cloud.elastic.co
+  ess_credentials: oblt-clusters-ess-tf-credentials

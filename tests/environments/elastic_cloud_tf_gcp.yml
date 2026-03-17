@@ -1,0 +1,11 @@
+---
+cluster_name: "{{ lookup('env','CLUSTER_NAME') | default('ess-test-oblt-{{ cluster_seed }}', true) }}"
+certificate_issuer: letsencrypt-staging
+
+stack:
+  mode: ess
+  version: "{{ default_stack_version }}"
+  template: observability
+  target: staging
+  ess:
+    provider: gcp

@@ -1,0 +1,4 @@
+---
+- name: Configure Apps
+  include_tasks: deploy_apps.yml
+  loop: "{{ k8s_apps }}"

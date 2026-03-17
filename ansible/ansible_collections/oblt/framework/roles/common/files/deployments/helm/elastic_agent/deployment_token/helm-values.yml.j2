@@ -1,0 +1,36 @@
+# minimal helm values for a deployment
+
+image:
+  # -- Docker image of the Elastic Agent.
+  name: docker.elastic.co/observability-ci/elastic-agent
+  # -- Tag for the Docker image.
+  tag: "{{ stack_version }}"
+  # -- Pull Docker images policy [IfNotPresent, Always, Never].
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - name: docker.elastic.co
+
+# -- Command arguments to pass to the Elastic Agent.
+commandArgs: [ "-e", "-d", "*" ]
+
+# -- Elastic Agent deployment type [deploymnent, daemonset, standalone]
+mode: deployment
+
+# -- Elastic Agent settings.
+fleet:
+  # -- token to use for the Elastic Agent enrollment. This is not needed in case fleet server is configured and `fleet.enroll` is set. Then the token is fetched from Kibana.
+  enrollToken: "{{ fleet_enroll_token }}"
+  # -- To ensure that enrollment occurs on every start of the container set `fleet.force` to true.
+  force: true
+  # -- set to `true` for enrollment into fleet-server. If not set, Elastic Agent is run in standalone mode.
+  enroll: true
+  # -- communicate with Fleet with either insecure HTTP or unverified HTTPS.
+  insecure: false
+  # -- URL of the Fleet Server to enroll into (e.g. https://fleet-server:8220).
+  serverUrl: "{{ fleet_url  }}"
+
+fullnameOverride: "{{ helm_chart.name }}"
+
+extraEnvs:
+  - name: DEPLOY_TIMESTAMP
+    value: "{{ deploy_timestamp }}"

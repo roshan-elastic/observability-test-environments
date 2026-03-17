@@ -1,0 +1,56 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Hey there 👋 I'm oblt-robot. I'm here to help you with Oblt Clusters, CI and some automation!\n"
+			}
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "See what I know about your question:",
+				"emoji": true
+			}
+		},
+  	{{ $length := len .Answers }}
+  	{{ if eq $length 0 }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":ghost: No answers could be found. Please poke `@observability-robots` if you need some help"
+			}
+		},
+    {{else}}
+		{{ range $answer := .Answers }}
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Question*: {{ $answer.Title }}"
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Answer*: {{ $answer.Answer }}"
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Further details*: <{{ $answer.Url }}|here>"
+			}
+		},
+    {{ end }}
+    {{ end }}
+		{
+			"type": "divider"
+		}
+	]
+}

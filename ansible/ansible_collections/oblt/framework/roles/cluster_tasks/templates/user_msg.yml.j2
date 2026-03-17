@@ -1,0 +1,10 @@
+{% if create_users %}
+Other users:
+{% for file in user_files.files|sort(attribute="path") %}
+  user: {{ file.path | basename | splitext | first }}
+  password: {{ elasticsearch_password }}
+{% endfor %}
+{% else %}
+user: {{ elasticsearch_username }}
+password: {{ elasticsearch_password }}
+{% endif %}

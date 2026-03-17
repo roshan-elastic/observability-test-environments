@@ -1,0 +1,23 @@
+cluster_name: edge-oblt-ccs-vydeb
+configure_external_snapshots_repo_ro: true
+create_users: true
+expire_date: "2025-12-31"
+gitops:
+    enabled: "false"
+oblt_username: awahab07
+slack_channel: '@U02EMMHHVDM'
+stack:
+    ess:
+        elasticsearch:
+            ccs_remote_cluster: edge-oblt
+            image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-c0a6b373
+        trusted_org: "2001152763"
+    mode: ess
+    observability: true
+    target: production
+    template: elasticsearch
+    version: 8.15.0-SNAPSHOT
+template_description: |
+    Cross Cluster Search (CCS) template configures a oblt cluster that has a remote cluster configured for CCS.
+    For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#ccs)
+template_name: ccs

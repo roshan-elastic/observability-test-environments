@@ -1,0 +1,33 @@
+---
+- block:
+  - name: Install Kind CLI
+    vars:
+      version: "{{ kind_version }}"
+      arch: "{{ ansible_system | lower }}"
+    get_url:
+      url: "https://github.com/kubernetes-sigs/kind/releases/download/v{{ version }}/kind-{{ arch }}-amd64"
+      dest: "{{ bin_dir }}/kind"
+      mode: 0770
+  when:
+    - hermit_enabled is false
+  tags:
+    - kind
+    - cli
+    - molecule-idempotence-notest
+
+- name: Check tools installed - Kind
+  changed_when: false
+  command: "{{ item.cmd }}"
+  loop:
+    - cmd: docker version
+    - cmd: kind --version
+  when:
+    - k8s_provider == 'kind'
+
+- name: Set Kind installed
+  file:
+    path: "{{ bin_dir }}/kind_installed"
+    state: touch
+  tags:
+    - kind
+    - cli

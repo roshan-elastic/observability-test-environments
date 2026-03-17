@@ -1,0 +1,8 @@
+cluster_name: "oblt-test-{{ cluster_seed }}"
+save_secrets: true
+deploy_timestamp: foo #always the same to check the idenpotence.
+build_dir: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}/build"
+ephemeral_cluster: true
+# FIXME remove when the configuration version 2.0 replace the 1.0
+stack:
+  mode: "none"

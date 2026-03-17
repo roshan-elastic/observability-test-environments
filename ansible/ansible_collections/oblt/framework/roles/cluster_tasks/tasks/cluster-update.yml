@@ -1,0 +1,91 @@
+---
+- name: Check the cluster exist
+  ansible.builtin.fail:
+    msg: "Cluster {{ cluster_name }} does not exists"
+  when:
+    - cluster_created is defined
+    - cluster_created is false
+
+- name: Update the Cluster
+  block:
+    - name: Include tasks from tasks-prepare-gcp.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: prepare-gcp.yml
+
+    - name: Include tasks from tasks-k8s.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: k8s.yml
+
+    - name: Include tasks from tasks-kibana-backup.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: kibana-backup.yml
+
+    - name: Include tasks from tasks-stack.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: stack.yml
+
+    - name: Include tasks from tasks-kibana-backup-restore.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: kibana-backup-restore.yml
+
+    - name: Include tasks from tasks-config.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: stack-config.yml
+
+    - name: Features
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: features.yml
+
+    - name: Include tasks from tasks-k8s-deployments.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: k8s-deployments.yml
+
+    - name: Include tasks from tasks-eden.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: eden.yml
+
+    - name: Include tasks tasks-snapshot-repo.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: snapshot-repo.yml
+      when:
+        - configure_external_snapshots_repo | default(false)
+
+    - name: Include tasks tasks-snapshot-repos-oblt-ro.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: snapshot-repos-oblt-ro.yml
+      when:
+        - configure_external_snapshots_repo_ro | default(false)
+
+    - name: Include tasks from tasks-vault-secrets.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: vault-secrets.yml
+      when:
+        - save_secrets|bool
+
+    - name: Include tasks from tasks-cluster-info.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: cluster-info.yml
+  rescue:
+    - name: Fail Updating the cluster
+      fail:
+        msg: "Cluster update failed"
+  always:
+    - name: Include tasks from tasks-github-summary.yml
+      include_role:
+        name: oblt.framework.cluster_tasks
+        tasks_from: github-summary.yml
+      when:
+        - github_enabled | bool

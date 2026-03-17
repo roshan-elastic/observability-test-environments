@@ -1,0 +1,51 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "feature_siem_linux_user": {
+            "type": "string",
+            "description": "User to connect to the VM",
+            "default": "\"\""
+        },
+        "feature_siem_linux_name": {
+            "type": "string",
+            "description": "Name of the VM",
+            "default": "\"\""
+        },
+        "feature_siem_linux_fleet_url": {
+            "type": "string",
+            "description": "URL of the Fleet server",
+            "default": "{{ fleet_url | mandatory }}"
+        },
+        "feature_siem_linux_kibana_url": {
+            "type": "string",
+            "description": "URL of the Kibana server",
+            "default": "{{ kibana_url | mandatory }}"
+        },
+        "feature_siem_linux_kibana_username": {
+            "type": "string",
+            "description": "Username to connect to Kibana",
+            "default": "{{ kibana_username | mandatory }}"
+        },
+        "feature_siem_linux_kibana_password": {
+            "type": "string",
+            "description": "Password to connect to Kibana",
+            "default": "{{ kibana_password | mandatory }}"
+        },
+        "feature_siem_linux_elastic_agent_version": {
+            "type": "string",
+            "description": "Version of the Elastic Agent",
+            "default": "8.13.0"
+        },
+        "feature_siem_linux_elastic_agent_package": {
+            "type": "string",
+            "description": "URL of the Elastic Agent package",
+            "default": "elastic-agent-{{ feature_siem_linux_elastic_agent_version }}-amd64.deb"
+        },
+        "feature_siem_linux_elastic_agent_package_url": {
+            "type": "string",
+            "description": "URL of the Elastic Agent package",
+            "default": "https://artifacts.elastic.co/downloads/beats/elastic-agent/{{ feature_siem_linux_elastic_agent_package }}"
+        }
+    }
+}

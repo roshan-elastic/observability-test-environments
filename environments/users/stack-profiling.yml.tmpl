@@ -1,0 +1,91 @@
+---
+# last update {{ .Date }}
+template_name: stack-profiling
+template_description: |
+  Deploy the Elastic Stack on k8s with ECK, all Opbeans, and configure Stack monitoring and profiling to send data to monitoring-oblt
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#stack_profiling)
+
+cluster_name: "{{ .ClusterName }}"
+slack_channel: "{{ .SlackChannel }}"
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+oblt_username: "{{ $username }}"
+
+expire_date: '{{ now | mustDateModify "+720h" | date "2006-01-02" }}'
+create_users: true
+
+observability_stack_metrics_enabled: false
+
+k8s:
+  provider: gcp
+  max_node_count: '10'
+  ingress: true
+  certmanager: true
+  machine_type: n2d-standard-4
+  static_ip: true
+
+stack:
+  version: "{{ .StackVersion }}"
+  mode: eck
+  template: observability
+  target: production
+  observability: true
+  eck:
+#{{- $elasticsearchEnabled := "true" }}
+#{{- if .ElasticsearchEnabled }}
+#{{ $elasticsearchEnabled = .ElasticsearchEnabled }}
+#{{- end }}
+    elasticsearch:
+      enabled: "{{ $elasticsearchEnabled }}"
+#{{- if .ElasticsearchDockerImage }}
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- $kibanaEnabled := "true" }}
+#{{- if .KibanaEnabled }}
+#{{ $kibanaEnabled = .KibanaEnabled }}
+#{{- end }}
+    kibana:
+      enabled: "{{ $kibanaEnabled }}"
+#{{- if .KibanaDockerImage }}
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- $elasticAgentEnabled := "true" }}
+#{{- if .ElasticAgentEnabled }}
+#{{ $elasticAgentEnabled = .ElasticAgentEnabled }}
+#{{- end }}
+    integrations:
+      enabled: "{{ $elasticAgentEnabled }}"
+#{{- if .ElasticAgentDockerImage }}
+      image: "{{ .ElasticAgentDockerImage }}"
+#{{- end }}
+
+apps:
+  helm:
+    - name: kube-state-metrics
+      chart: "prometheus-community/kube-state-metrics"
+      version: "{{ `{{ kube_state_metrics_version }}` }}"
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+    - name: kubernetes-integration
+      values_file: "{{ `{{ helm_deployment_dir }}` }}/elastic_agent/standalone-monitoring-oblt/helm-values.yml.j2"
+      chart: "{{ `{{ helm_charts_dir }}` }}/elastic_agent"
+      version: 0.1.0
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+    - name: stack-monitoring
+      values_file: "{{ `{{ helm_deployment_dir }}` }}/elastic_agent/stack-monitoring-oblt/helm-values.yml.j2"
+      chart: "{{ `{{ helm_charts_dir }}` }}/elastic_agent"
+      version: 0.1.0
+      namespace: "{{ `{{ k8s_default_namespace }}` }}"
+  k8s:
+    - name: universal-profiling-agent-{{ `{{ cluster_hash }}` }}
+      src: "{{ `{{ k8s_deployment_dir }}` }}/profiling-monitoring-oblt"
+#{{- $opbeansEnabled := true }}
+#{{- if .OpbeansEnabled }}
+#{{ $opbeansEnabled = .OpbeansEnabled }}
+#{{- end }}
+opbeans:
+    enabled: "{{ $opbeansEnabled }}"

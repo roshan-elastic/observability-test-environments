@@ -1,0 +1,44 @@
+---
+apm_apikey: {{ apm_apikey }}
+apm_token: {{ apm_token }}
+apm_url: {{ apm_url }}
+certmanager_available: {{ certmanager_available }}
+cluster_created: {{ cluster_created }}
+cluster_name: {{ cluster_name }}
+elasticsearch_apikey: {{ elasticsearch_apikey }}
+elasticsearch_password: {{ elasticsearch_password }}
+elasticsearch_url: {{ elasticsearch_url }}
+elasticsearch_username: {{ elasticsearch_username }}
+ess_cloud_id: {{ ess_cloud_id }}
+ess_deployment_id: {{ ess_deployment_id }}
+fleet_api_token: {{ fleet_api_token }}
+fleet_enroll_token: {{ fleet_enroll_token }}
+fleet_policy_id: {{ fleet_policy_id }}
+fleet_server_policy_id: {{ fleet_server_policy_id }}
+fleet_server_token: {{ fleet_server_token }}
+fleet_url: {{ fleet_url }}
+ingress_available: {{ ingress_available }}
+ingress_password: {{ ingress_password }}
+ingress_username: {{ ingress_username }}
+k8s_default_namespace: {{ k8s_default_namespace }}
+k8s_cluster_name: {{ gke_cluster_name }}
+k8s_project: {{ k8s_project}}
+k8s_provider: {{ k8s_provider }}
+k8s_region: {{ k8s_region }}
+k8s_domain: {{ k8s_domain }}
+kibana_password: {{ kibana_password }}
+kibana_url: {{ kibana_url }}
+kibana_username: {{ kibana_username }}
+kube_system_namespace: {{ kube_system_namespace }}
+load_balancer_ip: {{ load_balancer_ip }}
+profiling_token: {{ profiling_token }}
+profiling_url: {{ profiling_url }}
+serverless_deployment_id: {{ serverless_deployment_id }}
+stack_mode: {{ stack_mode }}
+stack_target: {{ stack_target }}
+stack_template: {{ stack_template }}
+stack_version: {{ stack_version }}
+private_key: |
+  {{ private_key | indent(2) }}
+public_key: |
+  {{ public_key | indent(2) }}

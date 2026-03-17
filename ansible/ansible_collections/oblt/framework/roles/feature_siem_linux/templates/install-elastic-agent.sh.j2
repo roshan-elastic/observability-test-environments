@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+FLEET_URL={{ feature_siem_linux_fleet_url }}
+KIBANA_URL={{ feature_siem_linux_kibana_url }}
+KIBANA_USERNAME={{ feature_siem_linux_kibana_username }}
+KIBANA_PASSWORD={{ feature_siem_linux_kibana_password }}
+ELASTIC_AGENT_VERSION={{ feature_siem_linux_elastic_agent_version }}
+ELASTIC_AGENT_PACKAGE={{ feature_siem_linux_elastic_agent_package }}
+ELASTIC_AGENT_PACKAGE_URL={{ feature_siem_linux_elastic_agent_package_url }}
+
+function get-enrollment-token {
+  curl -sSfL --retry 5 --retry-delay 30 \
+    -u "${KIBANA_USERNAME}:${KIBANA_PASSWORD}" \
+    -H "Content-Type: application/json" \
+    -H "kbn-xsrf: true" \
+    -d '{"policy_id": "security-linux-policy"}' \
+    "${KIBANA_URL}/api/fleet/enrollment_api_keys"
+}
+
+function read-token(){
+   python3 -c 'import json,sys;print(json.load(sys.stdin)["item"]["api_key"])'
+}
+
+function install-elastic-agent(){
+  FLEET_ENROLLMENT_TOKEN=$(get-enrollment-token|read-token)
+  curl -sSfL --retry 5 --retry-delay 30 -o "${ELASTIC_AGENT_PACKAGE}" "${ELASTIC_AGENT_PACKAGE_URL}"
+  sudo dpkg -i "${ELASTIC_AGENT_PACKAGE}"
+  sudo elastic-agent enroll --url="${FLEET_URL}" --enrollment-token="${FLEET_ENROLLMENT_TOKEN}"
+  sudo systemctl enable elastic-agent
+  sudo systemctl start elastic-agent
+}
+
+install-elastic-agent > /tmp/elastic-agent-install.log 2>&1

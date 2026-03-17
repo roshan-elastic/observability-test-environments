@@ -1,0 +1,104 @@
+{
+	"type": "modal",
+	"clear_on_close": true,
+	"title": {
+		"type": "plain_text",
+		"text": "{{ .Title }}",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hey!\n\nPlease configure your cluster."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "input",
+			"block_id": "create-ccs-cluster-from-template",
+			"element": {
+				"type": "static_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select a template cluster",
+					"emoji": true
+				},
+				"options": [
+					{{$first := true}}
+					{{ range $label := .Templates }}
+					{{if $first}}
+						{{$first = false}}
+					{{else}}
+					,
+					{{end}}
+					{
+						"text": {
+								"type": "plain_text",
+								"text": "{{ $label }}",
+								"emoji": true
+						},
+						"value": "{{ $label }}"
+					}
+					{{ end }}
+				],
+				"action_id": "select-from-template"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "From cluster",
+				"emoji": true
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "create-ccs-cluster-name-prefix",
+			"element": {
+				"type": "plain_text_input",
+				"action_id": "cluster-name-prefix",
+				"placeholder": {
+					"type" : "plain_text",
+					"text" : "Custom prefix to declare cluster purpose or origin"
+				}
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Custom Prefix",
+				"emoji": true
+			},
+			"optional": true
+		},
+		{
+			"type": "input",
+			"block_id": "create-ccs-cluster-name-suffix",
+			"element": {
+				"type": "plain_text_input",
+				"action_id": "cluster-name-suffix",
+				"placeholder": {
+					"type" : "plain_text",
+					"text" : "Custom suffix. This parameter ensures that the name of the cluster is unique use, it with caution."
+				},
+				"initial_value": "slack"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Custom Suffix",
+				"emoji": true
+			},
+			"optional": false
+		}
+	]
+}

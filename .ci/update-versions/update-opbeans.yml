@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://www.updatecli.io/schema/latest/config.json
+name: Update Opbeans
+scms:
+  githubConfig:
+    kind: "github"
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: "elastic"
+      repository: "observability-test-environments"
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: "main"
+actions:
+  chart:
+    kind: github/pullrequest
+    scmid: githubConfig
+    spec:
+      labels:
+        - "dependencies"
+        - "automerge"
+sources:
+# {{- range .Opbeans }}
+  lastDockerImage{{ . }}:
+    name: "Checking last {{ . }} Docker image"
+    kind: dockerdigest
+    spec:
+      image: "docker.elastic.co/observability-ci/opbeans-{{ . }}"
+      tag: "daily"
+      username: '{{ requiredEnv "ELASTIC_DOCKER_USERNAME" }}'
+      password: '{{ requiredEnv "ELASTIC_DOCKER_PASSWORD" }}'
+    transformers:
+      - addprefix: "docker.elastic.co/observability-ci/opbeans-{{ . }}@sha256:"
+# {{- end }}
+targets:
+# {{- range .Opbeans }}
+  updateDockerImage{{ . }}:
+    name: "Update {{ . }} Docker image"
+    sourceid: lastDockerImage{{ . }}
+    scmid: githubConfig
+    kind: yaml
+    spec:
+      file: "ansible/ansible_collections/oblt/framework/roles/k8s-opbeans/defaults/main.yml"
+      key: "opbeans_{{ . }}_image_default"
+# {{- end }}

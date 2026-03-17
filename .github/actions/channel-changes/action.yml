@@ -1,0 +1,93 @@
+---
+name: channnel-changes
+description: |
+  Check for modified channels on the file `.ci/schema-config.json` and outputs the list of channels that have changed.
+  The actions uses a temporary folder to checkout the previous commit and compare the channels.
+inputs:
+  ref:
+    description: 'The commit SHA or branch to checkout'
+    required: true
+    default: ${{ github.sha }}
+outputs:
+  changedChannels:
+    description: 'Channels with changes'
+    value: ${{ steps.changed-channels.outputs.changedChannels }}
+  currentChannels:
+    description: 'Current channels JSON information'
+    value: ${{ steps.current-channels.outputs.channels }}
+  previousChannels:
+    description: 'Previous channels JSON information before the last commit'
+    value: ${{ steps.previous-channels.outputs.channels }}
+  dayOfWeek:
+    description: 'Day of the week'
+    value: ${{steps.changed-channels.outputs.dayOfWeek }}
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        fetch-tags: false
+        ref: ${{ inputs.ref }}
+        path: channel-changes
+
+    - name: "Update Channels file path"
+      uses: actions/github-script@v7
+      id: channels-file
+      with:
+        script: |
+          const path = require('path');
+          const channelsFilePath = path.join(process.env.GITHUB_WORKSPACE, 'channel-changes', '.ci', 'update-versions', 'update_channels.json');
+          core.setOutput('path', channelsFilePath);
+
+    - name: "Load current update channels"
+      uses: actions/github-script@v7
+      id: current-channels
+      with:
+        script: |
+          const fs = require('fs');
+          const data = fs.readFileSync('${{ steps.channels-file.outputs.path }}', 'utf8');
+          const channels = JSON.parse(data);
+          core.setOutput('channels', channels);
+    - name: Get previous commit
+      shell: bash
+      working-directory: ./channel-changes
+      run: |
+        git checkout -b work_branch_before
+        git reset HEAD^1 --hard
+    - name: "Load previous update channels"
+      uses: actions/github-script@v7
+      id: previous-channels
+      with:
+        script: |
+          const fs = require('fs');
+          const data = fs.readFileSync('${{ steps.channels-file.outputs.path }}', 'utf8');
+          const channels = JSON.parse(data);
+          core.setOutput('channels', channels);
+    - name: "Check changed channels"
+      uses: actions/github-script@v7
+      id: changed-channels
+      env:
+        CURRENT_CHANNELS: ${{ steps.current-channels.outputs.channels }}
+        PREVIOUS_CHANNELS: ${{ steps.previous-channels.outputs.channels }}
+      with:
+        script: |
+          const currentChannels = JSON.parse(process.env.CURRENT_CHANNELS);
+          const previousChannels = JSON.parse(process.env.PREVIOUS_CHANNELS);
+          const changedChannels = [];
+          const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'long'}).format(new Date()).toLowerCase();
+
+          for (const [key, value] of Object.entries(currentChannels)) {
+            const currentChannel = currentChannels[key] || {};
+            const previousChannel = previousChannels[key] || {};
+            const currentBuild = currentChannel['build'] || 'none';
+            const previousBuild = previousChannel['build'] || 'none';
+            const currentScheduled = currentChannel['scheduled'] || 'none';
+            console.log("channel: " + key + ", schedule: " + currentScheduled + ": " + previousBuild + " VS " + currentBuild);
+            if (currentBuild !== previousBuild
+              && (currentScheduled === 'daily' || currentScheduled === dayName)) {
+              changedChannels.push(key);
+            }
+          }
+          core.setOutput('changedChannels', changedChannels);
+          core.setOutput('dayOfWeek', dayName);

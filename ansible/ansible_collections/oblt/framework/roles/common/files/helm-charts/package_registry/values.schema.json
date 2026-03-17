@@ -1,0 +1,176 @@
+{
+    "title": "Chart Values",
+    "type": "object",
+    "properties": {
+        "replicaCount": {
+            "type": "number",
+            "description": "Number of pod replicas",
+            "default": 1
+        },
+        "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable the whole kubernetes deployments, this allow to use it on parent charts.",
+            "default": true
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the Docker image (docker.elastic.co/observability-ci/integrations/package-registry).",
+                    "default": "docker.elastic.co/observability-ci/integrations/package-registry"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Tag of the Docker image (latest).",
+                    "default": "latest"
+                },
+                "pullPolicy": {
+                    "type": "string",
+                    "description": "Docker image pull policy (IfNotPresent|Always|Never)",
+                    "default": "IfNotPresent"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "type": "array",
+            "description": "Name of the Docker secret.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the Docker secret."
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart name used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "type": "string",
+            "description": "Overrides the the Helm Chart fullname used to naming kubernetes objects, by default `opbeans`.",
+            "default": ""
+        },
+        "annotations": {
+            "type": "object",
+            "description": "Additional annotations to add to the kubernetes deployment.",
+            "default": {}
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a service account should be created",
+                    "default": true
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Annotations to add to the service account",
+                    "default": {}
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the service account to use.",
+                    "default": ""
+                }
+            }
+        },
+        "securityContext": {
+            "type": "object",
+            "description": "",
+            "default": {}
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Service type",
+                    "default": "ClusterIP"
+                },
+                "port": {
+                    "type": "number",
+                    "description": "Service port",
+                    "default": 80
+                }
+            }
+        },
+        "ingress": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable or disable the ingress resource.",
+                    "default": false
+                },
+                "certificateIssuer": {
+                    "type": "string",
+                    "description": "Name of the certificates issuer.",
+                    "default": "letsencrypt-stage"
+                },
+                "host": {
+                    "type": "string",
+                    "description": "Hostname exposed by the ingress resource.",
+                    "default": "package-registry.127.0.0.1.ip.es.io"
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Additional annotation to the ingress resource.",
+                    "default": {}
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "The memory limit for the Opbean",
+                            "default": "512Mi"
+                        }
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "type": "string",
+                            "description": "The requested memory for the Opbean",
+                            "default": "256Mi"
+                        },
+                        "cpu": {
+                            "type": "number",
+                            "description": "The requested cpu for the Opbean",
+                            "default": 0.1
+                        }
+                    }
+                }
+            }
+        },
+        "extraEnvVars": {
+            "type": "array",
+            "description": "",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": ""
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": ""
+                    }
+                }
+            }
+        }
+    }
+}

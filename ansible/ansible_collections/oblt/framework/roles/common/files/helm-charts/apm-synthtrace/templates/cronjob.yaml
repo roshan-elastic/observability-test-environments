@@ -1,0 +1,78 @@
+{{ if .Values.cronjob.enabled }}
+{{ if .Values.scenarios }}
+{{- $fullname := (include "apm-synthtrace.fullname" .) -}}
+{{- $labels := (include "apm-synthtrace.labels" .) -}}
+{{- $labelsSelector := (include "apm-synthtrace.selectorLabels" .) -}}
+{{- $serviceAccountName := (include "apm-synthtrace.serviceAccountName" .) -}}
+{{- range .Values.scenarios }}
+{{- $scenario := . }}
+{{- $scenarioNormalized := ($scenario | lower | replace "." "-" | replace "_" "-") }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $fullname }}-{{ $scenarioNormalized }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    scenario: {{ $scenario }}
+    {{- $labels | nindent 4 }}
+spec:
+  schedule: "{{ $.Values.cronjob.schedule }}"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  concurrencyPolicy: {{ $.Values.cronjob.concurrencyPolicy }}
+  jobTemplate:
+    metadata:
+      labels:
+        scenario: {{ $scenario }}
+        {{- $labels | nindent 8 }}
+    spec:
+      parallelism: {{ $.Values.cronjob.parallelism }}
+      completions: {{ $.Values.cronjob.completions }}
+      template:
+        spec:
+          {{- with $.Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ $serviceAccountName }}
+          securityContext:
+            {{- toYaml $.Values.podSecurityContext | nindent 12 }}
+          restartPolicy: OnFailure
+          volumes:
+            - name: run-script
+              configMap:
+                name: {{ $fullname }}-run-script
+                defaultMode: 0777
+                items:
+                  - key: run.sh
+                    path: run.sh
+          containers:
+            - name: scenario
+              securityContext:
+                {{- toYaml $.Values.securityContext | nindent 16 }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+              imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              command: ["/bin/bash"]
+              args: ["-c", "/scripts/run.sh"]
+              env:
+                - name: CMD_OPTS
+                  value: "{{ $.Values.cronjob.args }}"
+                - name: ELASTICSEARCH_HOST
+                  value: "{{ ($.Values.elasticsearch).host }}"
+                - name: ELASTICSEARCH_USERNAME
+                  value: "{{ ($.Values.elasticsearch).username }}"
+                - name: ELASTICSEARCH_PASSWORD
+                  value: "{{ ($.Values.elasticsearch).password }}"
+                - name: SCENARIO
+                  value: {{ . | quote }}
+                - name: CI
+                  value: "true"
+              volumeMounts:
+                - name: run-script
+                  mountPath: /scripts
+              resources:
+                {{- toYaml $.Values.resources | nindent 16 }}
+{{ end }}
+{{ end }}
+{{- end }}

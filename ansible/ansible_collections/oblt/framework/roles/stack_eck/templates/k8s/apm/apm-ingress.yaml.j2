@@ -1,0 +1,63 @@
+---
+{% if ingress_available %}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: "{{ certificate_issuer }}"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/tls-acme: "true"
+  labels:
+    app: apm
+  name: apm
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "{{ apm_host }}"
+      http:
+        paths:
+          - backend:
+              service:
+                name: "{{ apm_host_int }}"
+                port:
+                  number: {{ apm_port_int }}
+            path: /
+            pathType: Prefix
+{% if certmanager_available %}
+  tls:
+    - hosts:
+        - "{{ apm_host }}"
+      secretName: apm-ingress-tls
+{% endif %}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: "{{ certificate_issuer }}"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+  labels:
+    app: fleet
+  name: fleet
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "{{ fleet_host }}"
+      http:
+        paths:
+          - backend:
+              service:
+                name: "{{ fleet_host_int }}"
+                port:
+                  number: {{ fleet_port_int }}
+            path: /
+            pathType: Prefix
+{% if certmanager_available %}
+  tls:
+    - hosts:
+        - "{{ fleet_host }}"
+      secretName: agent-ingress-tls
+{% endif %}
+{% endif %}

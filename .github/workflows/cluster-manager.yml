@@ -1,0 +1,202 @@
+---
+## Workflow to create, destroy, and edit users clusters.
+name: Oblt Cluster manager
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'environments/users/**/*.yml'
+      - 'environments/users/**/*.yaml'
+
+permissions:
+  contents: read
+  # To help with the gitops happening in .github/workflows/notify-cluster/action.yml
+  issues: write
+  id-token: write
+
+jobs:
+  filter-files:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: "${{ github.ref }}-oblt-clusters"
+    outputs:
+      deleted: ${{ steps.filtered-files.outputs.deleted }}
+      added: ${{ steps.filtered-files.outputs.added }}
+      modified: ${{ steps.filtered-files.outputs.modified }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: false
+          ref: ${{ github.sha || 'main' }}
+      - uses: ./.github/actions/no-forks
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: 'pip'
+          cache-dependency-path: ansible/requirements.txt
+      - run: pip install --no-compile -r ansible/requirements.txt
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@c65cd883420fd2eb864698a825fc4162dd94482c
+        with:
+          json: true
+          files: |
+            environments/users/**/*.yaml
+            environments/users/**/*.yml
+      - name: Filter Cluster Config files only
+        id: filtered-files
+        shell: python
+        run: |
+          import json
+          import os
+
+          copiededFilesJson = json.loads('${{ steps.changed-files.outputs.copied_files }}')
+          modifiedFilesJson = json.loads('${{ steps.changed-files.outputs.modified_files }}')
+          renamedFilesJson = json.loads('${{ steps.changed-files.outputs.renamed_files }}')
+          deleted = json.loads('${{ steps.changed-files.outputs.deleted_files }}')
+          added = json.loads('${{ steps.changed-files.outputs.added_files }}')
+          modified = copiededFilesJson + modifiedFilesJson + renamedFilesJson
+
+          with open(os.environ.get('GITHUB_OUTPUT'), "a") as f:
+            f.write("deleted={}\n".format(json.dumps(deleted)))
+            f.write("added={}\n".format(json.dumps(added)))
+            f.write("modified={}\n".format(json.dumps(modified)))
+
+  debug:
+    runs-on: ubuntu-latest
+    needs: filter-files
+    steps:
+      - name: Show deleted files
+        run: |
+          echo "Deleted files: ${{ needs.filter-files.outputs.deleted }}"
+      - name: Show added files
+        run: |
+          echo "Added files: ${{ needs.filter-files.outputs.added }}"
+      - name: Show modified files
+        run: |
+          echo "Modified files: ${{ needs.filter-files.outputs.modified }}"
+
+  delete:
+    if: ${{ fromJSON(needs.filter-files.outputs.deleted)[0] != '' }}
+    runs-on: ubuntu-latest
+    needs: filter-files
+    strategy:
+      fail-fast: false
+      matrix:
+        filename: ${{ fromJSON(needs.filter-files.outputs.deleted) }}
+    env:
+      CLUSTER_CONFIG_FILE: "${{ github.workspace }}/${{ matrix.filename }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 5
+
+      - name: Get previous commit
+        run: |
+          git checkout -b work_branch_before
+          git reset HEAD^1 --hard
+
+      - name: Deleting cluster
+        uses: ./.github/actions/cluster-destroy
+        with:
+          clusterConfigFile: ${{ env.CLUSTER_CONFIG_FILE }}
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  create:
+    if: ${{ fromJSON(needs.filter-files.outputs.added)[0] != '' }}
+    runs-on: ubuntu-latest
+    needs:
+      - filter-files
+    strategy:
+      fail-fast: false
+      matrix:
+        filename: ${{ fromJSON(needs.filter-files.outputs.added) }}
+    env:
+      CLUSTER_CONFIG_FILE: "${{ github.workspace }}/${{ matrix.filename }}"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Creating cluster
+        uses: ./.github/actions/cluster-create
+        with:
+          clusterConfigFile: ${{ env.CLUSTER_CONFIG_FILE }}
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  update:
+    if: ${{ fromJSON(needs.filter-files.outputs.modified)[0] != '' }}
+    runs-on: ubuntu-latest
+    needs:
+      - filter-files
+    strategy:
+      fail-fast: false
+      matrix:
+        filename: ${{ fromJSON(needs.filter-files.outputs.modified) }}
+    env:
+      CLUSTER_CONFIG_FILE: "${{ github.workspace }}/${{ matrix.filename }}"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: elastic/oblt-actions/git/setup@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read cluster config
+        id: cluster-config
+        uses: ./.github/actions/cluster-read-config
+        with:
+          filename: ${{ env.CLUSTER_CONFIG_FILE }}
+
+      - name: Test Docker image deployment
+        if: steps.cluster-config.outputs.golden_cluster == 'true'
+        uses: ./.github/actions/cluster-target
+        id: test-docker-image
+        with:
+          clusterConfigFile: ${{ env.CLUSTER_CONFIG_FILE }}
+          target: "test-creation"
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Invalid Docker image close PR
+        uses: ./.github/actions/pr-close
+        if: ${{ failure() && github.event.number != '' && startsWith(github.head_ref, 'updatecli_elastic_stack') && steps.cluster-config.outputs.golden_cluster == 'true' }}
+        with:
+          number: ${{ github.event.number }}
+          token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+
+      - name: Update cluster
+        uses: ./.github/actions/cluster-update
+        with:
+          clusterConfigFile: ${{ env.CLUSTER_CONFIG_FILE }}
+          workloadIdentityProvider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+          serviceAccount: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          dockerRegistry: ${{ secrets.ELASTIC_DOCKER_REGISTRY }}
+          dockerUsername: ${{ secrets.ELASTIC_DOCKER_USERNAME }}
+          dockerPassword: ${{ secrets.ELASTIC_DOCKER_PASSWORD }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: No possible to update close PR
+        uses: ./.github/actions/pr-close
+        if: ${{ failure() && github.event.number != '' && startsWith(github.head_ref, 'updatecli_update-dev') }}
+        with:
+          number: ${{ github.event.number }}
+          token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}

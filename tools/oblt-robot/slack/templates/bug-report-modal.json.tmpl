@@ -1,0 +1,140 @@
+{
+	"type": "modal",
+	"clear_on_close": true,
+	"title": {
+		"type": "plain_text",
+		"text": "{{ .Title }}",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hey *{{ .User }}*!\n\nThank you for taking the time to create a Bug Report!\n\nPlease provide a general summary of the issue in the title above, and I will create an issue in the observability-robots repository."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "input",
+			"block_id": "issue_title",
+			"element": {
+				"type": "plain_text_input",
+				"action_id": "title"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "What do you want to name this bug?",
+				"emoji": true
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "issue_expectedBehavior",
+			"label": {
+				"type": "plain_text",
+				"text": "What did you expect to happen? (i.e. - What command you used)",
+				"emoji": true
+			},
+			"element": {
+				"type": "plain_text_input",
+				"multiline": true,
+				"action_id": "expectedBehavior"
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "If you're describing a bug, tell us what should happen.",
+					"emoji": true
+				}
+			]
+		},
+		{
+			"type": "input",
+			"block_id": "issue_currentBehavior",
+			"label": {
+				"type": "plain_text",
+				"text": "What's actually happening?",
+				"emoji": true
+			},
+			"element": {
+				"type": "plain_text_input",
+				"multiline": true,
+				"action_id": "currentBehavior"
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "If describing a bug, tell us what happens instead of the expected behavior.  Who is affected by this bug?  When does this occur?  Where does it happen (e.g., run as part of automation, run inside a Docker container, etc.)? Sometimes it is desirable to include configuration and logs, but make to anonymize everything, and remove credentials, API tokens, etc., or any other sensitive information from everything you decide to include.",
+					"emoji": true
+				}
+			]
+		},
+		{
+			"type": "input",
+			"block_id": "issue_suggestions",
+			"label": {
+				"type": "plain_text",
+				"text": "Any ideas on what could be broken or what we can do to fix this quickly?",
+				"emoji": true
+			},
+			"element": {
+				"type": "plain_text_input",
+				"multiline": true,
+				"action_id": "suggestions"
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "Not obligatory, but suggest a fix for the bug, or idea show to implement the addition or change.",
+					"emoji": true
+				}
+			]
+		},
+		{
+			"type": "input",
+			"block_id": "issue_context",
+			"label": {
+				"type": "plain_text",
+				"text": "Are there any other details we need to be aware of?",
+				"emoji": true
+			},
+			"element": {
+				"type": "plain_text_input",
+				"multiline": true,
+				"action_id": "context"
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "How has this issue affected you?  What are you trying to accomplish?  Providing context helps us come up with a solution that is most useful in the real world.",
+					"emoji": true
+				}
+			]
+		}
+	]
+}

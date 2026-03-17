@@ -1,0 +1,89 @@
+# yaml-language-server: $schema=../../../../docs/cluster-config-schema.json
+cluster_name: release-oblt
+create_users: true
+grab_cluster_info: true
+configure_external_snapshots_repo: true
+golden_cluster: true
+slack_channel: "#observablt-bots"
+oblt_username: "robots"
+k8s:
+  enabled: true
+  provider: gcp
+  machine_type: e2-highcpu-4
+  max_node_count: 20
+  static_ip: true
+stack:
+  version: 8.15.0
+  mode: ess
+  template: observability
+  target: production
+  observability: true
+  update_channel: release
+  update_schedule: "daily"
+  ess:
+    saml_id: exkq4ad9w5kwfJK3o1t7
+    elasticsearch:
+      image: docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-3d204fe6
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-3d204fe6
+      mem: 8
+      zones: 3
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-3d204fe6
+      zones: 3
+      mem: 4
+    profiling:
+      enabled: true
+      image: docker.elastic.co/observability-ci/profiling-agent:8.15.0-3d204fe6
+apps:
+  helm:
+    - name: elastic-agent-standalone
+      values_file: "{{ helm_deployment_dir }}/elastic_agent/standalone/helm-values.yml.j2"
+      chart: "{{ helm_charts_dir }}/elastic_agent"
+      version: 0.1.0
+      namespace: kube-system
+    - name: opentelemetry-demo
+      values_file: '{{ helm_deployment_dir }}/opentelemetry-demo/helm-values.yml.j2'
+      chart: 'open-telemetry/opentelemetry-demo'
+      version: 0.22.3
+      namespace: "{{ cluster_name }}-opentelemetry-demo"
+      extra_args: "--create-namespace"
+    - name: apm-synthtrace-all
+      values_file: '{{ helm_deployment_dir }}/apm-synthtrace/helm-values-all.yml.j2'
+      chart: '{{ helm_charts_dir }}/apm-synthtrace'
+      version: 0.1.0
+      namespace: "{{ k8s_default_namespace }}"
+stack_build: "{{ stack.ess.elasticsearch.image | split(':') | last }}"
+beats:
+  enabled: true
+  auditbeat:
+    enabled: true
+    image: "docker.elastic.co/observability-ci/auditbeat:{{ stack_build }}"
+  filebeat:
+    enabled: false
+  heartbeat:
+    enabled: false
+  metricbeat:
+    enabled: false
+  packetbeat:
+    enabled: true
+    image: docker.elastic.co/observability-ci/packetbeat:{{ stack_build }}
+opbeans:
+  enabled: true
+updated_at: "2024-08-08T00:43:14Z"
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - '{{ deployment_dir }}/bootstrap-ilm'
+  - '{{ deployment_dir }}/bootstrap-fleet-v2'
+  - '{{ deployment_dir }}/bootstrap-slo'
+synthetics_monitors_folders:
+  - id: monitors
+    folder: "{{ synthetics_deployments_dir }}/generic"
+    locale: "en-US"
+    timezone: "America/Los_Angeles"
+    params:
+      ELASTICSEARCH_URL: "{{ elasticsearch_url | default('') }}"
+      APM_URL: "{{ apm_url | default('') }}"
+      KIBANA_URL: "{{ kibana_url | default('')}}"
+      KIBANA_USERNAME: "{{ elasticsearch_username | default('') }}"
+      KIBANA_PASSWORD: "{{ elasticsearch_password | default('') }}"

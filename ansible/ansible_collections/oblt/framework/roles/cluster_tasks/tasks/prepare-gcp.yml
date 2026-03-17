@@ -1,0 +1,21 @@
+---
+- name: K8s copy files
+  include_role:
+    name: oblt.framework.k8s
+    tasks_from: copy_files.yml
+
+- block:
+    - name: GCP Cluster Credentials
+      include_role:
+        name: oblt.framework.k8s_gcp
+        tasks_from: cluster_credentials.yml
+    - name: Set default context
+      vars:
+        cluster_context: "gke_{{ k8s_project }}_{{ k8s_region }}_{{ cluster_name }}"
+      include_role:
+        name: oblt.framework.k8s_common
+        tasks_from: set_default_context.yml
+  when:
+    - k8s_enabled|bool
+    - k8s_provider == 'gcp' or k8s_provider == 'autopilot'
+    - cluster_created or not gke_create_cluster

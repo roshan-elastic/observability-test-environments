@@ -1,0 +1,20 @@
+elasticsearch.hosts: https://keepserverless-qa-oblt-b4ba07.es.eu-west-1.aws.qa.elastic.cloud
+elasticsearch.serviceAccountToken: null
+elasticsearch.ssl.verificationMode: none
+elasticsearch.ignoreVersionMismatch: true
+migrations:
+  skip: true
+server.host: 0.0.0.0
+xpack:
+  reporting:
+    encryptionKey: null
+  security:
+    authc:
+      providers:
+        basic:
+          cloud-basic:
+            order: 150
+    encryptionKey: null
+    loginAssistanceMessage: 'Credentials: testing-internal / 3YUIBIRM275z1M29m91Qga6W'
+  encryptedSavedObjects:
+    encryptionKey: null

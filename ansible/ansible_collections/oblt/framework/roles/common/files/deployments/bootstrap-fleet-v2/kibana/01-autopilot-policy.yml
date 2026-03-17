@@ -1,0 +1,23 @@
+---
+description: Create the Kubernetes Integration Policy
+api: "/api/fleet/agent_policies"
+method: POST
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+ignore_errors: true
+register: fleet_autopilot_policy_result
+body: |
+  {
+    "name": "Kubernetes Autopilot Integration",
+    "id": "k8s-integration-autopilot",
+    "description": "Policy to configure the k8s integration on Autopilot GKE.",
+    "namespace": "default",
+    "monitoring_enabled": [
+      "logs",
+      "metrics"
+    ]
+  }
+return_code:
+  - 200
+  - 409

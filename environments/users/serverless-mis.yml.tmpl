@@ -1,0 +1,83 @@
+---
+# last update {{ .Date }}
+template_name: serverless-mis
+template_description: |
+  Serverless template configures an observability cluster that runs on Elastic Stack serverless on your target environment.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#serverless)
+
+#{{ $template := "observability" }}
+#{{- if .ProjectType }}
+#{{ $template = .ProjectType }}
+#{{- end }}
+#{{- $username := "unknown" }}
+#{{- if .User }}
+#{{ $username = .User }}
+#{{- end }}
+#{{- if .Username }}
+#{{ $username = .Username }}
+#{{- end }}
+#{{- $target := "qa" }}
+#{{- if .Target }}
+#{{ $target = .Target }}
+#{{- end }}
+
+slack_channel: "{{ .SlackChannel }}"
+oblt_username: "{{ $username }}"
+ephemeral_cluster: true
+grab_cluster_info: false
+create_ilm: false
+create_users: false
+cluster_name: "{{ .ClusterName }}"
+
+expire_date: '{{ now | mustDateModify "+28h" | date "2006-01-02" }}'
+
+k8s:
+  provider: gcp
+  shared: "serverless-k8s"
+  ingress: false
+  certmanager: false
+  default_namespace: "{{ .ClusterName }}-default"
+  kube_system_namespace: "{{ .ClusterName }}-kube-system"
+
+stack:
+  mode: "serverless"
+  template: "{{ $template }}"
+  target: "{{ $target }}"
+  serverless:
+#{{- if .ElasticsearchDockerImage }}
+    elasticsearch:
+      image: "{{ .ElasticsearchDockerImage }}"
+#{{- end }}
+#{{- if .KibanaDockerImage }}
+    kibana:
+      image: "{{ .KibanaDockerImage }}"
+#{{- end }}
+#{{- if .FleetDockerImage }}
+    fleet:
+      image: "{{ .FleetDockerImage }}"
+#{{- end }}
+
+bootstrap_cluster: true
+bootstrap_cluster_dirs:
+  - "{{ `{{ deployment_dir }}` }}/bootstrap-serverless"
+  - "{{ `{{ deployment_dir }}` }}/bootstrap-api-key-api"
+
+#{{- if .GitOps }}
+gitops:
+  enabled: "{{ .GitOps }}"
+#{{- if .GitHubCommit }}
+  commit: "{{ .GitHubCommit }}"
+#{{- end }}
+#{{- if .GitHubIssue }}
+  issue: "{{ .GitHubIssue }}"
+#{{- end }}
+#{{- if .GitHubPullRequest }}
+  pull_request: "{{ .GitHubPullRequest }}"
+#{{- end }}
+#{{- if .GitHubRepository }}
+  repository: "{{ .GitHubRepository }}"
+#{{- end }}
+#{{- if .GitHubCommentId }}
+  comment_id: "{{ .GitHubCommentId }}"
+#{{- end }}
+#{{- end }}

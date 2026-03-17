@@ -1,0 +1,244 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auditbeat-config
+  namespace: "{{ kube_system_namespace }}"
+  labels:
+    k8s-app: auditbeat
+data:
+  auditbeat.yml: |-
+{% if stack_version is version('7.10.0', '>=') %}
+    queue.disk:
+      max_size: 1GB
+{% endif %}
+    auditbeat.modules:
+    - module: auditd
+      audit_rules: |
+        ## If you are on a 64 bit platform, everything should be running
+        ## in 64 bit mode. This rule will detect any use of the 32 bit syscalls
+        ## because this might be a sign of someone exploiting a hole in the 32
+        ## bit API.
+        -a always,exit -F arch=b32 -S all -F key=32bit-abi
+
+        ## Kernel Related Events
+        -w /etc/sysctl.conf -p wa -k sysctl
+        -a always,exit -F perm=x -F auid!=-1 -F path=/sbin/insmod -k T1215_Kernel_Modules_and_Extensions
+        -a always,exit -F perm=x -F auid!=-1 -F path=/sbin/modprobe -k T1215_Kernel_Modules_and_Extensions
+        -a always,exit -F perm=x -F auid!=-1 -F path=/sbin/rmmod -k T1215_Kernel_Modules_and_Extensions
+        -a always,exit -F arch=b64 -S finit_module -S init_module -S delete_module -F auid!=-1 -k T1215_Kernel_Modules_and_Extensions
+        -w /etc/modprobe.conf -p wa -k T1215_Kernel_Modules_and_Extensions
+
+        ## Time Related Events
+        -a exit,always -F arch=b64 -S adjtimex -S settimeofday -S clock_settime -k T1099_Timestomp
+        -a always,exit -F arch=b64 -S clock_settime -k T1099_Timestomp
+        -w /etc/localtime -p wa -k T1099_Timestomp
+
+        ## Stunnel
+        -w /usr/sbin/stunnel -p x -k T1079_Multilayer_Encryption
+
+        ## Cron configuration & scheduled jobs related events
+        -w /etc/cron.allow -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/cron.deny -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/cron.d/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/cron.daily/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/cron.hourly/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/cron.monthly/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/cron.weekly/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/crontab -p wa -k T1168_Local_Job_Scheduling
+        -w /var/spool/cron/crontabs/ -k T1168_Local_Job_Scheduling
+        -w /etc/inittab -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/init.d/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/init/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/at.allow -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/at.deny -p wa -k T1168_Local_Job_Scheduling
+        -w /var/spool/at/ -p wa -k T1168_Local_Job_Scheduling
+        -w /etc/anacrontab -p wa -k T1168_Local_Job_Scheduling
+
+        ## Account Related Events
+        -w /etc/sudoers -p wa -k T1078_Valid_Accounts
+        -w /usr/bin/passwd -p x -k T1078_Valid_Accounts
+        -w /usr/sbin/groupadd -p x -k T1078_Valid_Accounts
+        -w /usr/sbin/groupmod -p x -k T1078_Valid_Accounts
+        -w /usr/sbin/addgroup -p x -k T1078_Valid_Accounts
+        -w /usr/sbin/useradd -p x -k T1078_Valid_Accounts
+        -w /usr/sbin/usermod -p x -k T1078_Valid_Accounts
+        -w /usr/sbin/adduser -p x -k T1078_Valid_Accounts
+
+        ## Privileged Command Execution Related Events
+        -a exit,always -F arch=b64 -F euid=0 -S execve -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/userdel -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/bin/chgrp -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/bin/ping6 -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/sbin/pam_timestamp_check -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/sbin/unix_chkpwd -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/sbin/pwck -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/suexec -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/newusers -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/groupdel -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/semanage -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/usernetctl -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/ccreds_validate -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/Xorg -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/rlogin -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/sudoedit -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/at -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/rsh -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/kgrantpty -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/crontab -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/staprun -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/rcp -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/passwd -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/chsh -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/chfn -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/chage -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/setfacl -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/chacl -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/chcon -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/newrole -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+        -a always,exit -F path=/usr/bin/kpac_dhcp_helper -F perm=x -F auid>=500 -F auid!=4294967295 -k T1078_Valid_Accounts
+
+        ## Priv Escalation Related Events
+        -w /bin/su -p x -k T1169_Sudo
+        -w /usr/bin/sudo -p x -k T1169_Sudo
+        -w /etc/sudoers -p rw -k T1169_Sudo
+        -a always,exit -F dir=/home -F uid=0 -F auid>=1000 -F auid!=4294967295 -C auid!=obj_uid -k T1169_Sudo
+        -a always,exit -F arch=b64 -S chmod  -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S chown -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S fchmod -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S fchmodat -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S fchown -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S fchownat -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S fremovexattr -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S fsetxattr -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S lchown -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S lremovexattr -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S lsetxattr -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S removexattr -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S setxattr -F auid>=500 -F auid!=4294967295 -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -C auid!=uid -S execve -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S setuid -S setgid -S setreuid -S setregid -k T1166_Seuid_and_Setgid
+        -a always,exit -F arch=b64 -S setuid -S setgid -S setreuid -S setregid -F exit=EPERM -k T1166_Seuid_and_Setgid
+        -w /usr/bin/ -p wa -k T1068_Exploitation_for_Privilege_Escalation
+        -w /usr/sbin/ -p wa -k T1068_Exploitation_for_Privilege_Escalation
+
+        ## Recon Related Events
+        -w /etc/group -p wa -k T1087_Account_Discovery
+        -w /etc/passwd -p wa -k TT1087_Account_Discovery
+        -w /etc/gshadow -k T1087_Account_Discovery
+        -w /etc/shadow -k T1087_Account_Discovery
+        -w /etc/security/opasswd -k T1087_Account_Discovery
+        -w /usr/sbin/nologin -k T1087_Account_Discovery
+        -w /sbin/nologin -k T1087_Account_Discovery
+        -w /usr/bin/whoami -p x -k T1033_System_Owner_User_Discovery
+        -w /etc/hostname -p r -k T1082_System_Information_Discovery
+        -w /sbin/iptables -p x -k T1082_System_Information_Discovery
+        -w /sbin/ifconfig -p x -k T1082_System_Information_Discovery
+        -w /etc/login.defs -p wa -k T1082_System_Information_Discovery
+        -w /etc/resolv.conf -k T1016_System_Network_Configuration_Discovery
+        -w /etc/hosts.allow -k T1016_System_Network_Configuration_Discovery
+        -w /etc/hosts.deny -k T1016_System_Network_Configuration_Discovery
+        -w /etc/securetty -p wa -k T1082_System_Information_Discovery
+        -w /var/log/faillog -p wa -k T1082_System_Information_Discovery
+        -w /var/log/lastlog -p wa -k T1082_System_Information_Discovery
+        -w /var/log/tallylog -p wa -k T1082_System_Information_Discovery
+        -w /usr/sbin/tcpdump -p x -k T1049_System_Network_Connections_discovery
+        -w /usr/sbin/traceroute -p x -k T1049_System_Network_Connections_discovery
+        -w /usr/bin/wireshark -p x -k T1049_System_Network_Connections_discovery
+        -w /usr/bin/rawshark -p x -k T1049_System_Network_Connections_discovery
+        -w /usr/bin/grep -p x -k T1081_Credentials_In_Files
+        -w /usr/bin/egrep -p x -k T1081_Credentials_In_Files
+        -w /usr/bin/ps -p x -k T1057_Process_Discovery
+
+        ## Remote Access Related Events
+        -w /usr/bin/wget -p x -k T1219_Remote_Access_Tools
+        -w /usr/bin/curl -p x -k T1219_Remote_Access_Tools
+        -w /usr/bin/base64 -p x -k T1219_Remote_Access_Tools
+        -w /bin/nc -p x -k T1219_Remote_Access_Tools
+        -w /bin/netcat -p x -k T1219_Remote_Access_Tools
+        -w /usr/bin/ncat -p x -k T1219_Remote_Access_Tools
+        -w /usr/bin/ssh -p x -k T1219_Remote_Access_Tools
+        -w /usr/bin/socat -p x -k T1219_Remote_Access_Tools
+        -w /usr/bin/rdesktop -p x -k T1219_Remote_Access_Tools
+
+        # DPKG / APT-GET (Debian/Ubuntu)
+        -w /usr/bin/dpkg -p x -k T1072_third_party_software
+        -w /usr/bin/apt-add-repository -p x -k T1072_third_party_software
+        -w /usr/bin/apt-get -p x -k T1072_third_party_software
+        -w /usr/bin/aptitude -p x -k T1072_third_party_software
+
+        ## Shell configuration Persistence Related Events
+        -w /etc/profile.d/ -k T1156_bash_profile_and_bashrc
+        -w /etc/profile -k T1156_bash_profile_and_bashrc
+        -w /etc/shells -k T1156_bash_profile_and_bashrc
+        -w /etc/bashrc -k T1156_bash_profile_and_bashrc
+        -w /etc/csh.cshrc -k T1156_bash_profile_and_bashrc
+        -w /etc/csh.login -k T1156_bash_profile_and_bashrc
+
+        -a always,exit -F arch=b64 -S execve,execveat -k T1059_CommandLine_Interface
+
+    - module: file_integrity
+      recursive: true
+      paths:
+        - /bin
+        - /usr/bin
+        - /sbin
+        - /usr/sbin
+        - /etc
+      exclude_files:
+        - '(?i)\.sw[nop]$'
+        - '~$'
+        - '/\.git($|/)'
+
+    # based on sample suggested config from 8.1 documentation
+    - module: system
+      datasets:
+        - host    # General host information, e.g. uptime, IPs
+        - login   # User logins, logouts, and system boots.
+        - package # Installed, updated, and removed packages
+        - user    # User information
+      period: 10s
+      state.period: 12h
+      socket.include_localhost: false
+      user.detect_password_changes: true
+
+    - module: system
+      datasets:
+        - process # Started and stopped processes
+        # - socket  # Opened and closed sockets
+      period: 1s
+      socket.include_localhost: false
+
+    setup.template.overwrite: true
+    processors:
+      - add_docker_metadata:
+         host: "unix:///var/run/docker.sock"
+         match_pids: [ "process.pid", "process.ppid" ]
+      - add_host_metadata: ~
+      - add_cloud_metadata: ~
+    output.elasticsearch:
+      hosts: ['${ELASTICSEARCH_HOST}']
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
+      ssl.enabled: true
+      ssl.verification_mode: none
+    monitoring.enabled: true
+    setup.kibana.host: ${KIBANA_HOST}
+    setup.kibana.username: ${KIBANA_USERNAME}
+    setup.kibana.password: ${KIBANA_PASSWORD}
+    setup.dashboards.enabled: true
+    instrumentation:
+      enabled: true
+      environment: production
+      hosts:
+        - "${ELASTIC_APM_SERVER_URL}"
+      secret_token: ${ELASTIC_APM_SECRET_TOKEN}

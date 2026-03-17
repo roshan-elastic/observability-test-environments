@@ -1,0 +1,84 @@
+---
+name: Oblt Cluster Generic (issue)
+
+on:
+  issues:
+    types:
+      - edited
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+
+# Avoid running if there is already an on-going action running for the same
+# GitHub issue
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.issue.number }}"
+
+jobs:
+  generic_cluster:
+    if: contains(github.event.issue.labels.*.name, 'generic-cluster')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify - started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🏃 I am attending your request for creating your generic cluster ([logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))'
+            })
+      - uses: actions/checkout@v4
+
+      # Use https://github.com/stefanbuck/github-issue-parser/releases/tag/v3.0.1
+      - uses: stefanbuck/github-issue-parser@c1a559d78bfb8dd05216dab9ffd2b91082ff5324
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/cluster-generic-issue.yaml
+
+      - name: Get release stack version
+        run: echo "RELEASE_STACK_VERSION=$(jq -r .release.version .ci/update-versions/update_channels.json)" >> "${GITHUB_ENV}"
+
+      - name: Configure oblt-cli parameters
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log(`Parsing flags`)
+            const { elasticsearch, elastic_agent, kibana, stack_version, RELEASE_STACK_VERSION } = process.env
+            var parameters = {}
+            parameters.StackVersion = RELEASE_STACK_VERSION
+            if (stack_version != '') {
+              parameters.StackVersion = stack_version
+            }
+            if (elasticsearch != '') {
+              parameters.ElasticsearchDockerImage = elasticsearch
+            }
+            if (elastic_agent != '') {
+              parameters.ElasticAgentDockerImage = elastic_agent
+            }
+            if (kibana != '') {
+              parameters.KibanaDockerImage = kibana
+            }
+            console.log(`Create PARAMETERS env variable`)
+            core.exportVariable('PARAMETERS', `${(JSON.stringify(parameters))}`)
+        env:
+          elasticsearch: ${{ steps.issue-parser.outputs.issueparser_elasticsearch_image || '' }}
+          kibana: ${{ steps.issue-parser.outputs.issueparser_kibana_image || '' }}
+          elastic_agent: ${{ steps.issue-parser.outputs.issueparser_elasticagent_image || '' }}
+          stack_version: ${{ steps.issue-parser.outputs.issueparser_stack_version || '' }}
+
+      - name: Setup Git
+        uses: elastic/oblt-actions/git/setup@v1
+
+      - uses: elastic/oblt-actions/oblt-cli/cluster-create-custom@v1
+        with:
+          cluster-name-prefix: ${{ steps.issue-parser.outputs.issueparser_prefix || 'issue' }}
+          cluster-name-suffix: ${{ steps.issue-parser.outputs.issueparser_suffix || '' }}
+          gitops: true
+          parameters: ${{ env.PARAMETERS }}
+          template: 'ess'
+          github-token: ${{ secrets.OBLT_TEST_ENV_GITHUB_TOKEN }}
+          username: ${{ github.event.issue.user.login }}

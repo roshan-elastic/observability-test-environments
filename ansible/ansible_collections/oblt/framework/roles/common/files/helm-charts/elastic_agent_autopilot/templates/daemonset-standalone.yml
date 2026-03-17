@@ -1,0 +1,253 @@
+{{- if eq .Values.mode "standalone" }}
+---
+# For more information refer https://www.elastic.co/guide/en/fleet/current/running-on-kubernetes-standalone.html
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: "{{ template "elastic_agent_autopilot.fullname" . }}"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: "{{ template "elastic_agent_autopilot.fullname" . }}"
+spec:
+  selector:
+    matchLabels:
+      app: "{{ template "elastic_agent_autopilot.fullname" . }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ template "elastic_agent_autopilot.fullname" . }}"
+    spec:
+      # Tolerations are needed to run Elastic Agent on Kubernetes control-plane nodes.
+      # Agents running on control-plane nodes collect metrics from the control plane components (scheduler, controller manager) of Kubernetes
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      serviceAccountName: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+      # hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+    {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+
+      priorityClassName: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+      containers:
+        - name: "{{ template "elastic_agent_autopilot.fullname" . }}"
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: [
+            "-c", "/etc/agent.yml",
+            "-e",
+          ]
+          env:
+            # The basic authentication username used to connect to Elasticsearch
+            # This user needs the privileges required to publish events to Elasticsearch.
+            - name: ES_USERNAME
+              value: "{{ .Values.elasticsearch.username }}"
+            # The basic authentication password used to connect to Elasticsearch
+            - name: ES_PASSWORD
+              value: "{{ .Values.elasticsearch.password }}"
+            - name: ES_HOST
+              value: "{{ .Values.elasticsearch.host }}"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: METRICS_SERVICE
+              value: "{{ .Values.metricsService }}"
+            - name: CONFIG_CHECKSUM
+              value: "{{ include (print $.Template.BasePath "/configmap-standalone.yml") . | sha256sum }}"
+          securityContext:
+            runAsUser: 0
+          resources:
+            # limit is ignore see https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#resource-limits
+            # limits:
+            #   cpu: 0.1
+            #   memory: 1Gi
+            #   ephemeral-storage: "4Gi"
+            requests:
+              # cpu: 300m
+              memory: 1Gi
+              ephemeral-storage: "4Gi"
+          volumeMounts:
+            - name: datastreams
+              mountPath: /etc/agent.yml
+              readOnly: true
+              subPath: agent.yml
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+      volumes:
+        - name: datastreams
+          configMap:
+            defaultMode: 0640
+            name: "{{ template "elastic_agent_autopilot.fullname" . }}-node-datastreams"
+        - name: varlog
+          hostPath:
+            path: /var/log
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}-kubeadm-config"
+  namespace: {{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}-kubeadm-config"
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+  labels:
+    k8s-app: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - namespaces
+      - events
+      - pods
+      - services
+      - configmaps
+      # Needed for cloudbeat
+      - serviceaccounts
+      - persistentvolumes
+      - persistentvolumeclaims
+    verbs: ["get", "list", "watch"]
+  # Enable this rule only if planing to use kubernetes_secrets provider
+  #- apiGroups: [""]
+  #  resources:
+  #  - secrets
+  #  verbs: ["get"]
+  - apiGroups: ["extensions"]
+    resources:
+      - replicasets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - statefulsets
+      - deployments
+      - replicasets
+      - daemonsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/stats
+    verbs:
+      - get
+  # Needed for apiserver
+  - nonResourceURLs:
+      - "/metrics"
+    verbs:
+      - get
+  # Needed for cloudbeat
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - clusterrolebindings
+      - clusterroles
+      - rolebindings
+      - roles
+    verbs: ["get", "list", "watch"]
+  # Needed for cloudbeat
+  - apiGroups: ["policy"]
+    resources:
+      - podsecuritypolicies
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [ "storage.k8s.io" ]
+    resources:
+      - storageclasses
+    verbs: [ "get", "list", "watch" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+  # Should be the namespace where elastic-agent is running
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s-app: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs: ["get", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}-kubeadm-config"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s-app: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    resourceNames:
+      - kubeadm-config
+    verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s-app: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: "{{ template "elastic_agent_autopilot.serviceAccountName" . }}"
+value: 1000000000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "Ensure that Elastic Agent Pods are always scheduled onto Nodes, by evicting other non-essential workloads."
+{{- end }}

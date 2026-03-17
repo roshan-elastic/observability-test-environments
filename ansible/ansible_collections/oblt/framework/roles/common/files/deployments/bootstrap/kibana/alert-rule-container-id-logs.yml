@@ -1,0 +1,37 @@
+---
+# Description of what the recipe do.
+description: Alert Rule - container.id logs
+# Path to the REST API call.
+api: "/app/observability/alerts/rules?_a=(lastResponse:!())"
+#HTTP method to use it can be GET, POST, PUT, DELETE, ...
+method: PUT
+# HTTP header we need to pass.
+headers:
+  Content-Type: application/json
+  kbn-xsrf: true
+# The payload to send to the REST API.
+body: |
+  {
+    "throttle": null,
+    "name": "container.id logs",
+    "tags": [],
+    "schedule": { "interval": "1m" },
+    "params": {
+      "timeSize": 1,
+      "timeUnit": "m",
+      "count": { "value": 10, "comparator": "more than" },
+      "criteria": [
+        {
+          "field": "event.dataset",
+          "comparator": "equals",
+          "value": "generic-pods"
+        }
+      ],
+      "groupBy": ["container.id"]
+    },
+    "notify_when": "onActionGroupChange",
+    "actions": []
+  }
+# The expected return code.
+return_code:
+  - 200

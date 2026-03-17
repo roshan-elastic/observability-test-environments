@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector-contrib
+  labels:
+    app: opentelemetry
+    component: otel-collector-contrib
+spec:
+  selector:
+    matchLabels:
+      app: opentelemetry
+      component: otel-collector-contrib
+  minReadySeconds: 5
+  progressDeadlineSeconds: 120
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: opentelemetry
+        component: otel-collector-contrib
+    spec:
+      containers:
+        - command:
+            - "/otelcontribcol"
+            - "--log-level=debug"
+            - "--config=/conf/config.yml"
+          image: otel/opentelemetry-collector-contrib:0.37.1
+          name: otel-collector-contrib
+          resources:
+            limits:
+              memory: 4Gi
+            requests:
+              cpu: 0.05
+              memory: 400Mi
+          ports:
+            - containerPort: 55679 # Default endpoint for ZPages.
+            - containerPort: 8888 # Default endpoint for otel-collector metrics.
+            - containerPort: 8200 # Default endpoint for APM Server exporter
+          env:
+            - name: ELASTIC_APM_SECRET_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apm-creds
+                  key: token
+            - name: ELASTIC_APM_SERVER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: apm-creds
+                  key: url
+          volumeMounts:
+            - name: configmap-volume
+              mountPath: /conf
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133 # Health Check extension default port.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133 # Health Check extension default port.
+      volumes:
+        - name: "configmap-volume"
+          configMap:
+            name: otel-collector-contrib-config

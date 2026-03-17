@@ -1,0 +1,29 @@
+---
+template_name: ccs
+template_description: |
+  Cross Cluster Search (CCS) template configures a oblt cluster that has a remote cluster configured for CCS.
+  For further information about the APM Soak template, please refer to the [documentation](https://elastic.github.io/observability-test-environments/user-guide/cluster-templates/#ccs)
+cluster_name: "dev-oblt-ccs-qnvnc-slack"
+slack_channel: "@U01G0CVD0MS"
+oblt_username: "dominique.belcher"
+create_users: true
+configure_external_snapshots_repo_ro: true
+expire_date: '2024-09-04'
+stack:
+  version: "8.15.0-SNAPSHOT"
+  mode: ess
+  template: elasticsearch
+  target: "production"
+  observability: true
+  ess:
+    trusted_org: "2001152763"
+    elasticsearch:
+      ccs_remote_cluster: "dev-oblt"
+      image: "docker.elastic.co/observability-ci/elasticsearch-cloud-ess:8.15.0-c83a98a2"
+    integrations:
+      image: docker.elastic.co/observability-ci/elastic-agent-cloud:8.15.0-c83a98a2
+    kibana:
+      image: docker.elastic.co/observability-ci/kibana-cloud:8.15.0-c83a98a2
+gitops:
+  enabled: "false"
+updated_at: "2024-08-08T01:20:52Z"

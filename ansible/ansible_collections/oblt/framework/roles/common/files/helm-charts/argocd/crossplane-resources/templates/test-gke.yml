@@ -1,0 +1,100 @@
+---
+# https://marketplace.upbound.io/providers/upbound/provider-gcp-container
+apiVersion: container.gcp.upbound.io/v1beta1
+kind: Cluster
+metadata:
+  annotations:
+    meta.upbound.io/example-id: container/v1beta1/cluster
+  labels:
+    name: {{ .Values.gcp.clusterName }}
+    owner: oblt-robots
+    division: engineering
+    org: obs
+    team: observability
+    project: oblt-clusters
+    testing.upbound.io/example-name: crossplane-k8s
+  name: crossplane-k8s
+spec:
+  forProvider:
+    initialNodeCount: 1
+    location: us-central1-c
+    removeDefaultNodePool: true
+    network: oblt-clusters-vpc
+    loggingService: none
+    loggingConfig:
+      - enableComponents: []
+    monitoringConfig:
+      - enableComponents: []
+        managedPrometheus:
+          - enabled: false
+    resource_labels:
+      labels:
+        name: {{ .Values.gcp.clusterName }}
+        owner: oblt-robots
+        division: engineering
+        org: obs
+        team: observability
+        project: oblt-clusters
+  providerConfigRef:
+    name: workload-id-providerconfig
+---
+apiVersion: container.gcp.upbound.io/v1beta1
+kind: NodePool
+metadata:
+  annotations:
+    meta.upbound.io/example-id: container/v1beta1/nodepool
+  labels:
+    testing.upbound.io/example-name: nodepool
+  name: nodepool
+spec:
+  forProvider:
+    clusterSelector:
+      matchLabels:
+        testing.upbound.io/example-name: crossplane-k8s
+    nodeConfig:
+      - machineType: e2-medium
+        oauthScopes:
+          - https://www.googleapis.com/auth/cloud-platform
+        preemptible: true
+        labels:
+          name: {{ .Values.gcp.clusterName }}
+          owner: oblt-robots
+          division: engineering
+          org: obs
+          team: observability
+          project: oblt-clusters
+        autoscaling:
+          maxNodeCount: 10
+          minNodeCount: 1
+  providerConfigRef:
+    name: workload-id-providerconfig
+---
+apiVersion: container.gcp.upbound.io/v1beta1
+kind: Cluster
+metadata:
+  annotations:
+    meta.upbound.io/example-id: container/v1beta1/cluster
+  labels:
+    name: {{ .Values.gcp.clusterName }}
+    owner: oblt-robots
+    division: engineering
+    org: obs
+    team: observability
+    project: oblt-clusters
+  name: crossplane-autopilot
+spec:
+  forProvider:
+    enableAutopilot: true
+    ipAllocationPolicy:
+      - {}
+    location: us-central1
+    resource_labels:
+      labels:
+        name: {{ .Values.gcp.clusterName }}
+        owner: oblt-robots
+        division: engineering
+        org: obs
+        team: observability
+        project: oblt-clusters
+  providerConfigRef:
+    name: workload-id-providerconfig

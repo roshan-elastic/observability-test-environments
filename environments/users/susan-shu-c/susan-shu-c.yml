@@ -1,0 +1,8 @@
+---
+template_name: oblt-user
+template_description: |
+  This template stores the information about users it is not a cluster configuration file.
+cluster_name: "susan-shu-c"
+slack_channel: "#secml-ops-alerts"
+oblt_username: "susan-shu-c"
+oblt_managed: false

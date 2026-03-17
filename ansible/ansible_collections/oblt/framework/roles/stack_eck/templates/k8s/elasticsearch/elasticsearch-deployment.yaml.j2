@@ -1,0 +1,95 @@
+---
+apiVersion: elasticsearch.k8s.elastic.co/{{ eck_api_version }}
+kind: Elasticsearch
+metadata:
+  name: {{ cluster_name }}
+spec:
+  version: {{ stack_version }}
+{% if observability_enabled is defined and observability_enabled %}
+  monitoring:
+{% if observability_stack_metrics_enabled %}
+    metrics:
+      elasticsearchRefs:
+        - secretName: {{ stack_monitoring_secret }}
+{% endif %}
+{% if observability_stack_logs_enabled %}
+    logs:
+      elasticsearchRefs:
+        - secretName: {{ stack_monitoring_secret }}
+{% endif %}
+{% endif %}
+  nodeSets:
+  - name: default
+    count: {{ eck_es_node_count }}
+    config:
+      logger.org.elasticsearch: warn
+{% if stack_version is version('8.0.0', '>=') %}
+      indices.id_field_data.enabled: true
+      action.destructive_requires_name: false
+{% endif %}
+{% if k8s_provider == 'kind' %}
+      cluster.routing.allocation.disk.threshold_enabled: false
+      ingest.geoip.downloader.enabled: false
+{% endif %}
+{% if stack_version is version('8.5.0', '>=') and observability_enabled and observability_stack_apm_enabled %}
+      tracing.apm.enabled: true
+      tracing.apm.agent.server_url: {{ observability_apm_url }}
+      tracing.apm.agent.metrics_interval: {{ observability_metrics_interval }}
+      tracing.apm.agent.transaction_sample_rate: {{ observability_transaction_sample_rate }}
+      tracing.apm.agent.log_level: {{ observability_log_level }}
+      tracing.apm.agent.global_labels.deploymentName: {{ cluster_name }}
+      tracing.apm.agent.global_labels.elasticStack: {{ stack_version | default('unknown') }}
+      tracing.apm.agent.secret_token: {{ observability_apm_token }}
+{% endif %}
+{% if (eck_es_node_storage | default('')) | length > 0 %}
+    volumeClaimTemplates:
+      - metadata:
+          name: elasticsearch-data # Do not change this name unless you set up a volume mount for the data path.
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ eck_es_node_storage }}Gi
+          storageClassName: standard
+{% endif %}
+    podTemplate:
+      spec:
+        imagePullSecrets:
+          - name: docker.elastic.co
+        initContainers:
+          - name: install-plugins
+            command: ["sh", "-c", "bin/elasticsearch-plugin install --batch repository-gcs"]
+          # TODO check if this init container will be fixed in ECK at some time.
+          # https://www.elastic.co/guide/en/cloud-on-k8s/master/k8s-virtual-memory.html
+          - name: sysctl
+            securityContext:
+              privileged: true
+              runAsUser: 0
+            command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        containers:
+# TODO check if this container will be fixed in ECK 2.11.0
+{% if observability_enabled is defined and observability_enabled and observability_stack_metrics_enabled %}
+          - name: metricbeat
+            args:
+              - -c
+              - /etc/metricbeat-config/metricbeat.yml
+              - -e
+              - -E
+              - ssl.verification_mode=none
+{% endif %}
+          - name: elasticsearch
+            image: {{ eck_es_image }}
+            env:
+            - name: DEPLOY_TIMESTAMP
+              value: "{{ deploy_timestamp }}"
+            resources:
+              requests:
+                memory: {{ (eck_es_mem | float) }}Gi
+                cpu: 1.0
+              limits:
+                memory: {{ (eck_es_mem | float) }}Gi
+  http:
+    service:
+      spec:
+        type: ClusterIP

@@ -1,0 +1,38 @@
+---
+- block:
+  - name: Create a directory tools folder
+    file:
+      path: "{{ bin_dir }}"
+      state: directory
+      mode: 0750
+
+  - name: Download Helm installer CLI
+    get_url:
+      url: "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
+      dest: "{{ bin_dir }}/get_helm.sh"
+      mode: 0770
+
+  - name: Install helm CLI
+    changed_when: false
+    environment:
+      HELM_INSTALL_DIR: "{{ bin_dir }}"
+    shell: |
+      ${HELM_INSTALL_DIR}/get_helm.sh --no-sudo --version v{{ helm_version }}
+  tags:
+    - helm
+    - cli
+    - molecule-idempotence-notest
+  when:
+    - hermit_enabled is false
+
+- name: Check tools installed - Helm
+  changed_when: false
+  command: helm version
+
+- name: Set Helm installed
+  file:
+    path: "{{ bin_dir }}/helm_installed"
+    state: touch
+  tags:
+    - helm
+    - cli

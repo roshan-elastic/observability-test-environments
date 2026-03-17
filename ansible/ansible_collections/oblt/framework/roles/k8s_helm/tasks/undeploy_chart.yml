@@ -1,0 +1,13 @@
+---
+- name: Undeploy Chart
+  changed_when: false
+  shell: |
+    NAME="{{ helm_chart.name }}"
+    NAMESPACE="{{ helm_chart.namespace }}"
+    helm status -n "${NAMESPACE}" "${NAME}"
+    RET=$?
+    if [ ${RET} == 0 ]; then
+      helm uninstall -n "${NAMESPACE}" "${NAME}"
+    fi
+  when:
+    - k8s_enabled|bool
